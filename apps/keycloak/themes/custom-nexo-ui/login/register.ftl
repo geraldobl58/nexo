@@ -88,6 +88,52 @@
                 </#if>
             </div>
 
+            <!-- CPF e Telefone -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                <!-- CPF -->
+                <div>
+                    <label for="cpf" class="block text-sm font-semibold text-gray-900 mb-2">
+                        CPF <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="cpf"
+                        name="user.attributes.cpf"
+                        value="${(register.formData['user.attributes.cpf']!'')}"
+                        class="block w-full px-4 py-3 text-gray-900 border ${messagesPerField.existsError('user.attributes.cpf')?then('border-red-500','border-gray-300')} rounded-lg shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 text-base"
+                        placeholder="000.000.000-00"
+                    />
+                    <#if messagesPerField.existsError('user.attributes.cpf')>
+                        <span class="text-sm text-red-600 mt-1 block">
+                            ${kcSanitize(messagesPerField.get('user.attributes.cpf'))?no_esc}
+                        </span>
+                    </#if>
+                </div>
+
+                <!-- Telefone -->
+                <div>
+                    <label for="phone" class="block text-sm font-semibold text-gray-900 mb-2">
+                        Telefone <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="tel"
+                        id="phone"
+                        name="user.attributes.phone"
+                        value="${(register.formData['user.attributes.phone']!'')}"
+                        class="block w-full px-4 py-3 text-gray-900 border ${messagesPerField.existsError('user.attributes.phone')?then('border-red-500','border-gray-300')} rounded-lg shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 text-base"
+                        placeholder="(11) 99999-9999"
+                    />
+                    <#if messagesPerField.existsError('user.attributes.phone')>
+                        <span class="text-sm text-red-600 mt-1 block">
+                            ${kcSanitize(messagesPerField.get('user.attributes.phone'))?no_esc}
+                        </span>
+                    </#if>
+                </div>
+
+            </div>
+
+
             <!-- Senha -->
             <#if passwordRequired??>
                 <div>
@@ -147,5 +193,28 @@
                 </a>
             </div>
         </form>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const cpf = document.getElementById("cpf");
+                const phone = document.getElementById("phone");
+
+                cpf?.addEventListener("input", () => {
+                    cpf.value = cpf.value
+                        .replace(/\D/g, "")
+                        .replace(/(\d{3})(\d)/, "$1.$2")
+                        .replace(/(\d{3})(\d)/, "$1.$2")
+                        .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+                });
+
+                phone?.addEventListener("input", () => {
+                    phone.value = phone.value
+                        .replace(/\D/g, "")
+                        .replace(/(\d{2})(\d)/, "($1) $2")
+                        .replace(/(\d{5})(\d)/, "$1-$2")
+                        .replace(/(\d{4})(\d)/, "$1-$2");
+                });
+            });
+        </script>
     </#if>
 </@layout.registrationLayout>

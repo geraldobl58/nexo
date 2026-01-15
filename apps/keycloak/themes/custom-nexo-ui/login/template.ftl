@@ -24,7 +24,7 @@
 
 <body class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 font-sans antialiased ${bodyClass}">
     
-    <div class="w-full max-w-md">
+    <div class="w-[800px] mx-auto">
         <!-- Logo -->
         <div class="text-center mb-8">
             <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl shadow-lg mb-4">
