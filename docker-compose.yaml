@@ -29,6 +29,9 @@ services:
       # 🔥 Theme customizado (monorepo)
       - ./apps/keycloak/themes:/opt/keycloak/themes
 
+      # 🔥 SPI customizado (Two-Step Registration)
+      - ./keycloak-spi/target/keycloak-two-step-registration.jar:/opt/keycloak/providers/keycloak-two-step-registration.jar:ro
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
       interval: 30s

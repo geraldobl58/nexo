@@ -1,0 +1,5 @@
+com/nexo/keycloak/requiredaction/CompleteRegistrationRequiredAction.class
+com/nexo/keycloak/validation/BrazilianValidators.class
+com/nexo/keycloak/authenticator/TwoStepRegistrationAuthenticator.class
+com/nexo/keycloak/authenticator/TwoStepRegistrationAuthenticatorFactory.class
+com/nexo/keycloak/requiredaction/CompleteRegistrationRequiredActionFactory.class
