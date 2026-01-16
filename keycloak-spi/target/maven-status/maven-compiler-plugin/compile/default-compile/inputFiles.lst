@@ -1,0 +1,5 @@
+/Users/geraldoluiz/Development/fullstack/nexo/keycloak-spi/src/main/java/com/nexo/keycloak/authenticator/TwoStepRegistrationAuthenticator.java
+/Users/geraldoluiz/Development/fullstack/nexo/keycloak-spi/src/main/java/com/nexo/keycloak/requiredaction/CompleteRegistrationRequiredActionFactory.java
+/Users/geraldoluiz/Development/fullstack/nexo/keycloak-spi/src/main/java/com/nexo/keycloak/authenticator/TwoStepRegistrationAuthenticatorFactory.java
+/Users/geraldoluiz/Development/fullstack/nexo/keycloak-spi/src/main/java/com/nexo/keycloak/validation/BrazilianValidators.java
+/Users/geraldoluiz/Development/fullstack/nexo/keycloak-spi/src/main/java/com/nexo/keycloak/requiredaction/CompleteRegistrationRequiredAction.java
