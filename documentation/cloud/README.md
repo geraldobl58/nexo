@@ -33,13 +33,6 @@ Documentação técnica completa do projeto Nexo Platform.
 | [Git & Branches](git-branching-strategy.md)    | GitFlow e proteção de branches |
 | [API](api.md)                                  | Documentação da API            |
 
-### 🏠 Ambiente Local K3D
-
-| Documento                                     | Descrição                          |
-| --------------------------------------------- | ---------------------------------- |
-| [Setup Local K3D](local/README.md)            | Kubernetes local idêntico produção |
-| [Configuração GitHub](local/github-config.md) | Secrets, Variables, Environments   |
-
 ## 🌿 Fluxo de Branches
 
 ```

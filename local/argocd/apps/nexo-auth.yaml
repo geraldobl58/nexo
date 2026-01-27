@@ -1,0 +1,48 @@
+# ============================================================================
+# ArgoCD Application - Nexo Auth (Keycloak) (Local)
+# ============================================================================
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nexo-auth-local
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: nexo-auth
+    environment: local
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: nexo-local
+
+  source:
+    repoURL: https://github.com/geraldobl58/nexo.git
+    targetRevision: develop
+    path: infra/helm/nexo-auth
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-dev.yaml
+      parameters:
+        - name: image.tag
+          value: "23.0"
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nexo-local
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

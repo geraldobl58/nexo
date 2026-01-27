@@ -71,7 +71,7 @@ make dev-fe
 | Serviço        | URL                       | Credenciais   |
 | -------------- | ------------------------- | ------------- |
 | Frontend       | http://localhost:3000     | -             |
-| Backend API    | http://localhost:3001     | -             |
+| Backend API    | http://localhost:3333     | -             |
 | Swagger        | http://localhost:3001/api | -             |
 | Keycloak Admin | http://localhost:8080     | admin / admin |
 
