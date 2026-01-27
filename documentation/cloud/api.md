@@ -6,7 +6,7 @@ Documentação da API REST do Nexo Platform.
 
 | Ambiente    | URL                          |
 | ----------- | ---------------------------- |
-| Local       | http://localhost:3001        |
+| Local       | http://localhost:3333        |
 | Development | https://api-dev.nexo.com     |
 | Staging     | https://api-staging.nexo.com |
 | Production  | https://api.nexo.com         |
