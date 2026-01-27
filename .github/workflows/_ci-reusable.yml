@@ -46,6 +46,12 @@ on:
         description: "Digest da imagem Docker"
         value: ${{ jobs.build.outputs.image_digest }}
 
+# Permissões herdadas do workflow principal
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+
 env:
   REGISTRY: ghcr.io
 
