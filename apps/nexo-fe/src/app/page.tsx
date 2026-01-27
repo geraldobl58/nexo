@@ -5,6 +5,9 @@ const HomePage = () => {
       <p>
         This is the home page of the Nexo application. Start building your app
       </p>
+      <p>
+        Edit <code>apps/nexo-fe/src/app/page.tsx</code> to get started.
+      </p>
     </>
   );
 };
