@@ -365,7 +365,7 @@ resources:
 
 | Variável              | Develop               | QA                     | Staging                     | Production          |
 | --------------------- | --------------------- | ---------------------- | --------------------------- | ------------------- |
-| `NEXT_PUBLIC_API_URL` | http://localhost:3001 | https://api.qa.nexo.io | https://api.staging.nexo.io | https://api.nexo.io |
+| `NEXT_PUBLIC_API_URL` | http://localhost:3333 | https://api.qa.nexo.io | https://api.staging.nexo.io | https://api.nexo.io |
 | `NEXT_PUBLIC_ENV`     | development           | qa                     | staging                     | production          |
 | `NEXTAUTH_URL`        | http://localhost:3000 | https://qa.nexo.io     | https://staging.nexo.io     | https://nexo.io     |
 

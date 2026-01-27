@@ -38,7 +38,7 @@ help:
 	@echo "  make logs          Logs dos containers"
 	@echo ""
 	@echo "$(B)APLICAÇÕES$(N)"
-	@echo "  make dev-be        Backend NestJS (localhost:3001)"
+	@echo "  make dev-be        Backend NestJS (localhost:3333)"
 	@echo "  make dev-fe        Frontend Next.js (localhost:3000)"
 	@echo ""
 	@echo "$(B)BUILD & TEST$(N)"
@@ -78,7 +78,7 @@ setup: doctor
 	@echo "$(G)✅ Setup concluído!$(N)"
 	@echo ""
 	@echo "   Próximos passos:"
-	@echo "   make dev-be  → Backend (localhost:3001)"
+	@echo "   make dev-be  → Backend (localhost:3333)"
 	@echo "   make dev-fe  → Frontend (localhost:3000)"
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -109,7 +109,7 @@ logs:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 dev-be:
-	@echo "$(B)⚙️  Backend$(N) → http://localhost:3001"
+	@echo "$(B)⚙️  Backend$(N) → http://localhost:3333"
 	@cd apps/nexo-be && pnpm start:dev
 
 dev-fe:

@@ -118,7 +118,7 @@ make up
 | Serviço     | URL                       | Credenciais   |
 | ----------- | ------------------------- | ------------- |
 | 🖥️ Frontend | http://localhost:3002     | -             |
-| ⚙️ Backend  | http://localhost:3001     | -             |
+| ⚙️ Backend  | http://localhost:3333     | -             |
 | 📚 Swagger  | http://localhost:3001/api | -             |
 | 🔐 Keycloak | http://localhost:8081     | admin / admin |
 | 📊 Tilt     | http://localhost:10350    | -             |

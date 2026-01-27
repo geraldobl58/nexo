@@ -47,7 +47,7 @@ feature/* → develop → qa → staging → main (production)
 | `staging`   | nexo-staging    | Automático | Não       |
 | `main`      | nexo-production | Manual     | Sim       |
 
-## � Container Registry
+## Container Registry
 
 O projeto utiliza **GitHub Container Registry (GHCR)** para armazenar imagens Docker:
 
@@ -60,7 +60,7 @@ O projeto utiliza **GitHub Container Registry (GHCR)** para armazenar imagens Do
 
 > **Vantagem:** Não requer token adicional, usa integração nativa com GitHub.
 
-## �🚀 Quick Start
+## 🚀 Quick Start
 
 ```bash
 # 1. Clone o repositório
@@ -83,7 +83,7 @@ make dev-fe  # Frontend (terminal 2)
 | Serviço     | URL                       | Credenciais   | Descrição |
 | ----------- | ------------------------- | ------------- | --------- |
 | Frontend    | http://localhost:3000     | -             | Next.js   |
-| Backend API | http://localhost:3001     | -             | NestJS    |
+| Backend API | http://localhost:3333     | -             | NestJS    |
 | Swagger     | http://localhost:3001/api | -             | API Docs  |
 | Keycloak    | http://localhost:8080     | admin / admin | Auth      |
 
@@ -106,6 +106,9 @@ nexo/
 ├── infra/
 │   ├── k8s/              # Manifests Kubernetes
 │   └── helm/             # Charts Helm
+│   └── argocd/           # ArgoCD
+│   └── docker/           # Docker
+│   └── observability/    # Observabilidade
 ├── scripts/              # Scripts de automação
 ├── documentation/        # 📚 Esta documentação
 └── docker-compose.yml    # Ambiente local
@@ -127,7 +130,7 @@ make status             # Status dos containers
 make logs               # Ver logs
 
 # Aplicações (hot-reload)
-make dev-be             # Backend NestJS (localhost:3001)
+make dev-be             # Backend NestJS (localhost:3333)
 make dev-fe             # Frontend Next.js (localhost:3000)
 
 # Build & Testes

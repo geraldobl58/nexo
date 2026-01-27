@@ -17,7 +17,7 @@ make dev-fe  # Terminal 2
 
 - **PostgreSQL** roda no Docker na porta 5432
 - **Keycloak** roda no Docker na porta 8080
-- **Backend** roda em Node.js com hot-reload na porta 3001
+- **Backend** roda em Node.js com hot-reload na porta 3333
 - **Frontend** roda em Next.js com hot-reload na porta 3000
 
 ## 📝 Workflow Git
@@ -40,12 +40,12 @@ git push origin feature/minha-feature
 
 ## 🔗 URLs de Acesso Local
 
-| Serviço        | URL                       | Descrição         |
-| -------------- | ------------------------- | ----------------- |
-| Frontend       | http://localhost:3000     | Next.js App       |
-| Backend API    | http://localhost:3001     | NestJS + Swagger  |
-| Swagger Docs   | http://localhost:3001/api | API Documentation |
-| Keycloak       | http://localhost:8080     | Admin Console     |
+| Serviço      | URL                       | Descrição         |
+| ------------ | ------------------------- | ----------------- |
+| Frontend     | http://localhost:3000     | Next.js App       |
+| Backend API  | http://localhost:3333     | NestJS + Swagger  |
+| Swagger Docs | http://localhost:3001/api | API Documentation |
+| Keycloak     | http://localhost:8080     | Admin Console     |
 
 **Credenciais Keycloak:** `admin / admin`
 
@@ -149,7 +149,7 @@ make keycloak-init
 O deploy em produção é feito via GitHub Actions + ArgoCD:
 
 1. Merge da feature branch para `develop` → Deploy automático em DEV
-2. Merge de `develop` para `qa` → Deploy automático em QA  
+2. Merge de `develop` para `qa` → Deploy automático em QA
 3. Merge de `qa` para `staging` → Deploy manual em STAGING
 4. Merge de `staging` para `main` → Deploy manual em PROD (com aprovação)
 
@@ -158,6 +158,6 @@ O deploy em produção é feito via GitHub Actions + ArgoCD:
 ## 🎯 Próximos Passos
 
 - **Arquitetura**: Entenda a estrutura do projeto em [architecture.md](architecture.md)
-- **Deploy**: Configure CI/CD em [deploy.md](deploy.md)  
+- **Deploy**: Configure CI/CD em [deploy.md](deploy.md)
 - **Kubernetes**: Aprenda sobre DOKS em [kubernetes.md](kubernetes.md)
 - **Git Flow**: Veja branching strategy em [git-branching-strategy.md](git-branching-strategy.md)
