@@ -63,6 +63,8 @@ help:
 	@echo "  make doctor        Verifica dependências instaladas"
 	@echo "  make clean         Limpa node_modules e containers"
 	@echo ""
+	@echo "$(Y)🏠 K3D LOCAL: cd local && make help$(N)"
+	@echo ""
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🚀 SETUP

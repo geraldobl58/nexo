@@ -1,0 +1,48 @@
+# ============================================================================
+# ArgoCD Project - Nexo Local
+# ============================================================================
+
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: nexo-local
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: "Nexo Platform - Ambiente Local"
+
+  # Repositórios permitidos
+  sourceRepos:
+    - "https://github.com/geraldobl58/nexo.git"
+    - "*"
+
+  # Destinos permitidos
+  destinations:
+    - namespace: nexo-local
+      server: https://kubernetes.default.svc
+    - namespace: monitoring
+      server: https://kubernetes.default.svc
+
+  # Recursos permitidos
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: "rbac.authorization.k8s.io"
+      kind: ClusterRole
+    - group: "rbac.authorization.k8s.io"
+      kind: ClusterRoleBinding
+
+  # Recursos de namespace permitidos
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  # Roles
+  roles:
+    - name: admin
+      description: "Admin do projeto Nexo Local"
+      policies:
+        - p, proj:nexo-local:admin, applications, *, nexo-local/*, allow
+      groups:
+        - admin
