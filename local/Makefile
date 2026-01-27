@@ -99,23 +99,26 @@ pf-prometheus: ## Port-forward Prometheus (localhost:9090)
 # Build e Deploy Local
 # ============================================================================
 
+# Diretório raiz do projeto
+ROOT_DIR := $(shell dirname $(LOCAL_DIR))
+
 build-be: ## Build imagem do backend para registry local
 	@echo "$(Y)Building nexo-be...$(N)"
-	@docker build -t nexo-registry.localhost:5111/nexo-be:local ../apps/nexo-be
+	@docker build -t nexo-registry.localhost:5111/nexo-be:local -f $(ROOT_DIR)/apps/nexo-be/Dockerfile $(ROOT_DIR)
 	@docker push nexo-registry.localhost:5111/nexo-be:local
 	@k3d image import nexo-registry.localhost:5111/nexo-be:local -c nexo-local
 	@echo "$(G)✓ nexo-be built, pushed and imported$(N)"
 
 build-fe: ## Build imagem do frontend para registry local
 	@echo "$(Y)Building nexo-fe...$(N)"
-	@docker build -t nexo-registry.localhost:5111/nexo-fe:local ../apps/nexo-fe
+	@docker build -t nexo-registry.localhost:5111/nexo-fe:local -f $(ROOT_DIR)/apps/nexo-fe/Dockerfile $(ROOT_DIR)
 	@docker push nexo-registry.localhost:5111/nexo-fe:local
 	@k3d image import nexo-registry.localhost:5111/nexo-fe:local -c nexo-local
 	@echo "$(G)✓ nexo-fe built, pushed and imported$(N)"
 
 build-auth: ## Build imagem do auth para registry local
 	@echo "$(Y)Building nexo-auth...$(N)"
-	@docker build -t nexo-registry.localhost:5111/nexo-auth:local ../apps/nexo-auth
+	@docker build -t nexo-registry.localhost:5111/nexo-auth:local -f $(ROOT_DIR)/apps/nexo-auth/Dockerfile $(ROOT_DIR)
 	@docker push nexo-registry.localhost:5111/nexo-auth:local
 	@k3d image import nexo-registry.localhost:5111/nexo-auth:local -c nexo-local
 	@echo "$(G)✓ nexo-auth built, pushed and imported$(N)"
