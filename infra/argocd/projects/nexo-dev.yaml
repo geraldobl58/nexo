@@ -1,0 +1,72 @@
+# ============================================================================
+# ArgoCD Project - Development Environment
+# ============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: nexo-dev
+  namespace: argocd
+  labels:
+    environment: dev
+    project: nexo
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: "Nexo Platform - Development Environment"
+
+  # Source repositories
+  sourceRepos:
+    - "https://github.com/*/nexo.git"
+    - "git@github.com:*/nexo.git"
+
+  # Destination clusters and namespaces
+  destinations:
+    - namespace: nexo-dev
+      server: https://kubernetes.default.svc
+    - namespace: nexo-dev
+      server: "*"
+
+  # Cluster resource whitelist
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: "networking.k8s.io"
+      kind: IngressClass
+
+  # Namespace resource blacklist (prevent deletion of certain resources)
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+
+  # Roles for this project
+  roles:
+    - name: developer
+      description: "Developer access to dev environment"
+      policies:
+        - p, proj:nexo-dev:developer, applications, get, nexo-dev/*, allow
+        - p, proj:nexo-dev:developer, applications, sync, nexo-dev/*, allow
+        - p, proj:nexo-dev:developer, applications, action/*, nexo-dev/*, allow
+        - p, proj:nexo-dev:developer, logs, get, nexo-dev/*, allow
+      groups:
+        - nexo-developers
+
+    - name: admin
+      description: "Admin access to dev environment"
+      policies:
+        - p, proj:nexo-dev:admin, applications, *, nexo-dev/*, allow
+        - p, proj:nexo-dev:admin, repositories, *, nexo-dev/*, allow
+      groups:
+        - nexo-admins
+
+  # Orphaned resources monitoring
+  orphanedResources:
+    warn: true
+    ignore:
+      - group: ""
+        kind: ConfigMap
+        name: kube-root-ca.crt
+
+  # Sync windows (allow syncs anytime for dev)
+  syncWindows: []

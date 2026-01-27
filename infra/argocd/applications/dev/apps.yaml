@@ -1,0 +1,47 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nexo-fe-dev
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/geraldobl58/nexo.git
+    targetRevision: develop
+    path: infra/helm/nexo-fe
+    helm:
+      valueFiles:
+        - values-dev.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nexo-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nexo-auth-dev
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/geraldobl58/nexo.git
+    targetRevision: develop
+    path: infra/helm/nexo-auth
+    helm:
+      valueFiles:
+        - values-dev.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nexo-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

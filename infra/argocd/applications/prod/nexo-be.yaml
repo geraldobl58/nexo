@@ -1,0 +1,62 @@
+# ============================================================================
+# ArgoCD Application - Backend (Production)
+# ============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nexo-be-prod
+  namespace: argocd
+  labels:
+    app: nexo-be
+    environment: prod
+  annotations:
+    notifications.argoproj.io/subscribe.on-sync-succeeded.slack: nexo-deploys
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: nexo-alerts
+    notifications.argoproj.io/subscribe.on-health-degraded.pagerduty: nexo-oncall
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: nexo-prod
+
+  source:
+    repoURL: https://github.com/nexo/nexo.git
+    targetRevision: main
+    path: infra/helm/nexo-be
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-prod.yaml
+      parameters:
+        - name: image.tag
+          value: "" # Set by CI/CD
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nexo-prod
+
+  # NO automated sync for production - manual only
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+
+  revisionHistoryLimit: 10
+
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+      jsonPointers:
+        - /spec/minReplicas
+        - /spec/maxReplicas

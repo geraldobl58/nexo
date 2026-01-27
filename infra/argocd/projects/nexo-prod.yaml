@@ -1,0 +1,85 @@
+# ============================================================================
+# ArgoCD Project - Production Environment
+# ============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: nexo-prod
+  namespace: argocd
+  labels:
+    environment: prod
+    project: nexo
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: "Nexo Platform - Production Environment"
+
+  sourceRepos:
+    - "https://github.com/*/nexo.git"
+
+  destinations:
+    - namespace: nexo-prod
+      server: https://kubernetes.default.svc
+
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+
+  # Stricter namespace resource controls for production
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+    - group: ""
+      kind: NetworkPolicy
+
+  roles:
+    - name: readonly
+      description: "Read-only access to production"
+      policies:
+        - p, proj:nexo-prod:readonly, applications, get, nexo-prod/*, allow
+        - p, proj:nexo-prod:readonly, logs, get, nexo-prod/*, allow
+      groups:
+        - nexo-developers
+        - nexo-qa
+
+    - name: deployer
+      description: "Deployer access to production (sync only, no delete)"
+      policies:
+        - p, proj:nexo-prod:deployer, applications, get, nexo-prod/*, allow
+        - p, proj:nexo-prod:deployer, applications, sync, nexo-prod/*, allow
+        - p, proj:nexo-prod:deployer, logs, get, nexo-prod/*, allow
+      groups:
+        - nexo-sre
+
+    - name: admin
+      description: "Admin access to production"
+      policies:
+        - p, proj:nexo-prod:admin, applications, *, nexo-prod/*, allow
+      groups:
+        - nexo-admins
+
+  orphanedResources:
+    warn: true
+    ignore:
+      - group: ""
+        kind: ConfigMap
+        name: kube-root-ca.crt
+
+  # Sync windows - only during maintenance windows
+  syncWindows:
+    # Block automatic syncs
+    - kind: deny
+      schedule: "* * * * *"
+      duration: 24h
+      applications:
+        - "*"
+      manualSync: false
+    # Allow manual syncs during maintenance window (Tue-Thu, 2-4 AM UTC)
+    - kind: allow
+      schedule: "0 2 * * 2-4"
+      duration: 2h
+      applications:
+        - "*"
+      manualSync: true

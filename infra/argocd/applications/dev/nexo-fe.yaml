@@ -1,0 +1,43 @@
+# ============================================================================
+# ArgoCD Application - Frontend (Development)
+# ============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nexo-fe-dev
+  namespace: argocd
+  labels:
+    app: nexo-fe
+    environment: dev
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: nexo-dev
+
+  source:
+    repoURL: https://github.com/geraldobl58/nexo.git
+    targetRevision: develop
+    path: infra/helm/nexo-fe
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-dev.yaml
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nexo-dev
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  revisionHistoryLimit: 5

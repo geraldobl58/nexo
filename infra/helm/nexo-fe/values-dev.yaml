@@ -1,0 +1,45 @@
+# Values for Development environment
+replicaCount: 1
+
+image:
+  # Para desenvolvimento local com Kind, usamos GHCR + kind load
+  # Para experiência cloud real: recriar cluster com 'make k8s-setup'
+  # que configura o registry local em localhost:5001
+  repository: ghcr.io/geraldobl58/nexo-fe
+  tag: "develop"
+  pullPolicy: Never  # Usar imagem carregada via kind load
+
+# Desabilitar imagePullSecrets para dev local
+imagePullSecrets: []
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations: {}
+  hosts:
+    - host: nexo-fe.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+
+env:
+  NODE_ENV: development
+  NEXT_PUBLIC_API_URL: http://nexo-be.local
+  NEXT_PUBLIC_KEYCLOAK_URL: http://nexo-auth.local
+  NEXT_PUBLIC_KEYCLOAK_REALM: nexo-dev
+  NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: nexo-fe
+
+podDisruptionBudget:
+  enabled: false

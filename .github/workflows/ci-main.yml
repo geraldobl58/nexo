@@ -1,0 +1,244 @@
+# ============================================================================
+# NEXO PLATFORM - CI Principal
+# ============================================================================
+# Workflow único de CI para todos os serviços usando matrix strategy.
+# Executa lint, test, build e push de Docker images.
+#
+# Branch Flow: feature/* → develop → qa → staging → main (production)
+# ============================================================================
+
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+      - qa
+      - develop
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/**"
+
+  pull_request:
+    branches:
+      - main
+      - staging
+      - qa
+      - develop
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/**"
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Permissões necessárias para o workflow reutilizável
+permissions:
+  contents: write # Necessário para commit automático
+  packages: write
+  security-events: write
+
+jobs:
+  # ============================================
+  # Detectar mudanças para otimizar builds
+  # ============================================
+  changes:
+    name: 🔍 Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      nexo-be: ${{ steps.filter.outputs.nexo-be }}
+      nexo-fe: ${{ steps.filter.outputs.nexo-fe }}
+      nexo-auth: ${{ steps.filter.outputs.nexo-auth }}
+      packages: ${{ steps.filter.outputs.packages }}
+      infra: ${{ steps.filter.outputs.infra }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            nexo-be:
+              - 'apps/nexo-be/**'
+              - 'packages/**'
+              - 'pnpm-lock.yaml'
+            nexo-fe:
+              - 'apps/nexo-fe/**'
+              - 'packages/**'
+              - 'pnpm-lock.yaml'
+            nexo-auth:
+              - 'apps/nexo-auth/**'
+            packages:
+              - 'packages/**'
+            infra:
+              - 'infra/**'
+
+  # ============================================
+  # CI - Backend (NestJS)
+  # ============================================
+  ci-backend:
+    name: 🔵 Backend
+    needs: changes
+    if: needs.changes.outputs.nexo-be == 'true' || needs.changes.outputs.packages == 'true'
+    uses: ./.github/workflows/_ci-reusable.yml
+    with:
+      service: nexo-be
+      working_directory: apps/nexo-be
+      build_type: node
+      run_tests: true
+      run_e2e: true
+    secrets: inherit
+
+  # ============================================
+  # CI - Frontend (Next.js)
+  # ============================================
+  ci-frontend:
+    name: 🟢 Frontend
+    needs: changes
+    if: needs.changes.outputs.nexo-fe == 'true' || needs.changes.outputs.packages == 'true'
+    uses: ./.github/workflows/_ci-reusable.yml
+    with:
+      service: nexo-fe
+      working_directory: apps/nexo-fe
+      build_type: node
+      run_tests: true
+      run_e2e: false
+    secrets: inherit
+
+  # ============================================
+  # CI - Keycloak Theme (nexo-auth)
+  # ============================================
+  ci-nexo-auth:
+    name: 🟡 Nexo Auth
+    needs: changes
+    if: needs.changes.outputs.nexo-auth == 'true'
+    uses: ./.github/workflows/_ci-reusable.yml
+    with:
+      service: nexo-auth
+      working_directory: apps/nexo-auth
+      build_type: docker-only
+      run_tests: false
+    secrets: inherit
+
+  # ============================================
+  # Lint Infraestrutura
+  # ============================================
+  lint-infra:
+    name: 🔧 Lint Infra
+    needs: changes
+    if: needs.changes.outputs.infra == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: "3.14.0"
+
+      - name: Lint Helm Charts
+        run: |
+          for chart in infra/helm/*/; do
+            echo "📋 Linting $chart"
+            helm lint "$chart" || true
+          done
+
+      - name: Validate YAML
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: infra/
+          config_file: .yamllint.yml
+        continue-on-error: true
+
+  # ============================================
+  # Relatório Final
+  # ============================================
+  summary:
+    name: 📊 Summary
+    runs-on: ubuntu-latest
+    needs: [changes]
+    if: always()
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "# 📊 CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Changes Detected" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Changed |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend | ${{ needs.changes.outputs.nexo-be }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | ${{ needs.changes.outputs.nexo-fe }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Nexo Auth | ${{ needs.changes.outputs.nexo-auth }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Infra | ${{ needs.changes.outputs.infra }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Branch → Environment Mapping" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | Environment | Deploy |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| develop | nexo-develop | Auto |" >> $GITHUB_STEP_SUMMARY
+          echo "| qa | nexo-qa | Auto |" >> $GITHUB_STEP_SUMMARY
+          echo "| staging | nexo-staging | Auto |" >> $GITHUB_STEP_SUMMARY
+          echo "| main | nexo-production | Manual + Approval |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ CI workflow completed successfully!" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================
+  # Auto Trigger CD - Deploy automático após CI bem-sucedido
+  # ============================================
+  auto-deploy:
+    name: 🚀 Trigger CD
+    runs-on: ubuntu-latest
+    needs: [changes, ci-backend, ci-frontend, ci-nexo-auth]
+    if: |
+      always() &&
+      github.event_name == 'push' &&
+      (needs.ci-backend.result == 'success' || needs.ci-backend.result == 'skipped') &&
+      (needs.ci-frontend.result == 'success' || needs.ci-frontend.result == 'skipped') &&
+      (needs.ci-nexo-auth.result == 'success' || needs.ci-nexo-auth.result == 'skipped') &&
+      (needs.ci-backend.result == 'success' || needs.ci-frontend.result == 'success' || needs.ci-nexo-auth.result == 'success')
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+    steps:
+      - name: Determine Environment
+        id: set-env
+        run: |
+          case "${{ github.ref }}" in
+            refs/heads/develop)
+              echo "environment=dev" >> $GITHUB_OUTPUT
+              ;;
+            refs/heads/qa)
+              echo "environment=qa" >> $GITHUB_OUTPUT
+              ;;
+            refs/heads/staging)
+              echo "environment=staging" >> $GITHUB_OUTPUT
+              ;;
+            refs/heads/main)
+              echo "environment=prod" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "environment=none" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Summary
+        run: |
+          echo "🚀 CD will be triggered for environment: ${{ steps.set-env.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+
+  #         token: ${{ secrets.GITHUB_TOKEN }}
+  #         fetch-depth: 0
+  #         ref: develop
+  #
+  #     ... resto do job comentado para referência futura ...

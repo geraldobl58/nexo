@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nexo-auth-dev
+  namespace: argocd
+spec:
+  project: nexo-dev
+  source:
+    repoURL: https://github.com/geraldobl58/nexo
+    targetRevision: develop
+    path: infra/helm/nexo-auth
+    helm:
+      valueFiles:
+        - values-dev.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nexo-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

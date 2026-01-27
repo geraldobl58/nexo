@@ -1,0 +1,81 @@
+# ============================================================================
+# ArgoCD Project - QA Environment
+# ============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: nexo-qa
+  namespace: argocd
+  labels:
+    environment: qa
+    project: nexo
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: "Nexo Platform - QA Environment"
+
+  # Source repositories
+  sourceRepos:
+    - "https://github.com/*/nexo.git"
+    - "git@github.com:*/nexo.git"
+
+  # Destination clusters and namespaces
+  destinations:
+    - namespace: nexo-qa
+      server: https://kubernetes.default.svc
+    - namespace: nexo-qa
+      server: "*"
+
+  # Cluster resource whitelist
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: "networking.k8s.io"
+      kind: IngressClass
+
+  # Namespace resource blacklist (prevent deletion of certain resources)
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+
+  # Roles for this project
+  roles:
+    - name: qa-tester
+      description: "QA team access"
+      policies:
+        - p, proj:nexo-qa:qa-tester, applications, get, nexo-qa/*, allow
+        - p, proj:nexo-qa:qa-tester, applications, sync, nexo-qa/*, allow
+        - p, proj:nexo-qa:qa-tester, logs, get, nexo-qa/*, allow
+      groups:
+        - nexo-qa-team
+
+    - name: developer
+      description: "Developer access to QA environment"
+      policies:
+        - p, proj:nexo-qa:developer, applications, get, nexo-qa/*, allow
+        - p, proj:nexo-qa:developer, applications, sync, nexo-qa/*, allow
+        - p, proj:nexo-qa:developer, applications, action/*, nexo-qa/*, allow
+        - p, proj:nexo-qa:developer, logs, get, nexo-qa/*, allow
+      groups:
+        - nexo-developers
+
+    - name: admin
+      description: "Admin access to QA environment"
+      policies:
+        - p, proj:nexo-qa:admin, applications, *, nexo-qa/*, allow
+        - p, proj:nexo-qa:admin, repositories, *, nexo-qa/*, allow
+      groups:
+        - nexo-admins
+
+  # Orphaned resources monitoring
+  orphanedResources:
+    warn: true
+    ignore:
+      - group: ""
+        kind: ConfigMap
+        name: kube-root-ca.crt
+
+  # Sync windows - allow syncs anytime for QA
+  syncWindows: []

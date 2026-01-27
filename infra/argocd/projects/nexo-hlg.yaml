@@ -1,0 +1,55 @@
+# ============================================================================
+# ArgoCD Project - Homologation Environment
+# ============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: nexo-hlg
+  namespace: argocd
+  labels:
+    environment: hlg
+    project: nexo
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: "Nexo Platform - Homologation Environment"
+
+  sourceRepos:
+    - "https://github.com/*/nexo.git"
+
+  destinations:
+    - namespace: nexo-hlg
+      server: https://kubernetes.default.svc
+
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+
+  roles:
+    - name: qa
+      description: "QA access to hlg environment"
+      policies:
+        - p, proj:nexo-hlg:qa, applications, get, nexo-hlg/*, allow
+        - p, proj:nexo-hlg:qa, applications, sync, nexo-hlg/*, allow
+        - p, proj:nexo-hlg:qa, logs, get, nexo-hlg/*, allow
+      groups:
+        - nexo-qa
+
+    - name: admin
+      description: "Admin access to hlg environment"
+      policies:
+        - p, proj:nexo-hlg:admin, applications, *, nexo-hlg/*, allow
+      groups:
+        - nexo-admins
+
+  orphanedResources:
+    warn: true
+
+  # Sync windows - only during business hours
+  syncWindows:
+    - kind: allow
+      schedule: "0 8 * * 1-5"
+      duration: 12h
+      applications:
+        - "*"
+      manualSync: true

@@ -1,0 +1,41 @@
+# ArgoCD Image Updater - Helm Values para Kind Local
+# Atualiza automaticamente as imagens quando detecta novas versões no registry
+
+replicaCount: 1
+
+image:
+  repository: quay.io/argoprojlabs/argocd-image-updater
+  pullPolicy: IfNotPresent
+  tag: "v0.12.2"
+
+config:
+  # Registries configurados
+  registries:
+    - name: Local Registry
+      prefix: localhost:5001
+      api_url: http://nexo-registry:5000
+      ping: yes
+      insecure: yes
+    - name: GitHub Container Registry
+      prefix: ghcr.io
+      api_url: https://ghcr.io
+
+  # Log level
+  logLevel: info
+
+# ServiceAccount
+serviceAccount:
+  create: true
+  name: argocd-image-updater
+
+# RBAC
+rbac:
+  create: true
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
