@@ -29,9 +29,7 @@ spec:
         - name: image.tag
           value: "local"
         - name: image.pullPolicy
-          value: "Always"
-        - name: imagePullSecrets
-          value: "[]"
+          value: "IfNotPresent"
         - name: ingress.hosts[0].host
           value: "nexo.local"
 

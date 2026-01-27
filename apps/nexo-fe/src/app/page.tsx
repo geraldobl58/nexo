@@ -8,6 +8,9 @@ const HomePage = () => {
       <p>
         Edit <code>apps/nexo-fe/src/app/page.tsx</code> to get started.
       </p>
+      <p>
+        Deploy your application and manage it with ease using our integrated
+      </p>
     </>
   );
 };
