@@ -24,8 +24,8 @@ spec:
         - values.yaml
         - values-dev.yaml
       parameters:
-        - name: image.tag
-          value: "23.0"
+        - name: ingress.hosts[0].host
+          value: "auth.nexo.local"
 
   destination:
     server: https://kubernetes.default.svc

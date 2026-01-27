@@ -346,8 +346,51 @@ kubectl -n argocd patch application nexo-be-local --type merge -p '{"operation":
 
 ---
 
+## Build e Deploy de Imagens Locais
+
+O ambiente local usa imagens importadas diretamente no K3D. Isso é necessário porque o registry local pode ter problemas de conectividade com os nodes.
+
+### Workflow Recomendado
+
+```bash
+# 1. Build das imagens
+cd apps/nexo-be
+docker build -t nexo-registry.localhost:5111/nexo-be:local .
+
+cd ../nexo-fe
+docker build -t nexo-registry.localhost:5111/nexo-fe:local .
+
+cd ../nexo-auth
+docker build -t nexo-registry.localhost:5111/nexo-auth:local .
+
+# 2. Push para registry local (opcional)
+docker push nexo-registry.localhost:5111/nexo-be:local
+docker push nexo-registry.localhost:5111/nexo-fe:local
+docker push nexo-registry.localhost:5111/nexo-auth:local
+
+# 3. Import direto no K3D (recomendado)
+k3d image import nexo-registry.localhost:5111/nexo-be:local -c nexo-local
+k3d image import nexo-registry.localhost:5111/nexo-fe:local -c nexo-local
+k3d image import nexo-registry.localhost:5111/nexo-auth:local -c nexo-local
+
+# 4. Restart dos pods para pegar nova imagem
+kubectl rollout restart deployment/nexo-be-local -n nexo-local
+kubectl rollout restart deployment/nexo-fe-local -n nexo-local
+kubectl rollout restart deployment/nexo-auth-local -n nexo-local
+```
+
+### Por que usar k3d image import?
+
+O K3D cria um cluster isolado que nem sempre consegue acessar o registry local. Usando `k3d image import`, a imagem é copiada diretamente para todos os nodes do cluster, garantindo disponibilidade.
+
+### ImagePullPolicy
+
+As imagens locais usam `imagePullPolicy: IfNotPresent` para permitir uso de imagens importadas via `k3d image import`.
+
+---
+
 ## Próximos Passos
 
-1. [Configurar GitHub](github-config.md) - Secrets e environments
-2. [Workflow CI/CD](workflows.md) - Pipelines de deploy
-3. [Observabilidade](observability.md) - Dashboards e alertas
+1. [Configurar GitHub](../github-config.md) - Secrets e environments
+2. [Workflow CI/CD](../development.md) - Pipelines de deploy
+3. [Observabilidade](../observability-guide.md) - Dashboards e alertas

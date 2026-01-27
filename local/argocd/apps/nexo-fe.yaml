@@ -24,8 +24,16 @@ spec:
         - values.yaml
         - values-dev.yaml
       parameters:
+        - name: image.repository
+          value: "nexo-registry.localhost:5111/nexo-fe"
         - name: image.tag
           value: "local"
+        - name: image.pullPolicy
+          value: "Always"
+        - name: imagePullSecrets
+          value: "[]"
+        - name: ingress.hosts[0].host
+          value: "nexo.local"
 
   destination:
     server: https://kubernetes.default.svc

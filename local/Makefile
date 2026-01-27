@@ -103,15 +103,40 @@ build-be: ## Build imagem do backend para registry local
 	@echo "$(Y)Building nexo-be...$(N)"
 	@docker build -t nexo-registry.localhost:5111/nexo-be:local ../apps/nexo-be
 	@docker push nexo-registry.localhost:5111/nexo-be:local
-	@echo "$(G)✓ nexo-be built and pushed$(N)"
+	@k3d image import nexo-registry.localhost:5111/nexo-be:local -c nexo-local
+	@echo "$(G)✓ nexo-be built, pushed and imported$(N)"
 
 build-fe: ## Build imagem do frontend para registry local
 	@echo "$(Y)Building nexo-fe...$(N)"
 	@docker build -t nexo-registry.localhost:5111/nexo-fe:local ../apps/nexo-fe
 	@docker push nexo-registry.localhost:5111/nexo-fe:local
-	@echo "$(G)✓ nexo-fe built and pushed$(N)"
+	@k3d image import nexo-registry.localhost:5111/nexo-fe:local -c nexo-local
+	@echo "$(G)✓ nexo-fe built, pushed and imported$(N)"
 
-build-all: build-be build-fe ## Build todas as imagens
+build-auth: ## Build imagem do auth para registry local
+	@echo "$(Y)Building nexo-auth...$(N)"
+	@docker build -t nexo-registry.localhost:5111/nexo-auth:local ../apps/nexo-auth
+	@docker push nexo-registry.localhost:5111/nexo-auth:local
+	@k3d image import nexo-registry.localhost:5111/nexo-auth:local -c nexo-local
+	@echo "$(G)✓ nexo-auth built, pushed and imported$(N)"
+
+build-all: build-be build-fe build-auth ## Build todas as imagens
+
+deploy-be: build-be ## Build e deploy do backend
+	@kubectl rollout restart deployment/nexo-be-local -n nexo-local
+	@echo "$(G)✓ nexo-be deployed$(N)"
+
+deploy-fe: build-fe ## Build e deploy do frontend
+	@kubectl rollout restart deployment/nexo-fe-local -n nexo-local
+	@echo "$(G)✓ nexo-fe deployed$(N)"
+
+deploy-auth: build-auth ## Build e deploy do auth
+	@kubectl rollout restart deployment/nexo-auth-local -n nexo-local
+	@echo "$(G)✓ nexo-auth deployed$(N)"
+
+deploy-all: build-all ## Build e deploy de todos
+	@kubectl rollout restart deployment -n nexo-local
+	@echo "$(G)✓ All services deployed$(N)"
 
 # ============================================================================
 # ArgoCD
