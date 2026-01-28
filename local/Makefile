@@ -102,44 +102,66 @@ pf-prometheus: ## Port-forward Prometheus (localhost:9090)
 # Diretório raiz do projeto
 ROOT_DIR := $(shell dirname $(LOCAL_DIR))
 
-build-be: ## Build imagem do backend para registry local
-	@echo "$(Y)Building nexo-be...$(N)"
-	@docker build -t nexo-registry.localhost:5111/nexo-be:local -f $(ROOT_DIR)/apps/nexo-be/Dockerfile $(ROOT_DIR)
-	@docker push nexo-registry.localhost:5111/nexo-be:local
-	@k3d image import nexo-registry.localhost:5111/nexo-be:local -c nexo-local
-	@echo "$(G)✓ nexo-be built, pushed and imported$(N)"
+# DockerHub username
+DOCKER_USER := geraldobl58
 
-build-fe: ## Build imagem do frontend para registry local
-	@echo "$(Y)Building nexo-fe...$(N)"
-	@docker build -t nexo-registry.localhost:5111/nexo-fe:local -f $(ROOT_DIR)/apps/nexo-fe/Dockerfile $(ROOT_DIR)
-	@docker push nexo-registry.localhost:5111/nexo-fe:local
-	@k3d image import nexo-registry.localhost:5111/nexo-fe:local -c nexo-local
-	@echo "$(G)✓ nexo-fe built, pushed and imported$(N)"
+# Build flags para compatibilidade com K3D (linux/amd64)
+DOCKER_BUILD_FLAGS := --platform linux/amd64 --provenance=false --sbom=false
 
-build-auth: ## Build imagem do auth para registry local
-	@echo "$(Y)Building nexo-auth...$(N)"
-	@docker build -t nexo-registry.localhost:5111/nexo-auth:local -f $(ROOT_DIR)/apps/nexo-auth/Dockerfile $(ROOT_DIR)
-	@docker push nexo-registry.localhost:5111/nexo-auth:local
-	@k3d image import nexo-registry.localhost:5111/nexo-auth:local -c nexo-local
-	@echo "$(G)✓ nexo-auth built, pushed and imported$(N)"
+# ============================================================================
+# Build e Push para DockerHub
+# ============================================================================
 
-build-all: build-be build-fe build-auth ## Build todas as imagens
+docker-login: ## Login no DockerHub
+	@echo "$(C)🔐 Login no DockerHub...$(N)"
+	@docker login
+	@echo "$(G)✓ Login realizado$(N)"
 
-deploy-be: build-be ## Build e deploy do backend
-	@kubectl rollout restart deployment/nexo-be-local -n nexo-local
+build-be: ## Build imagem do backend e push para DockerHub
+	@echo "$(Y)🔨 Building nexo-be...$(N)"
+	@docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_USER)/nexo-be:latest -f $(ROOT_DIR)/apps/nexo-be/Dockerfile $(ROOT_DIR)
+	@docker push $(DOCKER_USER)/nexo-be:latest
+	@echo "$(G)✓ nexo-be built and pushed to DockerHub$(N)"
+
+build-fe: ## Build imagem do frontend e push para DockerHub
+	@echo "$(Y)🔨 Building nexo-fe...$(N)"
+	@docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_USER)/nexo-fe:latest -f $(ROOT_DIR)/apps/nexo-fe/Dockerfile $(ROOT_DIR)
+	@docker push $(DOCKER_USER)/nexo-fe:latest
+	@echo "$(G)✓ nexo-fe built and pushed to DockerHub$(N)"
+
+build-auth: ## Build imagem do auth e push para DockerHub (se customizado)
+	@echo "$(Y)🔨 Building nexo-auth...$(N)"
+	@docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_USER)/nexo-auth:latest -f $(ROOT_DIR)/apps/nexo-auth/Dockerfile $(ROOT_DIR)
+	@docker push $(DOCKER_USER)/nexo-auth:latest
+	@echo "$(G)✓ nexo-auth built and pushed to DockerHub$(N)"
+
+build-all: build-be build-fe ## Build e push de todas as imagens (exceto auth que usa Keycloak oficial)
+
+deploy-be: ## Deploy do backend (puxa imagem do DockerHub)
+	@echo "$(Y)🚀 Deploying nexo-be...$(N)"
+	@kubectl rollout restart deployment/nexo-be-local -n nexo-local 2>/dev/null || \
+		helm upgrade --install nexo-be-local $(LOCAL_DIR)/helm/nexo-be -n nexo-local --create-namespace
 	@echo "$(G)✓ nexo-be deployed$(N)"
 
-deploy-fe: build-fe ## Build e deploy do frontend
-	@kubectl rollout restart deployment/nexo-fe-local -n nexo-local
+deploy-fe: ## Deploy do frontend (puxa imagem do DockerHub)
+	@echo "$(Y)🚀 Deploying nexo-fe...$(N)"
+	@kubectl rollout restart deployment/nexo-fe-local -n nexo-local 2>/dev/null || \
+		helm upgrade --install nexo-fe-local $(LOCAL_DIR)/helm/nexo-fe -n nexo-local --create-namespace
 	@echo "$(G)✓ nexo-fe deployed$(N)"
 
-deploy-auth: build-auth ## Build e deploy do auth
-	@kubectl rollout restart deployment/nexo-auth-local -n nexo-local
+deploy-auth: ## Deploy do Keycloak
+	@echo "$(Y)🚀 Deploying nexo-auth...$(N)"
+	@kubectl rollout restart deployment/nexo-auth-local -n nexo-local 2>/dev/null || \
+		helm upgrade --install nexo-auth-local $(LOCAL_DIR)/helm/nexo-auth -n nexo-local --create-namespace
 	@echo "$(G)✓ nexo-auth deployed$(N)"
 
-deploy-all: build-all ## Build e deploy de todos
-	@kubectl rollout restart deployment -n nexo-local
+deploy-all: deploy-be deploy-fe deploy-auth ## Deploy de todos os serviços
 	@echo "$(G)✓ All services deployed$(N)"
+
+pull-latest: ## Força K3D a puxar as últimas imagens do DockerHub
+	@echo "$(Y)🔄 Forcing image pull from DockerHub...$(N)"
+	@kubectl rollout restart deployment -n nexo-local
+	@echo "$(G)✓ Deployments restarted - pulling latest images$(N)"
 
 # ============================================================================
 # ArgoCD

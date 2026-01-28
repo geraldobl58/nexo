@@ -22,14 +22,14 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-        - values-dev.yaml
+        - values-local.yaml
       parameters:
         - name: image.repository
-          value: "nexo-registry.localhost:5111/nexo-fe"
+          value: "docker.io/geraldobl58/nexo-fe"
         - name: image.tag
-          value: "local"
+          value: "latest"
         - name: image.pullPolicy
-          value: "IfNotPresent"
+          value: "Always"
         - name: ingress.hosts[0].host
           value: "nexo.local"
 

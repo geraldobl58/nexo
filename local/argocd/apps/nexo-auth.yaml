@@ -22,8 +22,14 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-        - values-dev.yaml
+        - values-local.yaml
       parameters:
+        - name: image.repository
+          value: "quay.io/keycloak/keycloak"
+        - name: image.tag
+          value: "23.0"
+        - name: image.pullPolicy
+          value: "IfNotPresent"
         - name: ingress.hosts[0].host
           value: "auth.nexo.local"
 

@@ -16,7 +16,52 @@ Ambiente de desenvolvimento local que **espelha exatamente a produção**.
 | nexo-fe       | Frontend Next.js           | -           |
 | nexo-auth     | Keycloak                   | -           |
 
-## 🚀 Quick Start
+## � DockerHub
+
+As imagens são sempre puxadas do **DockerHub** (registry público), simulando o ambiente de produção.
+
+### Repositórios
+
+- `docker.io/geraldobl58/nexo-be` - Backend NestJS
+- `docker.io/geraldobl58/nexo-fe` - Frontend Next.js
+- `quay.io/keycloak/keycloak` - Keycloak (imagem oficial)
+
+### Comandos
+
+```bash
+# Login no DockerHub (necessário para push)
+make docker-login
+
+# Build e push para DockerHub
+make build-be    # Backend
+make build-fe    # Frontend
+make build-all   # Ambos
+
+# Deploy (puxa imagens do DockerHub)
+make deploy-be
+make deploy-fe
+make deploy-all
+
+# Forçar pull das últimas imagens
+make pull-latest
+```
+
+### Fluxo de Desenvolvimento
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Código    │────▶│   Docker    │────▶│  DockerHub  │
+│   Local     │     │   Build     │     │   Push      │
+└─────────────┘     └─────────────┘     └─────────────┘
+                                              │
+                                              ▼
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│    K3D      │◀────│  Kubernetes │◀────│    Pull     │
+│   Cluster   │     │   Deploy    │     │   Image     │
+└─────────────┘     └─────────────┘     └─────────────┘
+```
+
+## �🚀 Quick Start
 
 ```bash
 cd local/

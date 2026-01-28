@@ -39,18 +39,13 @@ ports:
     nodeFilters:
       - loadbalancer
 
-# Registries
+# Registries - DockerHub como padrão
 registries:
-  # Usar registry local para builds
-  create:
-    name: nexo-registry.localhost
-    host: "0.0.0.0"
-    hostPort: "5111"
   config: |
     mirrors:
-      "nexo-registry.localhost:5111":
+      "docker.io":
         endpoint:
-          - http://nexo-registry.localhost:5111
+          - "https://registry-1.docker.io"
 
 # Opções do K3s
 options:
