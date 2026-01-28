@@ -13,22 +13,24 @@ Este documento descreve o fluxo completo de CI/CD, desde o commit até o deploy 
 
 ## 🔄 Fluxo de Branches
 
-| Branch | Ambiente | Deploy | Registry |
-|--------|----------|--------|----------|
-| `feature/*` | - | ❌ Não deploya | - |
-| `develop` | dev | ✅ Automático | ghcr.io |
-| `qa` | qa | ✅ Automático | ghcr.io |
-| `staging` | staging | ✅ Automático | ghcr.io |
-| `main` | prod | ⚠️ Manual + Aprovação | ghcr.io |
+| Branch      | Ambiente | Deploy                | Registry |
+| ----------- | -------- | --------------------- | -------- |
+| `feature/*` | -        | ❌ Não deploya        | -        |
+| `develop`   | dev      | ✅ Automático         | ghcr.io  |
+| `qa`        | qa       | ✅ Automático         | ghcr.io  |
+| `staging`   | staging  | ✅ Automático         | ghcr.io  |
+| `main`      | prod     | ⚠️ Manual + Aprovação | ghcr.io  |
 
 ## 📦 1. CI Pipeline (GitHub Actions)
 
 ### Triggers
+
 - **Push** para: `main`, `staging`, `qa`, `develop`
 - **Pull Request** para essas branches
 - **NÃO roda** em `feature/*` branches
 
 ### Jobs
+
 1. **Detect Changes** - Identifica quais serviços mudaram
 2. **Lint & Test** - Valida código
 3. **Build & Push** - Constrói e publica imagem Docker
@@ -44,6 +46,7 @@ docker.io/geraldobl58/nexo-auth:<tag>
 ```
 
 **Tags geradas:**
+
 - `develop` - Branch develop
 - `qa` - Branch qa
 - `staging` - Branch staging
@@ -52,6 +55,7 @@ docker.io/geraldobl58/nexo-auth:<tag>
 - `<sha>` - Commit SHA (ex: `abc1234`)
 
 ### Exemplo de Imagem
+
 ```bash
 # Após push para develop
 docker.io/geraldobl58/nexo-be:develop
@@ -129,6 +133,7 @@ metadata:
 O ambiente local usa um fluxo diferente:
 
 ### Registry Local
+
 ```
 nexo-registry.localhost:5111/nexo-be:local
 nexo-registry.localhost:5111/nexo-fe:local
@@ -211,8 +216,8 @@ kubectl rollout restart deployment/nexo-be-local -n nexo-local
 
 ### GitHub Secrets
 
-| Secret | Descrição |
-|--------|-----------|
+| Secret            | Descrição                     |
+| ----------------- | ----------------------------- |
 | `DOCKERHUB_TOKEN` | Token de acesso do Docker Hub |
 
 > **Nota:** O username é configurado diretamente no workflow (`geraldobl58`)

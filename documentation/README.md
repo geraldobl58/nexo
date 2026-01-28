@@ -35,11 +35,11 @@ Documentação técnica completa do projeto Nexo Platform.
 
 ### 🏠 Ambiente Local K3D
 
-| Documento                           | Descrição                          |
-| ----------------------------------- | ---------------------------------- |
-| [Setup Local K3D](local/README.md)  | Kubernetes local idêntico produção |
-| [CI/CD Flow](cicd-flow.md)          | Fluxo completo de CI/CD            |
-| [GitHub Config](github-config.md)   | Secrets, Variables, Environments   |
+| Documento                          | Descrição                          |
+| ---------------------------------- | ---------------------------------- |
+| [Setup Local K3D](local/README.md) | Kubernetes local idêntico produção |
+| [CI/CD Flow](cicd-flow.md)         | Fluxo completo de CI/CD            |
+| [GitHub Config](github-config.md)  | Secrets, Variables, Environments   |
 
 ## 🌿 Fluxo de Branches
 

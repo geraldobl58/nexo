@@ -11,6 +11,7 @@ const HomePage = () => {
       <p>
         Deploy your application and manage it with ease using our integrated
       </p>
+      <p>Deploy dockerfile in dockerhub</p>
     </>
   );
 };
