@@ -7,9 +7,9 @@
 replicaCount: 1
 
 image:
-  repository: quay.io/keycloak/keycloak
-  pullPolicy: IfNotPresent
-  tag: "23.0"
+  repository: nexo-auth
+  pullPolicy: Never
+  tag: "local"
 
 # Keycloak specific config
 command: []
@@ -93,6 +93,12 @@ env:
     value: "true"
   - name: KC_METRICS_ENABLED
     value: "true"
+  - name: KC_SPI_THEME_STATIC_MAX_AGE
+    value: "-1"
+  - name: KC_SPI_THEME_CACHE_THEMES
+    value: "false"
+  - name: KC_SPI_THEME_CACHE_TEMPLATES
+    value: "false"
 
 # Autoscaling desabilitado para local
 autoscaling:

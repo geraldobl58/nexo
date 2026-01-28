@@ -145,11 +145,12 @@ services:
       KC_SPI_THEME_STATIC_MAX_AGE: "-1"
       KC_SPI_THEME_CACHE_THEMES: "false"
       KC_SPI_THEME_CACHE_TEMPLATES: "false"
+      KC_SPI_THEME_FOLDER_DIR: /opt/keycloak/themes
       KC_LOG_LEVEL: INFO
       # Using H2 database for development (default)
     volumes:
       - keycloak-data-dev:/opt/keycloak/data
-      - ../../../../apps/nexo-auth/themes:/opt/keycloak/themes:ro
+      - ../../../../apps/nexo-auth/themes/nexo:/opt/keycloak/themes/nexo:ro
     networks:
       - nexo-dev-network
     healthcheck:
