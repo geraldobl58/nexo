@@ -1,14 +1,18 @@
 # =============================================================================
 # Values for Local K3D environment
 # =============================================================================
-# Usa Keycloak oficial e Traefik como Ingress Controller
+# TEMPORÁRIO: Usando imagem oficial do Keycloak
+# Quando a imagem customizada existir no DockerHub, mudar para:
+#   repository: docker.io/geraldobl58/nexo-auth
+#   tag: "develop"
+#   pullPolicy: Always
 # =============================================================================
 
 replicaCount: 1
 
 image:
   repository: quay.io/keycloak/keycloak
-  tag: "23.0"
+  tag: "26.5"
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
@@ -39,19 +43,32 @@ autoscaling:
   enabled: false
 
 env:
-  KEYCLOAK_ADMIN: admin
-  KEYCLOAK_ADMIN_PASSWORD: admin
+  # Keycloak 26+ usa KC_BOOTSTRAP_ADMIN_*
+  KC_BOOTSTRAP_ADMIN_USERNAME: admin
+  KC_BOOTSTRAP_ADMIN_PASSWORD: admin
   KC_HOSTNAME_STRICT: "false"
   KC_PROXY: "edge"
   KC_HTTP_ENABLED: "true"
   KC_HEALTH_ENABLED: "true"
   KC_METRICS_ENABLED: "true"
 
-# Probes ajustados para Keycloak
+# Command para iniciar em modo dev (local)
+command:
+  - /opt/keycloak/bin/kc.sh
+args:
+  - start-dev
+  - --http-enabled=true
+  - --hostname-strict=false
+  - --http-port=8080
+
+# Porta de gerenciamento (health, metrics) - Keycloak 26+ usa porta 9000
+managementPort: 9000
+
+# Probes ajustados para Keycloak 26+ (usa porta de gerenciamento)
 livenessProbe:
   httpGet:
     path: /health/live
-    port: http
+    port: management
   initialDelaySeconds: 120
   periodSeconds: 15
   timeoutSeconds: 10
@@ -60,7 +77,7 @@ livenessProbe:
 readinessProbe:
   httpGet:
     path: /health/ready
-    port: http
+    port: management
   initialDelaySeconds: 60
   periodSeconds: 10
   timeoutSeconds: 5
