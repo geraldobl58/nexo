@@ -1,6 +1,8 @@
 # ============================================================================
 # ArgoCD Application - Nexo Auth (Keycloak) (Local)
 # ============================================================================
+# Usa imagem oficial do Keycloak - não usa Image Updater
+# ============================================================================
 
 apiVersion: argoproj.io/v1alpha1
 kind: Application

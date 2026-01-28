@@ -15,7 +15,8 @@ metadata:
   annotations:
     # ArgoCD Image Updater - monitora DockerHub automaticamente
     argocd-image-updater.argoproj.io/image-list: nexo-fe=docker.io/geraldobl58/nexo-fe
-    argocd-image-updater.argoproj.io/nexo-fe.update-strategy: latest
+    argocd-image-updater.argoproj.io/nexo-fe.update-strategy: name
+    argocd-image-updater.argoproj.io/nexo-fe.allow-tags: regexp:^latest$
     argocd-image-updater.argoproj.io/write-back-method: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
