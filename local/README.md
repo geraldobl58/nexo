@@ -4,21 +4,34 @@ Ambiente de desenvolvimento local que **espelha exatamente a produção**.
 
 ## 📋 O que está incluído
 
-| Componente    | Descrição                  | Porta Local |
-| ------------- | -------------------------- | ----------- |
-| K3D Cluster   | Kubernetes local (3 nodes) | -           |
-| ArgoCD        | GitOps CD                  | 30080       |
-| Prometheus    | Métricas                   | 30090       |
-| Grafana       | Dashboards                 | 30030       |
-| Alertmanager  | Alertas                    | 30093       |
-| NGINX Ingress | Load Balancer              | 80/443      |
-| nexo-be       | Backend NestJS             | -           |
-| nexo-fe       | Frontend Next.js           | -           |
-| nexo-auth     | Keycloak                   | -           |
+| Componente    | Descrição                  | URL / Porta Local       |
+| ------------- | -------------------------- | ----------------------- |
+| K3D Cluster   | Kubernetes local (3 nodes) | -                       |
+| ArgoCD        | GitOps CD                  | http://localhost:30080  |
+| Prometheus    | Métricas                   | http://localhost:30090  |
+| Grafana       | Dashboards                 | http://localhost:30030  |
+| Alertmanager  | Alertas                    | http://localhost:30093  |
+| **nexo-fe**   | Frontend Next.js           | http://nexo.local       |
+| **nexo-be**   | Backend NestJS             | http://api.nexo.local   |
+| **nexo-auth** | Keycloak                   | http://auth.nexo.local  |
 
-## � DockerHub
+## 🌐 URLs de Acesso
 
-As imagens são sempre puxadas do **DockerHub** (registry público), simulando o ambiente de produção.
+```
+http://nexo.local/           # Frontend
+http://api.nexo.local/       # Backend API
+http://api.nexo.local/health # Health Check
+http://auth.nexo.local/      # Keycloak Admin
+```
+
+> **Nota:** Adicione no `/etc/hosts`:
+> ```
+> 127.0.0.1 nexo.local api.nexo.local auth.nexo.local
+> ```
+
+## 🐳 DockerHub
+
+As imagens são sempre puxadas do **DockerHub** (registry público).
 
 ### Repositórios
 
@@ -26,85 +39,81 @@ As imagens são sempre puxadas do **DockerHub** (registry público), simulando o
 - `docker.io/geraldobl58/nexo-fe` - Frontend Next.js
 - `quay.io/keycloak/keycloak` - Keycloak (imagem oficial)
 
-### Comandos
+## 🔄 Fluxo de Desenvolvimento
+
+### ⚠️ Importante: Quando preciso fazer build?
+
+| Ambiente | Quando Buildar | Automático? |
+|----------|----------------|-------------|
+| **LOCAL (K3D)** | Após alterar código | ❌ Manual (`make build-all`) |
+| **CLOUD (Prod)** | Push para GitHub | ✅ GitHub Actions |
+
+### Desenvolvimento Diário
 
 ```bash
-# Login no DockerHub (necessário para push)
-make docker-login
+# 1. Faça suas alterações no código
 
-# Build e push para DockerHub
-make build-be    # Backend
-make build-fe    # Frontend
-make build-all   # Ambos
+# 2. Build e push para DockerHub
+make build-all   # ou build-be / build-fe
 
-# Deploy (puxa imagens do DockerHub)
-make deploy-be
-make deploy-fe
-make deploy-all
-
-# Forçar pull das últimas imagens
+# 3. Atualizar K3D com novas imagens
 make pull-latest
+
+# 4. Ver logs
+make logs-be
+make logs-fe
+make logs-auth
 ```
 
-### Fluxo de Desenvolvimento
+## 🛠️ Comandos
 
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Código    │────▶│   Docker    │────▶│  DockerHub  │
-│   Local     │     │   Build     │     │   Push      │
-└─────────────┘     └─────────────┘     └─────────────┘
-                                              │
-                                              ▼
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│    K3D      │◀────│  Kubernetes │◀────│    Pull     │
-│   Cluster   │     │   Deploy    │     │   Image     │
-└─────────────┘     └─────────────┘     └─────────────┘
-```
-
-## �🚀 Quick Start
+### Setup Inicial
 
 ```bash
 cd local/
-
-# Verificar dependências
-make doctor
-
-# Setup completo (uma vez)
-make setup
-
-# Ver status
-make status
-
-# Destruir ambiente
-make destroy
+make doctor   # Verificar dependências
+make setup    # Setup completo
 ```
 
-## 📂 Estrutura
+### Build e Deploy
 
+```bash
+make docker-login   # Login DockerHub
+make build-be       # Build backend
+make build-fe       # Build frontend
+make build-all      # Build todos
+make pull-latest    # Atualizar imagens
 ```
-local/
-├── k3d/
-│   └── config.yaml           # Configuração do cluster K3D
-├── argocd/
-│   ├── nodeport.yaml         # Service NodePort ArgoCD
-│   ├── apps/                 # Applications ArgoCD
-│   └── projects/             # AppProjects
-├── helm/
-│   ├── nexo-be/
-│   │   └── values-local.yaml # Values backend local
-│   ├── nexo-fe/
-│   │   └── values-local.yaml # Values frontend local
-│   └── nexo-auth/
-│       └── values-local.yaml # Values Keycloak local
-├── observability/
-│   └── values.yaml           # Prometheus + Grafana + Alertmanager
-├── scripts/
-│   ├── setup.sh              # Setup completo
-│   ├── destroy.sh            # Limpar tudo
-│   └── status.sh             # Status do cluster
-└── Makefile                  # Comandos locais
+
+### Outros
+
+```bash
+make status           # Ver status
+make pods             # Listar pods
+make argocd-password  # Senha ArgoCD
+make grafana-password # Senha Grafana
+make destroy          # Destruir ambiente
 ```
+
+## 📊 Observabilidade
+
+### Grafana Dashboards
+
+- **Nexo Backend** - Métricas HTTP, latência
+- **Nexo Frontend** - Performance, requests
+- **Nexo Auth** - Keycloak metrics
+
+Acesse: http://localhost:30030
+
+## 🔐 Credenciais Padrão
+
+| Serviço | Usuário | Senha |
+|---------|---------|-------|
+| ArgoCD | admin | `make argocd-password` |
+| Grafana | admin | admin123 |
+| Keycloak | admin | admin |
 
 ## 📖 Documentação
 
-Veja a documentação completa em [/documentation/local](../documentation/local/README.md).
+Veja [/documentation/local](../documentation/local/README.md).
+
