@@ -5,10 +5,10 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 @Controller()
 export class HealthController {
   @Get('health')
-  @ApiOperation({ summary: 'API' })
+  @ApiOperation({ summary: 'API Health Check' })
   @ApiResponse({
     status: 200,
-    description: 'Agora foi...',
+    description: 'API está funcionando',
     schema: {
       type: 'object',
       properties: {

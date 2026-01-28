@@ -482,7 +482,7 @@ cacheThemes=false
 cacheTemplates=false
 ```
 
-> **⚠️ Importante:** Versões anteriores usavam `parent=base` com `import=common/keycloak`. 
+> **⚠️ Importante:** Versões anteriores usavam `parent=base` com `import=common/keycloak`.
 > Para Keycloak 26+, use apenas `parent=keycloak`.
 
 ### Habilitar o Tema

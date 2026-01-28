@@ -1,7 +1,10 @@
 const HomePage = () => {
   return (
     <>
-      <p>Agora foi...</p>
+      <div>Welcome to Nexo!</div>
+      <p>
+        This is the home page of the Nexo application. Explore the features and
+      </p>
     </>
   );
 };

@@ -24,8 +24,6 @@
 
 <body class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 font-sans antialiased ${bodyClass}">
     
-    <h1>Agora foi...</h1>
-
     <div class="w-[800px] mx-auto">
         <!-- Logo -->
         <div class="text-center mb-8">
