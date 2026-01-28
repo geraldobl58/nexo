@@ -8,6 +8,7 @@ const HomePage = () => {
         financial goals.
       </p>
       <p>Agora com ArgoCD Image Updater funcionando!</p>
+      <p>Agora vai...</p>
     </>
   );
 };

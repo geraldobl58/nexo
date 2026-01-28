@@ -14,9 +14,9 @@ metadata:
     environment: local
   annotations:
     # ArgoCD Image Updater - monitora DockerHub automaticamente
-    argocd-image-updater.argoproj.io/image-list: nexo-be=docker.io/geraldobl58/nexo-be
-    argocd-image-updater.argoproj.io/nexo-be.update-strategy: name
-    argocd-image-updater.argoproj.io/nexo-be.allow-tags: regexp:^latest$
+    # Monitora a tag 'develop' e atualiza quando o digest muda
+    argocd-image-updater.argoproj.io/image-list: nexo-be=docker.io/geraldobl58/nexo-be:develop
+    argocd-image-updater.argoproj.io/nexo-be.update-strategy: digest
     argocd-image-updater.argoproj.io/write-back-method: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -35,7 +35,7 @@ spec:
         - name: image.repository
           value: "docker.io/geraldobl58/nexo-be"
         - name: image.tag
-          value: "latest"
+          value: "develop"
         - name: image.pullPolicy
           value: "Always"
         - name: ingress.hosts[0].host
