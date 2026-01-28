@@ -7,6 +7,7 @@ const HomePage = () => {
         Explore our services and discover how we can help you achieve your
         financial goals.
       </p>
+      <p>Agora com ArgoCD Image Updater funcionando!</p>
     </>
   );
 };
