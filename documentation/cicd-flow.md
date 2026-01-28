@@ -35,12 +35,12 @@ Este documento descreve o fluxo completo de CI/CD, desde o commit até o deploy 
 
 ### Imagens Publicadas
 
-As imagens são publicadas no GitHub Container Registry (GHCR):
+As imagens são publicadas no Docker Hub:
 
 ```
-ghcr.io/geraldobl58/nexo/nexo-be:<tag>
-ghcr.io/geraldobl58/nexo/nexo-fe:<tag>
-ghcr.io/geraldobl58/nexo/nexo-auth:<tag>
+docker.io/geraldobl58/nexo-be:<tag>
+docker.io/geraldobl58/nexo-fe:<tag>
+docker.io/geraldobl58/nexo-auth:<tag>
 ```
 
 **Tags geradas:**
@@ -54,12 +54,12 @@ ghcr.io/geraldobl58/nexo/nexo-auth:<tag>
 ### Exemplo de Imagem
 ```bash
 # Após push para develop
-ghcr.io/geraldobl58/nexo/nexo-be:develop
-ghcr.io/geraldobl58/nexo/nexo-be:abc1234
+docker.io/geraldobl58/nexo-be:develop
+docker.io/geraldobl58/nexo-be:abc1234
 
 # Após push para main
-ghcr.io/geraldobl58/nexo/nexo-be:main
-ghcr.io/geraldobl58/nexo/nexo-be:latest
+docker.io/geraldobl58/nexo-be:main
+docker.io/geraldobl58/nexo-be:latest
 ```
 
 ---
@@ -88,19 +88,19 @@ on:
 
 ## 🔧 3. Configuração ArgoCD
 
-### Para Ambientes Reais (GHCR)
+### Para Ambientes Reais (Docker Hub)
 
-As aplicações ArgoCD apontam para imagens no GHCR:
+As aplicações ArgoCD apontam para imagens no Docker Hub:
 
 ```yaml
 # infra/helm/nexo-be/values-dev.yaml
 image:
-  repository: ghcr.io/geraldobl58/nexo/nexo-be
+  repository: docker.io/geraldobl58/nexo-be
   tag: develop
   pullPolicy: Always
 
 imagePullSecrets:
-  - name: ghcr-secret
+  - name: dockerhub-secret
 ```
 
 ### ArgoCD Image Updater (Opcional)
@@ -117,9 +117,9 @@ Adicione annotations às Applications:
 ```yaml
 metadata:
   annotations:
-    argocd-image-updater.argoproj.io/image-list: nexo-be=ghcr.io/geraldobl58/nexo/nexo-be
+    argocd-image-updater.argoproj.io/image-list: nexo-be=docker.io/geraldobl58/nexo-be
     argocd-image-updater.argoproj.io/nexo-be.update-strategy: latest
-    argocd-image-updater.argoproj.io/nexo-be.pull-secret: pullsecret:argocd/ghcr-secret
+    argocd-image-updater.argoproj.io/nexo-be.pull-secret: pullsecret:argocd/dockerhub-secret
 ```
 
 ---
@@ -149,16 +149,16 @@ make deploy-fe
 curl http://nexo.local
 ```
 
-### Usar Imagem do GHCR Localmente
+### Usar Imagem do Docker Hub Localmente
 
 Se quiser testar a imagem exata do CI localmente:
 
 ```bash
-# 1. Pull da imagem do GHCR
-docker pull ghcr.io/geraldobl58/nexo/nexo-be:develop
+# 1. Pull da imagem do Docker Hub
+docker pull docker.io/geraldobl58/nexo-be:develop
 
 # 2. Tag para registry local
-docker tag ghcr.io/geraldobl58/nexo/nexo-be:develop nexo-registry.localhost:5111/nexo-be:local
+docker tag docker.io/geraldobl58/nexo-be:develop nexo-registry.localhost:5111/nexo-be:local
 
 # 3. Import no K3D
 k3d image import nexo-registry.localhost:5111/nexo-be:local -c nexo-local
@@ -213,16 +213,27 @@ kubectl rollout restart deployment/nexo-be-local -n nexo-local
 
 | Secret | Descrição |
 |--------|-----------|
-| `GITHUB_TOKEN` | Automático, usado para push GHCR |
+| `DOCKERHUB_TOKEN` | Token de acesso do Docker Hub |
+
+> **Nota:** O username é configurado diretamente no workflow (`geraldobl58`)
+
+### Como criar o token do Docker Hub
+
+1. Acesse https://hub.docker.com/settings/security
+2. Clique em **New Access Token**
+3. Dê um nome (ex: `nexo-ci`)
+4. Selecione **Read, Write, Delete**
+5. Copie o token
+6. Adicione em GitHub → Settings → Secrets → `DOCKERHUB_TOKEN`
 
 ### Kubernetes Secrets (por ambiente)
 
 ```bash
-# Criar secret para pull de imagens do GHCR
-kubectl create secret docker-registry ghcr-secret \
-  --docker-server=ghcr.io \
+# Criar secret para pull de imagens do Docker Hub
+kubectl create secret docker-registry dockerhub-secret \
+  --docker-server=docker.io \
   --docker-username=geraldobl58 \
-  --docker-password=<GH_TOKEN> \
+  --docker-password=<DOCKERHUB_TOKEN> \
   --namespace=nexo-dev
 ```
 
@@ -244,7 +255,7 @@ kubectl -n argocd patch application nexo-be-dev --type merge -p '{"operation":{"
 
 ```bash
 # Verificar se o secret existe
-kubectl get secret ghcr-secret -n nexo-dev
+kubectl get secret dockerhub-secret -n nexo-dev
 
 # Verificar logs do pod
 kubectl describe pod <pod-name> -n nexo-dev
@@ -264,4 +275,4 @@ kubectl -n argocd patch application nexo-be-dev --type json \
 
 - [ArgoCD Documentation](https://argo-cd.readthedocs.io/)
 - [ArgoCD Image Updater](https://argocd-image-updater.readthedocs.io/)
-- [GitHub Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
+- [Docker Hub](https://hub.docker.com/)

@@ -53,7 +53,8 @@ permissions:
   security-events: write
 
 env:
-  REGISTRY: ghcr.io
+  REGISTRY: docker.io
+  DOCKERHUB_USERNAME: geraldobl58
 
 jobs:
   # ============================================
@@ -67,7 +68,7 @@ jobs:
     steps:
       - name: Set variables
         id: vars
-        run: echo "image_name=${{ github.repository }}/${{ inputs.service }}" >> $GITHUB_OUTPUT
+        run: echo "image_name=geraldobl58/${{ inputs.service }}" >> $GITHUB_OUTPUT
 
   # ============================================
   # Job 1: Lint e Validação
@@ -199,12 +200,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to GitHub Container Registry
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Extract metadata
         id: meta
