@@ -151,6 +151,81 @@ kubectl logs -n argocd -l app.kubernetes.io/name=argocd-image-updater -f
 | Grafana  | admin   | admin123               |
 | Keycloak | admin   | admin                  |
 
+## � Docker Hub Authentication
+
+Para evitar rate limits do Docker Hub (erro 429), é necessário configurar credenciais:
+
+### Criar Secret de Credenciais
+
+```bash
+# Criar secret no namespace nexo-local
+kubectl create secret docker-registry dockerhub-creds \
+  --docker-server=docker.io \
+  --docker-username=SEU_USUARIO \
+  --docker-password=SEU_TOKEN \
+  -n nexo-local
+```
+
+> **Nota:** Use um [Access Token](https://hub.docker.com/settings/security) ao invés da senha.
+
+### Configurar nas Aplicações ArgoCD
+
+```bash
+# Adicionar imagePullSecrets às aplicações
+kubectl patch application nexo-be-local -n argocd --type='json' \
+  -p='[{"op":"add","path":"/spec/source/helm/parameters/-","value":{"name":"imagePullSecrets[0].name","value":"dockerhub-creds"}}]'
+
+kubectl patch application nexo-fe-local -n argocd --type='json' \
+  -p='[{"op":"add","path":"/spec/source/helm/parameters/-","value":{"name":"imagePullSecrets[0].name","value":"dockerhub-creds"}}]'
+
+# Sincronizar
+argocd app sync nexo-be-local nexo-fe-local
+```
+
+### Verificar Configuração
+
+```bash
+# Ver se os deployments têm imagePullSecrets
+kubectl get deployment nexo-be-local nexo-fe-local -n nexo-local \
+  -o jsonpath='{range .items[*]}{.metadata.name}: {.spec.template.spec.imagePullSecrets}{"\n"}{end}'
+```
+
+## 🎨 Keycloak Tema Customizado
+
+O Keycloak usa o tema customizado **nexo** para login e email.
+
+### Estrutura do Tema
+
+```
+apps/nexo-auth/themes/nexo/
+├── login/
+│   ├── theme.properties
+│   ├── resources/css/tailwind.css
+│   └── ...
+└── email/
+    └── theme.properties
+```
+
+### Configuração do theme.properties (Keycloak 26+)
+
+```properties
+# login/theme.properties
+parent=keycloak
+styles=css/tailwind.css
+locales=pt-BR,en
+defaultLocale=pt-BR
+cacheThemes=false
+```
+
+> **Importante:** Para Keycloak 26+, use `parent=keycloak` ao invés de `parent=base` com `import=common/keycloak`.
+
+### Habilitar no Keycloak Admin
+
+1. Acesse http://auth.nexo.local
+2. Login: admin / admin
+3. Realm Settings → Themes
+4. Selecione "nexo" em Login Theme
+
 ## 🔧 Troubleshooting
 
 ### Image Updater não está atualizando
@@ -168,6 +243,28 @@ kubectl rollout restart deployment argocd-image-updater -n argocd
 ```bash
 # Forçar redeployment
 kubectl rollout restart deployment nexo-be-local -n nexo-local
+```
+
+### Erro 429 - Docker Hub Rate Limit
+
+```bash
+# Verificar se o secret existe
+kubectl get secret dockerhub-creds -n nexo-local
+
+# Verificar se o deployment tem imagePullSecrets
+kubectl get deployment nexo-be-local -n nexo-local -o jsonpath='{.spec.template.spec.imagePullSecrets}'
+
+# Se não tiver, adicionar via ArgoCD (ver seção Docker Hub Authentication)
+```
+
+### Tema Keycloak não aparece
+
+```bash
+# Verificar se o tema está no container
+kubectl exec -n nexo-local deployment/nexo-auth-local -- ls /opt/keycloak/themes/nexo
+
+# Reiniciar Keycloak para recarregar temas
+kubectl rollout restart deployment nexo-auth-local -n nexo-local
 ```
 
 ## 📖 Documentação
