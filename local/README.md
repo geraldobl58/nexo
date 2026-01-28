@@ -2,6 +2,12 @@
 
 Ambiente de desenvolvimento local que **espelha exatamente a produção** com **GitOps automatizado**.
 
+# Nexo Platform - Multi Ambiente
+
+127.0.0.1 hlg.nexo.local hlg.api.nexo.local hlg.auth.nexo.local
+127.0.0.1 qa.nexo.local qa.api.nexo.local qa.auth.nexo.local
+127.0.0.1 staging.nexo.local staging.api.nexo.local staging.auth.nexo.local
+
 ## 📋 O que está incluído
 
 | Componente               | Descrição                         | URL / Porta Local      |
