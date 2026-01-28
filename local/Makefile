@@ -176,6 +176,28 @@ argocd-sync: ## Sincroniza todas as applications
 	@kubectl -n argocd get applications -o name | xargs -I {} kubectl -n argocd patch {} --type merge -p '{"operation":{"sync":{}}}'
 	@echo "$(G)✓ Sync iniciado para todas as applications$(N)"
 
+sync-all: argocd-sync ## Alias para argocd-sync
+
+# ============================================================================
+# ArgoCD Image Updater
+# ============================================================================
+
+image-updater: ## Ver logs do ArgoCD Image Updater
+	@kubectl logs -n argocd -l app.kubernetes.io/name=argocd-image-updater -f --tail=50
+
+image-updater-restart: ## Reiniciar ArgoCD Image Updater
+	@echo "$(Y)🔄 Reiniciando Image Updater...$(N)"
+	@kubectl rollout restart deployment argocd-image-updater -n argocd
+	@kubectl rollout status deployment argocd-image-updater -n argocd
+	@echo "$(G)✓ Image Updater reiniciado$(N)"
+
+image-updater-status: ## Status do ArgoCD Image Updater
+	@echo "$(C)📊 ArgoCD Image Updater Status:$(N)"
+	@kubectl get pod -n argocd -l app.kubernetes.io/name=argocd-image-updater
+	@echo ""
+	@echo "$(C)🔍 Últimas atualizações:$(N)"
+	@kubectl logs -n argocd -l app.kubernetes.io/name=argocd-image-updater --tail=20
+
 # ============================================================================
 # Observabilidade
 # ============================================================================

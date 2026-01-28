@@ -162,14 +162,23 @@ install_argocd() {
     # Criar NodePort service para acesso local
     kubectl apply -f "$LOCAL_DIR/argocd/nodeport.yaml"
     
+    # Instalar ArgoCD Image Updater
+    log_info "Instalando ArgoCD Image Updater..."
+    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/stable/manifests/install.yaml
+    
+    # Aguardar Image Updater ficar pronto
+    log_info "Aguardando Image Updater ficar pronto..."
+    kubectl wait --for=condition=Available deployment/argocd-image-updater -n argocd --timeout=120s
+    
     # Obter senha inicial
     local argocd_password=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
     
-    log_success "ArgoCD instalado!"
+    log_success "ArgoCD + Image Updater instalados!"
     echo ""
     echo "  📍 URL: http://localhost:30080"
     echo "  👤 User: admin"
     echo "  🔑 Password: $argocd_password"
+    echo "  🔄 Image Updater: Monitorando DockerHub a cada 2min"
     echo ""
 }
 
@@ -248,6 +257,12 @@ show_summary() {
     echo -e "${GREEN}✅ Ambiente local K3D configurado com sucesso!${NC}"
     echo "============================================================================"
     echo ""
+    echo "� Fluxo GitOps Automatizado:"
+    echo ""
+    echo "   Código → Commit → Push → GitHub Actions → DockerHub → Image Updater → K3D"
+    echo ""
+    echo "   O Image Updater verifica novas imagens a cada 2 minutos!"
+    echo ""
     echo "📋 Serviços disponíveis:"
     echo ""
     echo "  | Serviço       | URL                      | Credenciais            |"
@@ -259,17 +274,17 @@ show_summary() {
     echo ""
     echo "📋 Comandos úteis:"
     echo ""
-    echo "  kubectl get pods -A                    # Ver todos os pods"
-    echo "  kubectl get svc -A                     # Ver todos os serviços"
-    echo "  k3d cluster list                       # Listar clusters"
-    echo "  make local-status                      # Status do ambiente"
-    echo "  make local-destroy                     # Destruir ambiente"
+    echo "  make status                            # Ver status geral"
+    echo "  make image-updater                     # Ver logs do Image Updater"
+    echo "  make pods                              # Ver pods"
+    echo "  make logs-be                           # Logs do backend"
+    echo "  make destroy                           # Destruir ambiente"
     echo ""
-    echo "📋 Próximos passos:"
+    echo "📋 Desenvolvimento:"
     echo ""
-    echo "  1. Acesse o ArgoCD: http://localhost:30080"
-    echo "  2. Sincronize as applications"
-    echo "  3. Veja os dashboards no Grafana"
+    echo "  git add . && git commit -m 'feat: X' && git push"
+    echo ""
+    echo "  Só isso! O CI/CD faz build e deploy automático 🎉"
     echo ""
 }
 

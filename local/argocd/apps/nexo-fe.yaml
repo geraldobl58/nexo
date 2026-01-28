@@ -1,6 +1,8 @@
 # ============================================================================
 # ArgoCD Application - Nexo Frontend (Local)
 # ============================================================================
+# Image Updater monitora DockerHub e atualiza automaticamente
+# ============================================================================
 
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -10,6 +12,11 @@ metadata:
   labels:
     app.kubernetes.io/name: nexo-fe
     environment: local
+  annotations:
+    # ArgoCD Image Updater - monitora DockerHub automaticamente
+    argocd-image-updater.argoproj.io/image-list: nexo-fe=docker.io/geraldobl58/nexo-fe
+    argocd-image-updater.argoproj.io/nexo-fe.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
