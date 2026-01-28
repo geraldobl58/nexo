@@ -12,7 +12,7 @@ const HomePage = () => {
         Deploy your application and manage it with ease using our integrated
       </p>
       <p>Deploy dockerfile in dockerhub</p>
-      <p>Agora vai....</p>
+      <p>Agora vai pra prod...</p>
     </>
   );
 };

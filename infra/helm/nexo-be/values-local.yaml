@@ -17,7 +17,8 @@ imagePullSecrets: []
 ingress:
   enabled: true
   className: "traefik"
-  annotations: {}
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
   hosts:
     - host: api.nexo.local
       paths:
