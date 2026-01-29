@@ -4,9 +4,22 @@ Ambiente de desenvolvimento local que **espelha exatamente a produção** com **
 
 # Nexo Platform - Multi Ambiente
 
+(Local)
+127.0.0.1 nexo.local api.nexo.local auth.nexo.local
+
+(HLG)(Develop)
 127.0.0.1 hlg.nexo.local hlg.api.nexo.local hlg.auth.nexo.local
+
+(QA)(QA)
 127.0.0.1 qa.nexo.local qa.api.nexo.local qa.auth.nexo.local
+
+(Staging)(Staging)
 127.0.0.1 staging.nexo.local staging.api.nexo.local staging.auth.nexo.local
+
+(Prod)(Main)
+127.0.0.1 prod.nexo.local prod.api.nexo.local prod.auth.nexo.local
+
+(Obs): Precisamos inserir o postgres para nexo-auth
 
 ## 📋 O que está incluído
 

@@ -2,7 +2,7 @@
 # Nexo Platform - ArgoCD Applications - Ambiente Produção
 # ============================================================================
 # Branch: main
-# Domínios: nexo.local, api.nexo.local, auth.nexo.local
+# Domínios: prod.nexo.local, prod.api.nexo.local, prod.auth.nexo.local
 # ============================================================================
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -37,7 +37,7 @@ spec:
         - name: image.pullPolicy
           value: Always
         - name: ingress.hosts[0].host
-          value: api.nexo.local
+          value: prod.api.nexo.local
         - name: imagePullSecrets[0].name
           value: dockerhub-creds
   destination:
@@ -92,7 +92,7 @@ spec:
         - name: image.pullPolicy
           value: Always
         - name: ingress.hosts[0].host
-          value: nexo.local
+          value: prod.nexo.local
         - name: imagePullSecrets[0].name
           value: dockerhub-creds
   destination:
@@ -147,7 +147,7 @@ spec:
         - name: image.pullPolicy
           value: Always
         - name: ingress.hosts[0].host
-          value: auth.nexo.local
+          value: prod.auth.nexo.local
         - name: imagePullSecrets[0].name
           value: dockerhub-creds
         - name: managementPort
