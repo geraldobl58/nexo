@@ -2,8 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "nexo-be.fullname" . }}
-  labels:
-    {{- include "nexo-be.labels" . | nindent 4 }}
+  labels: {{- include "nexo-be.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -11,5 +10,4 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
-  selector:
-    {{- include "nexo-be.selectorLabels" . | nindent 4 }}
+  selector: {{- include "nexo-be.selectorLabels" . | nindent 4 }}
