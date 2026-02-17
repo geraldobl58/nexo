@@ -684,7 +684,7 @@ jobs:
           # Função para atualizar um serviço específico
           update_service() {
             local SERVICE=$1
-            local VALUES_FILE="infra/helm/${SERVICE}/values-${ENV}.yaml"
+            local VALUES_FILE="local/helm/${SERVICE}/values-${ENV}.yaml"
             
             if [ -f "$VALUES_FILE" ]; then
               # Atualizar apenas a tag da seção image principal (antes de postgresql/autoscaling)

@@ -9,7 +9,6 @@ image:
 imagePullSecrets:
   - name: ghcr-secret
 
-
 # Usar start-dev em develop para hot-reload de temas
 args:
   - start-dev

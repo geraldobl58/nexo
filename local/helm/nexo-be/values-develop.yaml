@@ -9,7 +9,6 @@ image:
 imagePullSecrets:
   - name: ghcr-secret
 
-
 ingress:
   enabled: true
   className: "nginx"
