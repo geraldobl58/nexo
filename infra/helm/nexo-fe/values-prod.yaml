@@ -6,47 +6,13 @@ image:
   tag: "latest"
   pullPolicy: Always
 
-imagePullSecrets:
-  - name: ghcr-secret
 
 ingress:
   enabled: true
   className: "nginx"
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
   hosts:
-    - host: app.g3developer.online
+    - host: nexo.local
       paths:
         - path: /
           pathType: Prefix
-  tls:
-    - secretName: nexo-fe-prod-tls
-      hosts:
-        - app.g3developer.online
-
-resources:
-  limits:
-    cpu: 200m
-    memory: 256Mi
-  requests:
-    cpu: 10m
-    memory: 64Mi
-
-autoscaling:
-  enabled: false
-
-env:
-  NODE_ENV: production
-  API_URL: http://nexo-be-prod:3000
-  NEXT_PUBLIC_API_URL: https://api.g3developer.online
-  NEXT_PUBLIC_KEYCLOAK_URL: https://auth.g3developer.online
-  NEXT_PUBLIC_KEYCLOAK_REALM: nexo
-  NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: nexo-web
-
-podDisruptionBudget:
-  enabled: true
-  minAvailable: 1
-
-podAnnotations:
-  app.kubernetes.io/commit: "initial"

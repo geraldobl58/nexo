@@ -6,8 +6,6 @@ image:
   tag: "latest"
   pullPolicy: Always
 
-imagePullSecrets:
-  - name: ghcr-secret
 
 # Modo start-dev para Lab (nós com recursos limitados)
 args:
@@ -21,19 +19,13 @@ ingress:
   enabled: true
   className: "nginx"
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
     nginx.ingress.kubernetes.io/proxy-buffers-number: "4"
   hosts:
-    - host: auth.g3developer.online
+    - host: auth.nexo.local
       paths:
         - path: /
           pathType: Prefix
-  tls:
-    - secretName: nexo-auth-prod-tls
-      hosts:
-        - auth.g3developer.online
 
 livenessProbe:
   httpGet:
@@ -65,7 +57,7 @@ autoscaling:
   enabled: false
 
 env:
-  KC_HOSTNAME: "https://auth.g3developer.online"
+  KC_HOSTNAME: "http://auth.nexo.local"
   KC_HOSTNAME_STRICT: "false"
   KC_PROXY_HEADERS: "xforwarded"
   KC_HTTP_ENABLED: "true"

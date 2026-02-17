@@ -6,24 +6,16 @@ image:
   tag: "latest"
   pullPolicy: Always
 
-imagePullSecrets:
-  - name: ghcr-secret
 
 ingress:
   enabled: true
   className: "nginx"
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
   hosts:
-    - host: api.g3developer.online
+    - host: api.nexo.local
       paths:
         - path: /
           pathType: Prefix
-  tls:
-    - secretName: nexo-be-prod-tls
-      hosts:
-        - api.g3developer.online
 
 resources:
   limits:
@@ -42,7 +34,7 @@ env:
   LOG_LEVEL: warn
   SWAGGER_ENABLED: "true"
   METRICS_ENABLED: "true"
-  KEYCLOAK_URL: "https://auth.g3developer.online"
+  KEYCLOAK_URL: "http://auth.nexo.local"
   KEYCLOAK_INTERNAL_URL: "http://nexo-auth-prod:8080"
   KEYCLOAK_REALM: nexo
 
