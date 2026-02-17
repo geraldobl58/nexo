@@ -1,0 +1,14 @@
+apiVersion: v2
+name: nexo-auth
+description: Nexo Auth - Keycloak Theme and Configuration (DigitalOcean)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - keycloak
+  - theme
+  - auth
+  - digitalocean
+maintainers:
+  - name: Nexo Team
+    email: team@nexo.dev

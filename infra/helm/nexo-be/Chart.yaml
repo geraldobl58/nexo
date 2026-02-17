@@ -1,0 +1,14 @@
+apiVersion: v2
+name: nexo-be
+description: Nexo Backend - NestJS API (DigitalOcean)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - nestjs
+  - api
+  - backend
+  - digitalocean
+maintainers:
+  - name: Nexo Team
+    email: team@nexo.dev

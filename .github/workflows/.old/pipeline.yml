@@ -1,0 +1,965 @@
+# ============================================================================
+# Nexo Platform - Unified CI/CD Pipeline
+# ============================================================================
+# Pipeline unificada que:
+# - Detecta mudanças por serviço (nexo-be, nexo-fe, nexo-auth)
+# - Executa CI apenas para serviços alterados
+# - Faz build e push de imagens para GitHub Container Registry (GHCR)
+# - Deploy APENAS no ambiente correspondente à branch
+# - Atualiza image tag nos values files para ArgoCD sincronizar
+#
+# Branch → Environment:
+#   develop → nexo-develop
+#   main → nexo-prod
+#
+# Registry: ghcr.io (sem rate limits como DockerHub)
+# ============================================================================
+
+name: Pipeline
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/pipeline.yml"
+
+  pull_request:
+    branches:
+      - develop
+      - main
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/pipeline.yml"
+
+  workflow_dispatch:
+    inputs:
+      force_all:
+        description: "Forçar build de todos os serviços"
+        type: boolean
+        default: false
+
+env:
+  # GitHub Container Registry (GHCR) - sem rate limits
+  REGISTRY: ghcr.io
+  # Repositório owner (usuário ou organização)
+  IMAGE_OWNER: ${{ github.repository_owner }}
+
+# Evita execuções concorrentes na mesma branch
+# Apenas novos pushes cancelam execuções anteriores (não re-runs)
+concurrency:
+  group: pipeline-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: write # Necessário para Danger.js comentar em PRs
+  issues: write # Necessário para Danger.js
+
+jobs:
+  # ==========================================================================
+  # STAGE 0: AI Code Review (apenas PRs)
+  # ==========================================================================
+  ai-review:
+    name: 🤖 AI Code Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Dependencies
+        working-directory: apps/nexo-fe
+        run: npm install danger
+
+      - name: Run Danger.js
+        working-directory: apps/nexo-fe
+        run: npx danger ci
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: CodeRabbit Summary
+        run: |
+          echo "## 🐰 CodeRabbit Review" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "CodeRabbit está revisando este PR automaticamente." >> $GITHUB_STEP_SUMMARY
+          echo "Os comentários aparecerão em breve na aba 'Files changed'." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Verificações realizadas:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Clean Architecture (Backend nexo-be)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ TypeScript Best Practices" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ React/Next.js Patterns (Frontend nexo-fe)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Segurança e Performance" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Testes" >> $GITHUB_STEP_SUMMARY
+
+  # ==========================================================================
+  # STAGE 1: Pre-flight Checks
+  # ==========================================================================
+  preflight:
+    name: 🔍 Pre-flight
+    runs-on: ubuntu-latest
+    # Não depende de ai-review porque ele só roda em PRs
+    if: |
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      github.actor != 'github-actions[bot]'
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+      branch: ${{ steps.info.outputs.branch }}
+      environment: ${{ steps.info.outputs.environment }}
+      namespace: ${{ steps.info.outputs.namespace }}
+      is_pr: ${{ steps.info.outputs.is_pr }}
+      build_number: ${{ steps.build_number.outputs.number }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check Skip
+        id: check
+        run: |
+          echo "✅ Pipeline will run"
+          echo "should_run=true" >> $GITHUB_OUTPUT
+
+      - name: Extract Info
+        id: info
+        run: |
+          # Determinar branch
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            BRANCH="${{ github.base_ref }}"
+            IS_PR="true"
+          else
+            BRANCH="${{ github.ref_name }}"
+            IS_PR="false"
+          fi
+
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "is_pr=$IS_PR" >> $GITHUB_OUTPUT
+
+          # Mapear branch → environment → namespace
+          case "$BRANCH" in
+            develop)
+              echo "environment=develop" >> $GITHUB_OUTPUT
+              echo "namespace=nexo-develop" >> $GITHUB_OUTPUT
+              ;;
+            main)
+              echo "environment=prod" >> $GITHUB_OUTPUT
+              echo "namespace=nexo-prod" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "environment=unknown" >> $GITHUB_OUTPUT
+              echo "namespace=unknown" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+          echo "📋 Branch: $BRANCH"
+          echo "🎯 Environment: $(cat $GITHUB_OUTPUT | grep environment | cut -d= -f2)"
+          echo "📦 Namespace: $(cat $GITHUB_OUTPUT | grep namespace | cut -d= -f2)"
+
+      - name: Generate Build Number
+        id: build_number
+        run: |
+          # Contar commits na branch atual para gerar número de build
+          BUILD_NUM=$(git rev-list --count HEAD)
+          # Formatar como #001, #002, etc
+          FORMATTED=$(printf "#%03d" $BUILD_NUM)
+          echo "number=$FORMATTED" >> $GITHUB_OUTPUT
+          echo "🔢 Build Number: $FORMATTED"
+
+  # ==========================================================================
+  # STAGE 2: Detect Changes
+  # ==========================================================================
+  detect-changes:
+    name: 🔎 Detect Changes
+    runs-on: ubuntu-latest
+    needs: preflight
+    outputs:
+      nexo-be: ${{ steps.summary.outputs.nexo-be }}
+      nexo-fe: ${{ steps.summary.outputs.nexo-fe }}
+      nexo-auth: ${{ steps.summary.outputs.nexo-auth }}
+      any-change: ${{ steps.summary.outputs.any-change }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          # Usar comparação com a branch base para detectar mudanças corretas
+          base: ${{ github.event.before || github.event.pull_request.base.sha }}
+          filters: |
+            nexo-be:
+              - 'apps/nexo-be/**'
+              - 'packages/**'
+            nexo-fe:
+              - 'apps/nexo-fe/**'
+              - 'packages/**'
+            nexo-auth:
+              - 'apps/nexo-auth/**'
+
+      - name: Detect changes from merge (fallback)
+        id: merge-files
+        run: |
+          # Detectar arquivos alterados no último commit (incluindo merges)
+          echo "📂 Checking changed files..."
+
+          # Para merge commits, comparar com o primeiro parent
+          if git rev-parse --verify HEAD^2 >/dev/null 2>&1; then
+            # É um merge commit - comparar HEAD^1 (branch destino) com HEAD
+            CHANGED_FILES=$(git diff --name-only HEAD^1 HEAD)
+          else
+            # Commit normal - comparar com parent
+            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD 2>/dev/null || echo "")
+          fi
+
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Verificar cada serviço
+          if echo "$CHANGED_FILES" | grep -q "^apps/nexo-be/"; then
+            echo "nexo-be=true" >> $GITHUB_OUTPUT
+            echo "✅ nexo-be has changes"
+          else
+            echo "nexo-be=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$CHANGED_FILES" | grep -q "^apps/nexo-fe/"; then
+            echo "nexo-fe=true" >> $GITHUB_OUTPUT
+            echo "✅ nexo-fe has changes"
+          else
+            echo "nexo-fe=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$CHANGED_FILES" | grep -q "^apps/nexo-auth/"; then
+            echo "nexo-auth=true" >> $GITHUB_OUTPUT
+            echo "✅ nexo-auth has changes"
+          else
+            echo "nexo-auth=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Verificar packages (afeta todos os serviços que usam packages)
+          if echo "$CHANGED_FILES" | grep -q "^packages/"; then
+            echo "packages=true" >> $GITHUB_OUTPUT
+            echo "✅ packages has changes (may affect be/fe)"
+          else
+            echo "packages=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for merge commits
+        id: merge-check
+        run: |
+          BRANCH="${{ needs.preflight.outputs.branch }}"
+
+          # Verificar se é um merge commit (tem mais de 1 parent)
+          if git rev-parse --verify HEAD^2 >/dev/null 2>&1; then
+            echo "is_merge=true" >> $GITHUB_OUTPUT
+            echo "🔀 Merge commit detected"
+          else
+            echo "is_merge=false" >> $GITHUB_OUTPUT
+            echo "📝 Regular commit"
+          fi
+
+          # Não forçar build de todos - usar detecção de paths mesmo em main
+          # Isso permite que apenas os serviços modificados sejam buildados
+          echo "force_build=false" >> $GITHUB_OUTPUT
+          echo "📊 Using path detection for selective builds"
+
+      - name: Summary
+        id: summary
+        run: |
+          # Combinar resultados do paths-filter e merge-files detection
+          FILTER_BE="${{ steps.filter.outputs.nexo-be }}"
+          FILTER_FE="${{ steps.filter.outputs.nexo-fe }}"
+          FILTER_AUTH="${{ steps.filter.outputs.nexo-auth }}"
+
+          MERGE_BE="${{ steps.merge-files.outputs.nexo-be }}"
+          MERGE_FE="${{ steps.merge-files.outputs.nexo-fe }}"
+          MERGE_AUTH="${{ steps.merge-files.outputs.nexo-auth }}"
+          PACKAGES="${{ steps.merge-files.outputs.packages }}"
+
+          FORCE="${{ inputs.force_all }}"
+          IS_MERGE="${{ steps.merge-check.outputs.is_merge }}"
+          BRANCH="${{ needs.preflight.outputs.branch }}"
+
+          echo "📊 Detection Results:"
+          echo "  - Branch: $BRANCH"
+          echo "  - Is Merge: $IS_MERGE"
+          echo "  - Force All: $FORCE"
+          echo ""
+          echo "  paths-filter results:"
+          echo "    - BE: $FILTER_BE"
+          echo "    - FE: $FILTER_FE"
+          echo "    - AUTH: $FILTER_AUTH"
+          echo ""
+          echo "  merge-files results:"
+          echo "    - BE: $MERGE_BE"
+          echo "    - FE: $MERGE_FE"
+          echo "    - AUTH: $MERGE_AUTH"
+          echo "    - Packages: $PACKAGES"
+
+          # Decisão final: usar OR entre paths-filter e merge-files
+          # Se qualquer um detectar mudança, considerar como true
+
+          if [[ "$FORCE" == "true" ]]; then
+            echo "🚀 Building all services (force mode)"
+            BE_FINAL="true"
+            FE_FINAL="true"
+            AUTH_FINAL="true"
+          else
+            # BE: detectado por filter OU merge-files OU packages mudou
+            if [[ "$FILTER_BE" == "true" || "$MERGE_BE" == "true" || "$PACKAGES" == "true" ]]; then
+              BE_FINAL="true"
+            else
+              BE_FINAL="false"
+            fi
+            
+            # FE: detectado por filter OU merge-files OU packages mudou
+            if [[ "$FILTER_FE" == "true" || "$MERGE_FE" == "true" || "$PACKAGES" == "true" ]]; then
+              FE_FINAL="true"
+            else
+              FE_FINAL="false"
+            fi
+            
+            # AUTH: detectado por filter OU merge-files (não usa packages)
+            if [[ "$FILTER_AUTH" == "true" || "$MERGE_AUTH" == "true" ]]; then
+              AUTH_FINAL="true"
+            else
+              AUTH_FINAL="false"
+            fi
+          fi
+
+          echo ""
+          echo "🎯 Final decision:"
+          echo "  - nexo-be: $BE_FINAL"
+          echo "  - nexo-fe: $FE_FINAL"
+          echo "  - nexo-auth: $AUTH_FINAL"
+
+          echo "nexo-be=$BE_FINAL" >> $GITHUB_OUTPUT
+          echo "nexo-fe=$FE_FINAL" >> $GITHUB_OUTPUT
+          echo "nexo-auth=$AUTH_FINAL" >> $GITHUB_OUTPUT
+
+          if [[ "$BE_FINAL" == "true" || "$FE_FINAL" == "true" || "$AUTH_FINAL" == "true" ]]; then
+            echo "any-change=true" >> $GITHUB_OUTPUT
+          else
+            echo "any-change=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "### 📦 Services Changed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Changed |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| nexo-be | $BE_FINAL |" >> $GITHUB_STEP_SUMMARY
+          echo "| nexo-fe | $FE_FINAL |" >> $GITHUB_STEP_SUMMARY
+          echo "| nexo-auth | $AUTH_FINAL |" >> $GITHUB_STEP_SUMMARY
+
+  # ==========================================================================
+  # STAGE 3: CI - Backend
+  # ==========================================================================
+  ci-backend:
+    name: 🔵 CI Backend
+    runs-on: ubuntu-latest
+    needs: [preflight, detect-changes]
+    if: |
+      needs.detect-changes.outputs.nexo-be == 'true' || 
+      inputs.force_all == true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm --filter nexo-be lint
+        continue-on-error: true
+
+      - name: Test
+        run: pnpm --filter nexo-be test
+        continue-on-error: true
+
+      - name: Build
+        run: pnpm --filter nexo-be build
+
+  # ==========================================================================
+  # STAGE 4: CI - Frontend
+  # ==========================================================================
+  ci-frontend:
+    name: 🟢 CI Frontend
+    runs-on: ubuntu-latest
+    needs: [preflight, detect-changes]
+    if: |
+      needs.detect-changes.outputs.nexo-fe == 'true' || 
+      inputs.force_all == true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm --filter nexo-fe lint
+        continue-on-error: true
+
+      - name: Build
+        run: pnpm --filter nexo-fe build
+
+  # ==========================================================================
+  # STAGE 5: CI - Auth (apenas Docker build)
+  # ==========================================================================
+  ci-auth:
+    name: 🟡 CI Auth
+    runs-on: ubuntu-latest
+    needs: [preflight, detect-changes]
+    if: |
+      needs.detect-changes.outputs.nexo-auth == 'true' || 
+      inputs.force_all == true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Dockerfile
+        run: |
+          if [ -f apps/nexo-auth/Dockerfile ]; then
+            echo "✅ Dockerfile exists"
+          else
+            echo "❌ Dockerfile not found"
+            exit 1
+          fi
+
+  # ==========================================================================
+  # STAGE 6: Build & Push - Backend
+  # ==========================================================================
+  build-backend:
+    name: 🐳 Build Backend
+    runs-on: ubuntu-latest
+    needs: [preflight, detect-changes, ci-backend]
+    if: |
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      needs.preflight.outputs.is_pr == 'false' &&
+      (needs.detect-changes.outputs.nexo-be == 'true' || inputs.force_all == true)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/nexo-be/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/nexo-be:${{ needs.preflight.outputs.branch }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/nexo-be:${{ needs.preflight.outputs.branch }}-${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/nexo-be:${{ needs.preflight.outputs.branch }}
+          cache-to: type=inline
+
+      - name: Summary
+        run: |
+          echo "✅ Backend image pushed: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/nexo-be:${{ needs.preflight.outputs.branch }}"
+
+  # ==========================================================================
+  # STAGE 7: Build & Push - Frontend
+  # ==========================================================================
+  build-frontend:
+    name: 🐳 Build Frontend
+    runs-on: ubuntu-latest
+    needs: [preflight, detect-changes, ci-frontend]
+    if: |
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      needs.preflight.outputs.is_pr == 'false' &&
+      (needs.detect-changes.outputs.nexo-fe == 'true' || inputs.force_all == true)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Set frontend env vars per environment
+        id: fe-env
+        run: |
+          ENV="${{ needs.preflight.outputs.environment }}"
+          case "$ENV" in
+            develop)
+              echo "NEXT_PUBLIC_API_URL=https://develop.api.g3developer.online" >> $GITHUB_OUTPUT
+              echo "NEXT_PUBLIC_KEYCLOAK_URL=https://develop.auth.g3developer.online" >> $GITHUB_OUTPUT
+              echo "NEXT_PUBLIC_KEYCLOAK_REALM=nexo" >> $GITHUB_OUTPUT
+              echo "NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=nexo-web" >> $GITHUB_OUTPUT
+              ;;
+            prod)
+              echo "NEXT_PUBLIC_API_URL=https://api.g3developer.online" >> $GITHUB_OUTPUT
+              echo "NEXT_PUBLIC_KEYCLOAK_URL=https://auth.g3developer.online" >> $GITHUB_OUTPUT
+              echo "NEXT_PUBLIC_KEYCLOAK_REALM=nexo" >> $GITHUB_OUTPUT
+              echo "NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=nexo-web" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/nexo-fe/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/nexo-fe:${{ needs.preflight.outputs.branch }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/nexo-fe:${{ needs.preflight.outputs.branch }}-${{ github.sha }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ steps.fe-env.outputs.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_KEYCLOAK_URL=${{ steps.fe-env.outputs.NEXT_PUBLIC_KEYCLOAK_URL }}
+            NEXT_PUBLIC_KEYCLOAK_REALM=${{ steps.fe-env.outputs.NEXT_PUBLIC_KEYCLOAK_REALM }}
+            NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=${{ steps.fe-env.outputs.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/nexo-fe:${{ needs.preflight.outputs.branch }}
+          cache-to: type=inline
+
+      - name: Summary
+        run: |
+          echo "✅ Frontend image pushed: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/nexo-fe:${{ needs.preflight.outputs.branch }}"
+
+  # ==========================================================================
+  # STAGE 8: Build & Push - Auth
+  # ==========================================================================
+  build-auth:
+    name: 🐳 Build Auth
+    runs-on: ubuntu-latest
+    needs: [preflight, detect-changes, ci-auth]
+    if: |
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      needs.preflight.outputs.is_pr == 'false' &&
+      (needs.detect-changes.outputs.nexo-auth == 'true' || inputs.force_all == true)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/nexo-auth/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/nexo-auth:${{ needs.preflight.outputs.branch }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/nexo-auth:${{ needs.preflight.outputs.branch }}-${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/nexo-auth:${{ needs.preflight.outputs.branch }}
+          cache-to: type=inline
+
+      - name: Summary
+        run: |
+          echo "✅ Auth image pushed: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/nexo-auth:${{ needs.preflight.outputs.branch }}"
+
+  # ==========================================================================
+  # STAGE 9: Deploy (Update K8s values)
+  # ==========================================================================
+  deploy:
+    name: 🚀 Deploy ${{ needs.preflight.outputs.environment }}
+    runs-on: ubuntu-latest
+    needs:
+      - preflight
+      - detect-changes
+      - build-backend
+      - build-frontend
+      - build-auth
+    if: |
+      always() &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      needs.preflight.outputs.is_pr == 'false' &&
+      needs.preflight.outputs.environment != 'unknown' &&
+      needs.detect-changes.outputs.any-change == 'true' &&
+      (needs.build-backend.result == 'success' || needs.build-backend.result == 'skipped') &&
+      (needs.build-frontend.result == 'success' || needs.build-frontend.result == 'skipped') &&
+      (needs.build-auth.result == 'success' || needs.build-auth.result == 'skipped')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Update values files for changed services only
+        run: |
+          ENV="${{ needs.preflight.outputs.environment }}"
+          COMMIT_SHA="${{ github.sha }}"
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+          BRANCH="${{ needs.preflight.outputs.branch }}"
+          REGISTRY="${{ env.REGISTRY }}"
+          IMAGE_OWNER="${{ env.IMAGE_OWNER }}"
+
+          echo "🔄 Updating values for environment: $ENV"
+          echo "📝 Commit SHA: $SHORT_SHA"
+          echo "🏷️ Image Tag: $BRANCH-$COMMIT_SHA"
+          echo "📦 Registry: $REGISTRY/$IMAGE_OWNER"
+
+          # Função para atualizar um serviço específico
+          update_service() {
+            local SERVICE=$1
+            local VALUES_FILE="infra/helm/${SERVICE}/values-${ENV}.yaml"
+            
+            if [ -f "$VALUES_FILE" ]; then
+              # Atualizar apenas a tag da seção image principal (antes de postgresql/autoscaling)
+              # Evita sobrescrever tags de dependências como PostgreSQL
+              awk -v new_tag="${BRANCH}-${COMMIT_SHA}" '
+                BEGIN { found=0 }
+                /^image:/ { in_image=1 }
+                /^postgresql:/ || /^autoscaling:/ || /^resources:/ { in_image=0 }
+                in_image && /tag:/ && !found { 
+                  sub(/tag: "[^"]*"/, "tag: \"" new_tag "\"")
+                  found=1
+                }
+                { print }
+              ' "$VALUES_FILE" > "$VALUES_FILE.tmp" && mv "$VALUES_FILE.tmp" "$VALUES_FILE"
+              
+              # Atualizar annotation de commit (se existir)
+              sed -i "s/app.kubernetes.io\/commit: \"[^\"]*\"/app.kubernetes.io\/commit: \"$SHORT_SHA\"/" "$VALUES_FILE"
+              
+              # Garantir que repository está correto (GHCR)
+              sed -i "s|repository: .*/${SERVICE}|repository: ${REGISTRY}/${IMAGE_OWNER}/${SERVICE}|" "$VALUES_FILE"
+              
+              git add "$VALUES_FILE"
+              echo "✅ Updated $VALUES_FILE"
+              echo "   - tag: ${BRANCH}-${COMMIT_SHA}"
+            else
+              echo "⚠️ Values file not found: $VALUES_FILE"
+            fi
+          }
+
+          # Atualizar APENAS os serviços que foram buildados com sucesso
+          if [ "${{ needs.build-backend.result }}" == "success" ]; then
+            echo "📦 Updating nexo-be (build was successful)"
+            update_service "nexo-be"
+          else
+            echo "⏭️ Skipping nexo-be (build was ${{ needs.build-backend.result }})"
+          fi
+
+          if [ "${{ needs.build-frontend.result }}" == "success" ]; then
+            echo "📦 Updating nexo-fe (build was successful)"
+            update_service "nexo-fe"
+          else
+            echo "⏭️ Skipping nexo-fe (build was ${{ needs.build-frontend.result }})"
+          fi
+
+          if [ "${{ needs.build-auth.result }}" == "success" ]; then
+            echo "📦 Updating nexo-auth (build was successful)"
+            update_service "nexo-auth"
+          else
+            echo "⏭️ Skipping nexo-auth (build was ${{ needs.build-auth.result }})"
+          fi
+
+          echo ""
+          echo "📋 Summary of updates:"
+          git diff --cached --name-only || echo "No changes"
+
+      - name: Commit and push
+        run: |
+          ENV="${{ needs.preflight.outputs.environment }}"
+          NAMESPACE="${{ needs.preflight.outputs.namespace }}"
+          BUILD_NUM="${{ needs.preflight.outputs.build_number }}"
+          SHORT_SHA="${{ github.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:7}"
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+
+          # Extrair título do commit (primeira linha)
+          COMMIT_TITLE=$(echo "$COMMIT_MSG" | head -1 | cut -c1-80)
+
+          # Verificar se há mudanças
+          if git diff --cached --quiet; then
+            echo "⚠️ No changes to commit"
+            exit 0
+          fi
+
+          # Listar serviços que foram deployados baseado em quais builds rodaram
+          SERVICES=""
+          if [ "${{ needs.build-backend.result }}" == "success" ]; then
+            SERVICES="${SERVICES} nexo-be"
+          fi
+          if [ "${{ needs.build-frontend.result }}" == "success" ]; then
+            SERVICES="${SERVICES} nexo-fe"
+          fi
+          if [ "${{ needs.build-auth.result }}" == "success" ]; then
+            SERVICES="${SERVICES} nexo-auth"
+          fi
+
+          # Se nenhum build rodou (todos skipped), significa que forçamos build de tudo
+          if [ -z "$SERVICES" ]; then
+            SERVICES=" nexo-be nexo-fe nexo-auth"
+          fi
+
+          # Formato: #001: Merge pull request #20 | deploy(prod):services → sha
+          git commit -m "${BUILD_NUM}: ${COMMIT_TITLE} | deploy(${ENV}):${SERVICES} → ${SHORT_SHA} [skip ci]"
+          git push origin ${{ github.ref_name }}
+
+          echo "✅ Deployed to $NAMESPACE"
+
+      - name: Summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment**: ${{ needs.preflight.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Namespace**: ${{ needs.preflight.outputs.namespace }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Services Deployed" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| nexo-be | ${{ needs.build-backend.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| nexo-fe | ${{ needs.build-frontend.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| nexo-auth | ${{ needs.build-auth.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "ArgoCD detectará as mudanças e fará sync automaticamente." >> $GITHUB_STEP_SUMMARY
+
+  # ==========================================================================
+  # STAGE 10: Discord Notification (executa SEMPRE após os outros jobs)
+  # ==========================================================================
+  notify-discord:
+    name: 📢 Discord Notify
+    runs-on: ubuntu-latest
+    needs:
+      - preflight
+      - detect-changes
+      - build-backend
+      - build-frontend
+      - build-auth
+      - deploy
+    # Executa SEMPRE após os outros jobs (sucesso, falha ou skipped)
+    if: always() && needs.preflight.result == 'success'
+    steps:
+      - name: Send Discord Notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          ENV="${{ needs.preflight.outputs.environment }}"
+          NAMESPACE="${{ needs.preflight.outputs.namespace }}"
+          BUILD_NUM="${{ needs.preflight.outputs.build_number }}"
+          BRANCH="${{ needs.preflight.outputs.branch }}"
+          SHORT_SHA="${{ github.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:7}"
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          ACTOR="${{ github.actor }}"
+          REPO="${{ github.repository }}"
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          DEPLOY_RESULT="${{ needs.deploy.result }}"
+          ANY_CHANGE="${{ needs.detect-changes.outputs.any-change }}"
+
+          # Determinar status e cor baseado no resultado
+          if [ "$DEPLOY_RESULT" == "success" ]; then
+            STATUS_EMOJI="✅"
+            STATUS_TEXT="sucesso"
+            TITLE_EMOJI="🚀"
+            # Cor baseada no ambiente para sucesso
+            case "$ENV" in
+              dev) COLOR=3066993 ;; # Verde
+              prod) COLOR=15158332 ;; # Vermelho
+              *) COLOR=3447003 ;; # Azul
+            esac
+          elif [ "$DEPLOY_RESULT" == "skipped" ]; then
+            STATUS_EMOJI="⏭️"
+            STATUS_TEXT="pulado (sem mudanças)"
+            TITLE_EMOJI="📋"
+            COLOR=9807270 # Cinza
+          else
+            STATUS_EMOJI="❌"
+            STATUS_TEXT="falhou"
+            TITLE_EMOJI="🔴"
+            COLOR=15158332 # Vermelho para falha
+          fi
+
+          # Determinar serviços e seus status (formato simples para Discord)
+          SERVICES=""
+          if [ "${{ needs.build-backend.result }}" == "success" ]; then
+            SERVICES="${SERVICES}✅ nexo-be"$'\n'
+          elif [ "${{ needs.build-backend.result }}" == "failure" ]; then
+            SERVICES="${SERVICES}❌ nexo-be"$'\n'
+          elif [ "${{ needs.build-backend.result }}" == "skipped" ]; then
+            SERVICES="${SERVICES}⏭️ nexo-be (skipped)"$'\n'
+          fi
+
+          if [ "${{ needs.build-frontend.result }}" == "success" ]; then
+            SERVICES="${SERVICES}✅ nexo-fe"$'\n'
+          elif [ "${{ needs.build-frontend.result }}" == "failure" ]; then
+            SERVICES="${SERVICES}❌ nexo-fe"$'\n'
+          elif [ "${{ needs.build-frontend.result }}" == "skipped" ]; then
+            SERVICES="${SERVICES}⏭️ nexo-fe (skipped)"$'\n'
+          fi
+
+          if [ "${{ needs.build-auth.result }}" == "success" ]; then
+            SERVICES="${SERVICES}✅ nexo-auth"$'\n'
+          elif [ "${{ needs.build-auth.result }}" == "failure" ]; then
+            SERVICES="${SERVICES}❌ nexo-auth"$'\n'
+          elif [ "${{ needs.build-auth.result }}" == "skipped" ]; then
+            SERVICES="${SERVICES}⏭️ nexo-auth (skipped)"$'\n'
+          fi
+
+          # Remover última quebra de linha
+          SERVICES=$(echo -n "$SERVICES" | sed 's/[[:space:]]*$//')
+
+          # Se SERVICES estiver vazio, colocar mensagem padrão
+          if [ -z "$SERVICES" ]; then
+            SERVICES="Nenhum serviço alterado"
+          fi
+
+          # Limpar mensagem de commit (remover caracteres que podem quebrar JSON)
+          COMMIT_MSG=$(echo "${{ github.event.head_commit.message }}" | head -1 | sed 's/\[skip ci\]//g' | tr -d '\n\r' | sed 's/"/\\"/g' | cut -c1-100)
+
+          # Verificar se o webhook está configurado
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "⚠️ DISCORD_WEBHOOK não está configurado - pulando notificação"
+            exit 0
+          fi
+
+          echo "📤 Enviando notificação para Discord..."
+          echo "   Webhook configurado: ✅"
+          echo "   Ambiente: $ENV"
+          echo "   Status: $STATUS_TEXT"
+
+          # Construir JSON usando jq para garantir formato válido
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          ENV_UPPER=$(echo "$ENV" | tr '[:lower:]' '[:upper:]')
+
+          PAYLOAD=$(jq -n \
+            --arg title "${TITLE_EMOJI} Pipeline ${BUILD_NUM} - ${ENV_UPPER} ${STATUS_EMOJI}" \
+            --arg description "Pipeline ${STATUS_TEXT} no ambiente **${ENV}**" \
+            --argjson color "${COLOR}" \
+            --arg env "${ENV}" \
+            --arg namespace "${NAMESPACE}" \
+            --arg branch "${BRANCH}" \
+            --arg commit_link "[\`${SHORT_SHA}\`](https://github.com/${REPO}/commit/${{ github.sha }})" \
+            --arg commit_msg "${COMMIT_MSG}" \
+            --arg services "${SERVICES}" \
+            --arg pipeline_link "[Ver detalhes](${RUN_URL})" \
+            --arg footer "Nexo Platform • Pipeline ${BUILD_NUM}" \
+            --arg timestamp "${TIMESTAMP}" \
+            '{
+              embeds: [{
+                title: $title,
+                description: $description,
+                color: $color,
+                fields: [
+                  {
+                    name: "📦 Ambiente",
+                    value: "\($env) (\($namespace))",
+                    inline: true
+                  },
+                  {
+                    name: "🔀 Branch",
+                    value: $branch,
+                    inline: true
+                  },
+                  {
+                    name: "📝 Commit",
+                    value: $commit_link,
+                    inline: true
+                  },
+                  {
+                    name: "💬 Mensagem",
+                    value: $commit_msg,
+                    inline: false
+                  },
+                  {
+                    name: "📋 Serviços",
+                    value: $services,
+                    inline: false
+                  },
+                  {
+                    name: "🔗 Pipeline",
+                    value: $pipeline_link,
+                    inline: false
+                  }
+                ],
+                footer: {
+                  text: $footer
+                },
+                timestamp: $timestamp
+              }]
+            }')
+
+          # Enviar notificação com tratamento de erro
+          HTTP_RESPONSE=$(curl -s -o /tmp/discord_response.txt -w "%{http_code}" \
+            -H "Content-Type: application/json" \
+            -d "${PAYLOAD}" \
+            "$DISCORD_WEBHOOK")
+
+          if [ "$HTTP_RESPONSE" -ge 200 ] && [ "$HTTP_RESPONSE" -lt 300 ]; then
+            echo "✅ Discord notification sent! (HTTP $HTTP_RESPONSE)"
+          else
+            echo "⚠️ Failed to send Discord notification (HTTP $HTTP_RESPONSE)"
+            echo "Response: $(cat /tmp/discord_response.txt)"
+            # Não falha a pipeline por causa do Discord
+            exit 0
+          fi

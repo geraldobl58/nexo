@@ -1,0 +1,59 @@
+# Values for Development environment (DigitalOcean)
+replicaCount: 1
+
+image:
+  repository: ghcr.io/geraldobl58/nexo-be
+  tag: "develop-079ac8cdce90e49299db0dbd3125b7871a968f9b"
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: ghcr-secret
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: develop.api.g3developer.online
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: nexo-be-develop-tls
+      hosts:
+        - develop.api.g3developer.online
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
+
+autoscaling:
+  enabled: false
+
+env:
+  NODE_ENV: development
+  PORT: "3000"
+  LOG_LEVEL: debug
+  SWAGGER_ENABLED: "true"
+  METRICS_ENABLED: "true"
+  KEYCLOAK_URL: "https://develop.auth.g3developer.online"
+  KEYCLOAK_INTERNAL_URL: "http://nexo-auth-develop:8080"
+  KEYCLOAK_REALM: nexo
+
+podDisruptionBudget:
+  enabled: false
+
+podAnnotations:
+  app.kubernetes.io/commit: "079ac8c"
+
+metrics:
+  enabled: false
+  path: /metrics
+  serviceMonitor:
+    enabled: false

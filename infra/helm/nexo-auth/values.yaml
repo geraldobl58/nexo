@@ -1,0 +1,116 @@
+# Default values for nexo-auth (DigitalOcean)
+replicaCount: 1
+
+image:
+  repository: ghcr.io/geraldobl58/nexo-auth
+  pullPolicy: Always
+  tag: "latest"
+
+command: []
+args:
+  - start
+  - --http-enabled=true
+  - --hostname-strict=false
+  - --metrics-enabled=true
+  - --proxy-headers=xforwarded
+
+containerPort: 8080
+managementPort: 9000
+
+imagePullSecrets:
+  - name: ghcr-secret
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations:
+  app.kubernetes.io/commit: "initial"
+
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 8080
+
+livenessProbe:
+  httpGet:
+    path: /health/live
+    port: management
+  initialDelaySeconds: 120
+  periodSeconds: 15
+  timeoutSeconds: 5
+  failureThreshold: 15
+
+readinessProbe:
+  httpGet:
+    path: /health/ready
+    port: management
+  initialDelaySeconds: 90
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 15
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+    nginx.ingress.kubernetes.io/proxy-buffers-number: "4"
+  hosts:
+    - host: auth.g3developer.online
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: nexo-auth-tls
+      hosts:
+        - auth.g3developer.online
+
+resources:
+  limits:
+    cpu: 400m
+    memory: 768Mi
+  requests:
+    cpu: 10m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+# Env vars (KC_DB_*, admin credentials vêm dos secrets via envFrom no template)
+env:
+  KC_HOSTNAME_STRICT: "false"
+  KC_PROXY_HEADERS: "xforwarded"
+  KC_HTTP_ENABLED: "true"
+  KC_HEALTH_ENABLED: "true"
+  KC_METRICS_ENABLED: "true"
+
+envFrom: []
+
+metrics:
+  enabled: false
+  path: /metrics
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s
+    labels: {}

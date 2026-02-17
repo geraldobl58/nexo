@@ -1,0 +1,129 @@
+# ============================================================================
+# ArgoCD ApplicationSet - Multi-Environment Deployment (DigitalOcean)
+# ============================================================================
+# Branch Flow: feature/* → develop → main (production)
+# Registry: ghcr.io/geraldobl58/*
+# TLS: Let's Encrypt (letsencrypt-prod) via cert-manager
+# Domains: *.g3developer.online (DigitalOcean DNS)
+# Database: DigitalOcean Managed PostgreSQL (via K8s Secrets)
+#
+# Ambientes: develop (auto-sync) + prod (auto-sync)
+# Lab/estudo: recursos mínimos, 2 ambientes, sem monitoring
+#
+# Nota: Separado em 2 ApplicationSets porque o template do ArgoCD
+# não suporta booleans dinâmicos via generators (prune/selfHeal).
+# ============================================================================
+
+# --- Auto-sync environment (develop) ---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: nexo-apps-auto
+  namespace: argocd
+spec:
+  generators:
+    - matrix:
+        generators:
+          - list:
+              elements:
+                - env: develop
+                  namespace: nexo-develop
+                  branch: develop
+          - list:
+              elements:
+                - service: nexo-be
+                  path: infra/helm/nexo-be
+                - service: nexo-fe
+                  path: infra/helm/nexo-fe
+                - service: nexo-auth
+                  path: infra/helm/nexo-auth
+
+  template:
+    metadata:
+      name: "{{service}}-{{env}}"
+      labels:
+        app: "{{service}}"
+        environment: "{{env}}"
+    spec:
+      project: "nexo-{{env}}"
+      source:
+        repoURL: https://github.com/geraldobl58/nexo.git
+        targetRevision: "{{branch}}"
+        path: "{{path}}"
+        helm:
+          valueFiles:
+            - values.yaml
+            - "values-{{env}}.yaml"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - PruneLast=true
+        retry:
+          limit: 3
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+
+---
+# --- Auto-sync environment (prod) ---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: nexo-apps-prod
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - service: nexo-be
+            path: infra/helm/nexo-be
+          - service: nexo-fe
+            path: infra/helm/nexo-fe
+          - service: nexo-auth
+            path: infra/helm/nexo-auth
+
+  template:
+    metadata:
+      name: "{{service}}-prod"
+      labels:
+        app: "{{service}}"
+        environment: prod
+    spec:
+      project: nexo-prod
+      source:
+        repoURL: https://github.com/geraldobl58/nexo.git
+        targetRevision: main
+        path: "{{path}}"
+        helm:
+          valueFiles:
+            - values.yaml
+            - values-prod.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: nexo-prod
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - PruneLast=true
+        retry:
+          limit: 3
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true

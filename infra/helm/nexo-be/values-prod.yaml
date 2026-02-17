@@ -1,0 +1,62 @@
+# Values for Production environment (DigitalOcean)
+replicaCount: 1
+
+image:
+  repository: ghcr.io/geraldobl58/nexo-be
+  tag: "latest"
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: ghcr-secret
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: api.g3developer.online
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: nexo-be-prod-tls
+      hosts:
+        - api.g3developer.online
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
+
+autoscaling:
+  enabled: false
+
+env:
+  NODE_ENV: production
+  PORT: "3000"
+  LOG_LEVEL: warn
+  SWAGGER_ENABLED: "true"
+  METRICS_ENABLED: "true"
+  KEYCLOAK_URL: "https://auth.g3developer.online"
+  KEYCLOAK_INTERNAL_URL: "http://nexo-auth-prod:8080"
+  KEYCLOAK_REALM: nexo
+
+envFrom: []
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+podAnnotations:
+  app.kubernetes.io/commit: "initial"
+
+metrics:
+  enabled: false
+  path: /metrics
+  serviceMonitor:
+    enabled: false

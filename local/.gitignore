@@ -1,0 +1,49 @@
+# Nexo CloudLab - Local Development
+# Ignore generated files and credentials
+
+# Credentials
+argocd-credentials.txt
+*.credentials.txt
+*.key
+*.pem
+*.crt
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Helm
+*.tgz
+charts/*/charts
+
+# Terraform (se adicionar)
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Logs
+*.log
+logs/
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Backups locais (mantenha no SSD, não no git)
+backups/
+*.backup
+
+# Temp configs
+/tmp/
+*.values.yaml.bak

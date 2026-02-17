@@ -1,0 +1,36 @@
+{
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ],
+  "tailwindCSS.experimental.configFile": {
+    "apps/nexo-fe/tailwind.config.ts": "apps/nexo-fe/src/**",
+    "apps/nexo-auth/tailwind.config.js": "apps/nexo-auth/**"
+  },
+  "tailwindCSS.includeLanguages": {
+    "ftl": "html",
+    "typescriptreact": "html",
+    "javascriptreact": "html"
+  },
+  "tailwindCSS.files.exclude": [
+    "**/.git/**",
+    "**/node_modules/**",
+    "**/.hg/**",
+    "**/.svn/**"
+  ],
+  "tailwindCSS.emmetCompletions": true,
+  "tailwindCSS.classAttributes": ["class", "className", "ngClass", "variants"],
+  "files.associations": {
+    "*.ftl": "html",
+    "*.css": "tailwindcss"
+  },
+  "emmet.includeLanguages": {
+    "ftl": "html"
+  },
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  "css.validate": true,
+  "css.lint.unknownAtRules": "ignore"
+}

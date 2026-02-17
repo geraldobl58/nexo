@@ -1,0 +1,18 @@
+# ============================================================================
+# Nexo Platform - Namespaces (DigitalOcean)
+# ============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nexo-develop
+  labels:
+    name: nexo
+    environment: develop
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nexo-prod
+  labels:
+    name: nexo
+    environment: prod

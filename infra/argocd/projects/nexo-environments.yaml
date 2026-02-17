@@ -1,0 +1,39 @@
+# ============================================================================
+# Nexo Platform - ArgoCD Projects (DigitalOcean)
+# Ambientes: develop (auto-sync) + prod (manual sync)
+# ============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: nexo-develop
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Nexo Platform - Ambiente de Development
+  sourceRepos:
+    - "https://github.com/geraldobl58/nexo.git"
+  destinations:
+    - namespace: nexo-develop
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: nexo-prod
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Nexo Platform - Ambiente de Producao
+  sourceRepos:
+    - "https://github.com/geraldobl58/nexo.git"
+  destinations:
+    - namespace: nexo-prod
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
