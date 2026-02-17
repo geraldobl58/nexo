@@ -29,22 +29,16 @@ ingress:
           pathType: Prefix
 
 livenessProbe:
-  httpGet:
-    path: /health/live
-    port: management
+  enabled: true
+  path: /health/live
   initialDelaySeconds: 240
   periodSeconds: 15
-  timeoutSeconds: 5
-  failureThreshold: 20
 
 readinessProbe:
-  httpGet:
-    path: /health/ready
-    port: management
+  enabled: true
+  path: /health/ready
   initialDelaySeconds: 180
   periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 20
 
 resources:
   limits:
