@@ -7,7 +7,7 @@ Este guia mostra como integrar seu CloudLab local com GitHub para CI/CD automati
 Você pode usar GitHub Actions para:
 
 - ✅ Build automático de imagens Docker
-- ✅ Push para Harbor Registry local
+- ✅ Push para GitHub Container Registry (ghcr.io)
 - ✅ Deploy automático via ArgoCD
 - ✅ Testes automatizados
 - ✅ Scan de segurança
@@ -22,30 +22,22 @@ Você pode usar GitHub Actions para:
 
 ### 2. Adicionar Secrets Necessários
 
+> ℹ️ **NOTA IMPORTANTE:** O `GITHUB_TOKEN` é **automaticamente fornecido** pelo GitHub Actions em todos os workflows.
+> Você **NÃO precisa criar este secret manualmente** - GitHub não permite criar secrets com este nome (é reservado).
+
+**Secrets que você PRECISA criar:**
+
 ```bash
-# Token GitHub (para pull/push de código)
-GITHUB_TOKEN
-Value: <seu_github_token_aqui>
-
-# Gerar em: https://github.com/settings/tokens/new
-# Permissões: repo, write:packages, workflow
-
-# Harbor Registry (se usar)
-HARBOR_URL
-Value: harbor.nexo.local
-
-HARBOR_USERNAME
-Value: admin
-
-HARBOR_PASSWORD
-Value: Harbor12345
-
 # ArgoCD
 ARGOCD_SERVER
 Value: argocd.nexo.local
 
 ARGOCD_AUTH_TOKEN
 Value: <obter do comando abaixo>
+
+# Discord Notifications
+DISCORD_WEBHOOK
+Value: <seu webhook do Discord>
 
 # Database (para migrations/seeds)
 DATABASE_URL
@@ -85,7 +77,7 @@ argocd account generate-token --account admin
 │  (pode rodar no Mac local ou GitHub)        │
 │  1. Run tests                               │
 │  2. Build Docker image                      │
-│  3. Push to Harbor                          │
+│  3. Push to ghcr.io (GitHub Registry)       │
 │  4. Update Helm values                      │
 │  5. Trigger ArgoCD sync                     │
 └──────────────┬──────────────────────────────┘
@@ -185,7 +177,7 @@ on:
       - "apps/nexo-auth/**"
 
 env:
-  REGISTRY: harbor.nexo.local
+  REGISTRY: ghcr.io
   ARGOCD_SERVER: argocd.nexo.local
 
 jobs:
@@ -219,23 +211,23 @@ jobs:
       - name: Build Docker image
         run: |
           cd ${{ matrix.path }}
-          docker build -t ${{ env.REGISTRY }}/nexo/${{ matrix.app }}:${{ steps.tag.outputs.tag }} .
-          docker tag ${{ env.REGISTRY }}/nexo/${{ matrix.app }}:${{ steps.tag.outputs.tag }} \
-                     ${{ env.REGISTRY }}/nexo/${{ matrix.app }}:latest
+          docker build -t ${{ env.REGISTRY }}/${{ github.repository_owner }}/nexo-${{ matrix.app }}:${{ steps.tag.outputs.tag }} .
+          docker tag ${{ env.REGISTRY }}/${{ github.repository_owner }}/nexo-${{ matrix.app }}:${{ steps.tag.outputs.tag }} \
+                     ${{ env.REGISTRY }}/${{ github.repository_owner }}/nexo-${{ matrix.app }}:latest
 
-      - name: Login to Harbor
+      - name: Login to GitHub Container Registry
         run: |
-          echo "${{ secrets.HARBOR_PASSWORD }}" | docker login ${{ env.REGISTRY }} \
-            --username ${{ secrets.HARBOR_USERNAME }} --password-stdin
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
+            --username ${{ github.actor }} --password-stdin
 
-      - name: Push to Harbor
+      - name: Push to ghcr.io
         run: |
-          docker push ${{ env.REGISTRY }}/nexo/${{ matrix.app }}:${{ steps.tag.outputs.tag }}
-          docker push ${{ env.REGISTRY }}/nexo/${{ matrix.app }}:latest
+          docker push ${{ env.REGISTRY }}/${{ github.repository_owner }}/nexo-${{ matrix.app }}:${{ steps.tag.outputs.tag }}
+          docker push ${{ env.REGISTRY }}/${{ github.repository_owner }}/nexo-${{ matrix.app }}:latest
 
       - name: Update Helm values
         run: |
-          sed -i '' "s|repository:.*|repository: ${{ env.REGISTRY }}/nexo/${{ matrix.app }}|" \
+          sed -i '' "s|repository:.*|repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}/nexo-${{ matrix.app }}|" \
             ${{ matrix.helm }}/values-local.yaml
           sed -i '' "s|tag:.*|tag: \"${{ steps.tag.outputs.tag }}\"|" \
             ${{ matrix.helm }}/values-local.yaml

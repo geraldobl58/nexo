@@ -28,20 +28,16 @@ export const Header = () => {
   };
 
   return (
-    <div className="flex items-center justify-between p-4 shadow-sm bg-white">
+    <div className="flex items-center justify-between p-4 shadow-sm bg-[#E5E7EB]">
       <Logo />
       <NavBar />
       <div className="flex items-center space-x-4">
-        <Button
-          className="rounded-full"
-          variant="secondary"
-          onClick={handleLogin}
-        >
+        <Button variant="link" onClick={handleLogin}>
           Entrar
         </Button>
-        <Button className="rounded-full">
+        <Button className="rounded-2xl shadow-sm">
           <Link href="/panel" className="flex items-center space-x-1">
-            <span>Publicar</span>
+            <span>Anuncie Grátis</span>
           </Link>
         </Button>
       </div>

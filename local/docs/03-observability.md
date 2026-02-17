@@ -577,10 +577,12 @@ kubectl logs -n monitoring deploy/kube-prometheus-stack-grafana
 
 ## Próximos Passos
 
-- [05 - Logging (ELK)](./05-logging.md)
-- [06 - Deploy de Aplicações](./06-applications.md)
-- [07 - Troubleshooting](./07-troubleshooting.md)
+- [05 - Deploy de Aplicações](./05-applications.md)
+- [06 - Troubleshooting](./06-troubleshooting.md)
+- [07 - Cheat Sheet](./07-cheatsheet.md)
+
+<!-- Logging (04) foi removido - muito pesado para ambiente local -->
 
 ---
 
-**Anterior**: [03 - ArgoCD](./03-argocd.md) | **Próximo**: [05 - Logging](./05-logging.md)
+**Anterior**: [02 - ArgoCD](./02-argocd.md) | **Próximo**: [05 - Deploy de Aplicações](./05-applications.md)

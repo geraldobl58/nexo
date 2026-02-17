@@ -1,289 +1,253 @@
-# Nexo CloudLab - Documentação
+# 🚀 Nexo CloudLab Local - DevOps Ninja Edition
 
-Documentação completa do ambiente de desenvolvimento local CloudLab.
+Ambiente de desenvolvimento local completo que simula uma infraestrutura cloud profissional para prática e desenvolvimento de aplicações com stack DevOps completa.
 
-## 📚 Índice
+## 🎯 Objetivo
 
-1. **[Instalação e Configuração](./01-installation.md)**
-   - Pré-requisitos
-   - Instalação rápida vs manual
-   - Configuração do SSD externo
-   - Verificação da instalação
+Criar um ambiente local robusto para:
 
-2. **[Kubernetes Local (k3d)](./02-kubernetes.md)**
-   - Arquitetura do cluster
-   - Gestão do cluster (criar, parar, deletar)
-   - Namespaces e contextos
-   - Storage e volumes
-   - Networking e ingress
-   - Registry local
+- Desenvolvimento e testes de aplicações
+- Prática de DevOps e infraestrutura como código
+- Simulação de ambientes de produção
+- Aprendizado de ferramentas enterprise
 
-3. **[ArgoCD GitOps](./03-argocd.md)**
-   - Conceitos (Application, ApplicationSet, Project)
-   - Gestão de aplicações
-   - Sync policies e hooks
-   - Secrets management
-   - Notificações
-   - Multi-cluster
+## 🛠️ Stack Completa
 
-4. **[Observabilidade](./04-observability.md)**
-   - Stack Prometheus + Grafana + AlertManager
-   - Dashboards pré-configurados
-   - Métricas customizadas
-   - Alertas e recording rules
-   - Queries úteis
+- **Kubernetes**: k3d (K3s local) - Cluster Kubernetes leve e completo
+- **GitOps**: ArgoCD - Continuous Deployment
+- **Observability**: Prometheus, Grafana, AlertManager
+- **Logging**: Elasticsearch + Kibana + Filebeat
+- **Container Registry**: Harbor (registry local)
+- **Storage**: Volumes persistentes em SSD externo (/Volumes/Backup)
+- **Ingress**: Traefik (incluído no k3d)
+- **Service Mesh**: Opcional - Linkerd/Istio
 
-5. **[Logging (ELK)](./05-logging.md)**
-   - Stack Elasticsearch + Kibana + Filebeat
-   - Queries no Kibana
-   - Structured logging
-   - Dashboards e alertas
-   - Retention e ILM
+## 📋 Pré-requisitos
 
-6. **[Deploy de Aplicações](./06-applications.md)**
-   - Workflow de desenvolvimento
-   - Build e push de imagens
-   - Configuração Helm charts
-   - Rollback e scaling
-   - Migrations
-   - CI/CD integration
+- Docker Desktop (macOS)
+- 8GB+ RAM disponível
+- SSD Externo montado em `/Volumes/Backup`
+- Homebrew instalado
 
-7. **[Troubleshooting](./07-troubleshooting.md)**
-   - Problemas comuns
-   - Script de diagnóstico
-   - Logs importantes
-   - Comandos de emergência
+## 🚀 Quick Start
 
-8. **[Cheat Sheet](./08-cheatsheet.md)**
-   - Comandos kubectl essenciais
-   - k3d, ArgoCD, Helm, Docker
-   - Prometheus queries
-   - Elasticsearch queries
-   - Aliases úteis
-   - One-liners poderosos
-
-9. **[Integração com GitHub](./09-github-integration.md)**
-   - Configurar secrets no GitHub
-   - CI/CD com GitHub Actions
-   - Self-hosted runner
-   - Deploy automatizado
-   - Release para produção (g3developer.online)
-
-10. **[Arquitetura CloudLab](./10-architecture.md)**
-    - Diagrama completo da infraestrutura
-    - Componentes e suas interações
-    - Fluxo de deployment GitOps
-    - Estratégia multi-ambiente
-    - Alocação de recursos
-    - Segurança e controle de acesso
-    - Monitoramento e observabilidade
-
-11. **[Ambientes e Domínios](./11-environments-and-domains.md)**
-    - CloudLab Local vs Produção Real
-    - Por que HTTP local e HTTPS em produção
-    - Configuração de DNS e Let's Encrypt
-    - Fluxo de deploy por ambiente
-    - Setup de produção no DigitalOcean
-
-12. **[Configuração de DNS](./12-dns-configuration.md)**
-    - Como configurar /etc/hosts automaticamente
-    - Todos os domínios disponíveis
-    - Troubleshooting de DNS
-    - Alternativas ao /etc/hosts
-    - Restaurar backups
-
-## 🚀 Quick Links
-
-### Instalação
+### Setup Automático (Recomendado)
 
 ```bash
-# Setup completo em um comando
+cd local
+make setup
+# ou
 ./setup.sh
-
-# Ou passo a passo
-make install
 ```
 
-### Acesso Rápido
+### Setup Manual (Passo a Passo)
 
 ```bash
+# 1. Instalar dependências
+./scripts/00-install-deps.sh
+
+# 2. Criar cluster Kubernetes local
+./scripts/01-create-cluster.sh
+
+# 3. Instalar ArgoCD
+./scripts/02-install-argocd.sh
+
+# 4. Instalar stack de observabilidade
+./scripts/03-install-observability.sh
+
+# 5. Instalar Elasticsearch Stack
+./scripts/04-install-elasticsearch.sh
+
+# 6. Instalar Harbor Registry (opcional)
+./scripts/06-install-harbor.sh
+
+# 7. Deploy das aplicações
+./scripts/05-deploy-apps.sh
+
+# 8. Acessar dashboards
+./scripts/99-show-urls.sh
+# ou
+make urls
+```
+
+## 📖 Documentação
+
+- [00 - Instalação e Configuração](./00-installation.md)
+- [01 - Kubernetes Local (k3d)](./01-kubernetes.md)
+- [02 - ArgoCD GitOps](./02-argocd.md)
+- [03 - Observabilidade](./03-observability.md)
+- [04 - Logging (ELK)](./04-logging.md)
+- [05 - Deploy de Aplicações](./05-applications.md)
+- [06 - Troubleshooting](./06-troubleshooting.md)
+- [07 - Comandos Úteis](./07-cheatsheet.md)
+- [08 - GitHub Integration](./08-github-integration.md)
+- [09 - Arquitetura CloudLab](./09-architecture.md)
+- [10 - Ambientes e Domínios](./10-environments-and-domains.md)
+- [11 - Configuração de DNS](./11-dns-configuration.md)
+
+## 🌐 URLs de Acesso
+
+Após instalação completa:
+
+### Ferramentas
+
+```
+ArgoCD:           http://argocd.nexo.local
+Grafana:          http://grafana.nexo.local
+Prometheus:       http://prometheus.nexo.local
+AlertManager:     http://alertmanager.nexo.local
+Kibana:           http://kibana.nexo.local
+Harbor Registry:  http://harbor.nexo.local
+Traefik:          http://traefik.nexo.local
+```
+
+### Aplicações por Ambiente
+
+```
+# Develop
+Frontend:         http://develop.nexo.local
+API:              http://develop.api.nexo.local
+Auth:             http://develop.auth.nexo.local
+
+# QA
+Frontend:         http://qa.nexo.local
+API:              http://qa.api.nexo.local
+Auth:             http://qa.auth.nexo.local
+
+# Setup completo
+make setup
+
+# Status do cluster
+make status
+
 # Ver todas as URLs
 make urls
 
 # Abrir dashboards
-make dashboard   # ArgoCD
-make grafana     # Grafana
-make kibana      # Kibana
-make prometheus  # Prometheus
+make dashboard        # ArgoCD
+make grafana          # Grafana
+make kibana           # Kibana
+make prometheus       # Prometheus
 
-# Status do cluster
-make status
-```
+# Gerenciamento
+make start            # Iniciar cluster
+make stop             # Parar cluster
+make restart          # Reiniciar cluster
 
-### Gestão
+# Troubleshooting
+make troubleshoot     # Diagnóstico completo
+make top              # Ver uso de recursos
 
-```bash
-make start       # Iniciar cluster
-make stop        # Parar cluster
-make restart     # Reiniciar cluster
-make clean       # Limpar tudo
-```
+# Limpeza
+make clean            # Limpar tudo
+make backup           # Backup completo
 
-## 📖 Leitura Recomendada
+# Ver logs
+make logs SERVICE=nexo-be NAMESPACE=nexo-local
 
-### Iniciantes
+# Interface visual
+k9s
+# Limpar tudo
+make clean
 
-1. [01 - Instalação](./01-installation.md)
-2. [02 - Kubernetes](./02-kubernetes.md)
-3. [08 - Cheat Sheet](./08-cheatsheet.md)
-4. [07 - Troubleshooting](./07-troubleshooting.md)
+# Backup completo
+make backup
 
-### Intermediário
-
-1. [03 - ArgoCD](./03-argocd.md)
-2. [06 - Aplicações](./06-applications.md)
-3. [04 - Observabilidade](./04-observability.md)
-
-### Avançado
-
-1. [05 - Logging](./05-logging.md)
-2. [04 - Observabilidade](./04-observability.md) (alertas e recording rules)
-3. [03 - ArgoCD](./03-argocd.md) (hooks e multi-cluster)
-
-## 🎯 Casos de Uso
-
-### Desenvolvimento Local
-
-```bash
-# Iniciar ambiente
-make start
-
-# Ver apps rodando
-kubectl get pods -n nexo-local
+# Restaurar backup
+make restore
 
 # Ver logs
 make logs SERVICE=nexo-be
 
-# Port-forward para debug
+# Port-forward de serviços
 make port-forward SERVICE=nexo-be PORT=3000
 ```
 
-### Testes de Deploy
+## 📦 Estrutura
 
-```bash
-# Build nova versão
-docker build -t registry.nexo.local:5000/nexo-be:v1.2.3 apps/nexo-be
-docker push registry.nexo.local:5000/nexo-be:v1.2.3
-
-# Atualizar Helm values
-vim local/helm/nexo-be/values-local.yaml
-
-# Git commit e push
-git add . && git commit -m "release: v1.2.3" && git push
-
-# ArgoCD sync automaticamente
-argocd app sync nexo-be-local
+```
+local/
+├── README.md                 # Este arquivo
+├── Makefile                  # Comandos facilitados
+├── config/                   # Configurações do cluster
+│   ├── k3d-config.yaml      # Configuração k3d
+│   └── storage-class.yaml   # StorageClass para SSD externo
+├── scripts/                  # Scripts de instalação e gestão
+│   ├── 00-install-deps.sh
+│   ├── 01-create-cluster.sh
+│   ├── 02-install-argocd.sh
+│   ├── 03-install-observability.sh
+│   ├── 04-install-elasticsearch.sh
+│   ├── 05-deploy-apps.sh
+│   └── 99-show-urls.sh
+├── argocd/                   # Configurações ArgoCD local
+│   ├── apps/                 # Applications
+│   └── projects/             # Projects
+├── observability/            # Stack Prometheus + Grafana
+│   ├── prometheus/
+│   ├── grafana/
+│   └── alertmanager/
+├── logging/                  # Stack Elasticsearch
+│   ├── elasticsearch/
+│   ├── kibana/
+│   └── filebeat/
+├── helm/                     # Helm values local
+│   ├── nexo-be/
+│   ├── nexo-fe/
+│   └── nexo-auth/
+└── docs/                     # Documentação detalhada
 ```
 
-### Aprendizado DevOps
+## 🔥 Features
 
-```bash
-# Explorar cluster com k9s
-k9s
-
-# Ver métricas no Grafana
-make grafana
-
-# Analisar logs no Kibana
-make kibana
-
-# Experimentar queries no Prometheus
-make prometheus
-```
-
-### Troubleshooting
-
-```bash
-# Diagnóstico completo
-./scripts/troubleshoot.sh
-
-# Ver pods com problemas
-kubectl get pods -A --field-selector=status.phase!=Running
-
-# Ver eventos recentes
-kubectl get events -A --sort-by='.lastTimestamp' | tail -n 20
-
-# Restart serviço
-kubectl rollout restart deployment nexo-be -n nexo-local
-```
+✅ Cluster Kubernetes multi-node local  
+✅ GitOps com ArgoCD  
+✅ Métricas com Prometheus  
+✅ Dashboards com Grafana  
+✅ Alertas com AlertManager  
+✅ Logs centralizados com Elasticsearch  
+✅ Visualização de logs com Kibana  
+✅ Container Registry local (Harbor)  
+✅ Ingress com TLS (self-signed)  
+✅ Persistent Volumes em SSD externo  
+✅ Network Policies  
+✅ Resource Limits otimizados  
+✅ Auto-scaling (HPA)  
+✅ Service Mesh (opcional)
 
 ## 💡 Dicas
 
-### Performance
+- Use `k9s` para gerenciar o cluster visualmente
+- Configure aliases no shell para comandos kubectl
+- Monitore recursos com `kubectl top nodes/pods`
+- Use port-forward para debug de serviços
+- Backup regular com `make backup`
 
-- Alocar pelo menos 6GB de RAM para Docker Desktop
-- Usar SSD externo para volumes persistentes
-- Limpar imagens Docker antigas: `docker system prune -a`
-- Monitorar recursos: `kubectl top nodes`
+## 🐛 Troubleshooting
 
-### Produtividade
+Se algo não funcionar:
 
-- Instalar k9s para interface visual
-- Configurar aliases (ver [Cheat Sheet](./08-cheatsheet.md))
-- Usar kubectx/kubens para trocar contextos rapidamente
-- Salvar queries úteis do Prometheus e Kibana
+```bash
+# Ver logs do cluster
+./scripts/troubleshoot.sh
 
-### Segurança (para produção)
+# Ver status de todos pods
+kubectl get pods -A
 
-- Nunca commitar secrets no Git
-- Usar Sealed Secrets ou External Secrets Operator
-- Habilitar Network Policies
-- Configurar Resource Quotas
-- Scan de imagens com Trivy
+# Ver eventos
+kubectl get events -A --sort-by='.lastTimestamp'
 
-## 🔗 Recursos Externos
+# Reiniciar um namespace
+kubectl delete pods --all -n nexo-local
+```
 
-### Documentação Oficial
+## 📚 Recursos
 
-- [Kubernetes](https://kubernetes.io/docs/)
-- [k3d](https://k3d.io/)
-- [ArgoCD](https://argo-cd.readthedocs.io/)
-- [Prometheus](https://prometheus.io/docs/)
-- [Grafana](https://grafana.com/docs/)
-- [Elasticsearch](https://www.elastic.co/guide/)
-
-### Tutoriais Recomendados
-
-- [Kubernetes the Hard Way](https://github.com/kelseyhightower/kubernetes-the-hard-way)
-- [ArgoCD Tutorial](https://argo-cd.readthedocs.io/en/stable/getting_started/)
-- [Prometheus Best Practices](https://prometheus.io/docs/practices/naming/)
-
-### Comunidade
-
-- [Kubernetes Slack](https://slack.k8s.io/)
-- [CNCF Slack](https://slack.cncf.io/)
-- [ArgoCD Community](https://argoproj.github.io/community/)
-
-## 🆘 Precisa de Ajuda?
-
-1. Verifique o [Troubleshooting Guide](./07-troubleshooting.md)
-2. Execute `./scripts/troubleshoot.sh` para diagnóstico
-3. Consulte o [Cheat Sheet](./08-cheatsheet.md) para comandos
-4. Pesquise nos logs: `kubectl logs` ou Kibana
-
-## 📝 Contribuindo
-
-Este CloudLab é parte do projeto Nexo e pode ser melhorado:
-
-- Adicionar novos componentes (Service Mesh, Vault, etc)
-- Melhorar automação dos scripts
-- Adicionar mais dashboards
-- Documentar novos casos de uso
-
-## 📜 Licença
-
-Este projeto faz parte do ecossistema Nexo.
+- [k3d Documentation](https://k3d.io/)
+- [ArgoCD Documentation](https://argo-cd.readthedocs.io/)
+- [Prometheus Operator](https://prometheus-operator.dev/)
+- [Elastic Stack](https://www.elastic.co/guide/)
 
 ---
 
-**Bom aprendizado e desenvolvimento! 🚀**
+**Ambiente preparado para DevOps Ninja! 🥷**

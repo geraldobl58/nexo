@@ -120,15 +120,14 @@ EOF
 helm upgrade --install harbor harbor/harbor \
   --namespace $NAMESPACE \
   --values /tmp/harbor-values.yaml \
-  --wait \
-  --timeout 10m
+  --timeout 15m
 
 # Aguardar pods ficarem prontos
-echo -e "${YELLOW}⏳ Aguardando Harbor ficar pronto...${NC}"
+echo -e "${YELLOW}⏳ Aguardando Harbor ficar pronto (pode levar vários minutos)...${NC}"
 kubectl wait --for=condition=ready pod \
   --selector=app=harbor \
   --namespace=$NAMESPACE \
-  --timeout=600s 2>/dev/null || echo "Alguns pods ainda estão inicializando..."
+  --timeout=900s 2>/dev/null || echo "⚠️  Alguns pods do Harbor ainda estão inicializando..."
 
 # Configurar Harbor como registry adicional do k3d
 echo -e "${YELLOW}🔧 Configurando Harbor no cluster...${NC}"

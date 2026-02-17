@@ -15,9 +15,6 @@ ports:
   - port: 443:443
     nodeFilters:
       - loadbalancer
-  - port: 8080:8080
-    nodeFilters:
-      - loadbalancer
 
 # Volumes persistentes no SSD externo
 volumes:
@@ -49,7 +46,6 @@ options:
     updateDefaultKubeconfig: true
     switchCurrentContext: true
   runtime:
-    gpuRequest: false
     labels:
       - label: environment=local
         nodeFilters:

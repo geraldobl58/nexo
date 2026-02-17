@@ -36,14 +36,14 @@ helm upgrade --install argocd argo/argo-cd \
   --set controller.metrics.enabled=true \
   --set server.metrics.enabled=true \
   --set repoServer.metrics.enabled=true \
-  --wait
+  --timeout 10m
 
 # Aguardar pods ficarem prontos
 echo -e "${YELLOW}⏳ Aguardando ArgoCD ficar pronto...${NC}"
 kubectl wait --for=condition=ready pod \
   --selector=app.kubernetes.io/name=argocd-server \
   --namespace=argocd \
-  --timeout=300s
+  --timeout=600s || echo "⚠️  ArgoCD ainda inicializando..."
 
 # Criar Ingress
 echo -e "${YELLOW}🌐 Configurando Ingress...${NC}"

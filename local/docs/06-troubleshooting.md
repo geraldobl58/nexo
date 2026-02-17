@@ -572,6 +572,95 @@ kubectl logs -n logging elasticsearch-master-0
 kubectl logs -n ingress-nginx -l app.kubernetes.io/component=controller
 ```
 
+## 🗑️ Quando Reinstalar do Zero
+
+Às vezes, a solução mais rápida é destruir tudo e reinstalar. Use o comando **destroy** quando:
+
+- Muitas coisas quebradas ao mesmo tempo
+- Configurações corrompidas
+- Problemas persistentes sem causa clara
+- Quer começar limpo após testes
+
+### Opções de Limpeza
+
+#### 1. Delete (apenas cluster)
+
+Remove apenas o cluster, mantém volumes:
+
+```bash
+make delete
+# ou
+k3d cluster delete nexo-local
+```
+
+**Use quando:** Quer recriar o cluster mas manter dados (Prometheus, ES, etc)
+
+#### 2. Clean (cluster + volumes)
+
+Remove cluster e limpa volumes do SSD:
+
+```bash
+make clean
+```
+
+**Use quando:** Quer limpar dados mas manter /etc/hosts
+
+#### 3. Destroy (TUDO)
+
+Remove TUDO de forma interativa com confirmação:
+
+```bash
+make destroy
+# ou
+cd local && ./destroy.sh
+```
+
+**Remove:**
+
+- ✅ Todos os Helm releases (ArgoCD, Prometheus, ES, etc)
+- ✅ Todos os namespaces
+- ✅ Cluster k3d completo
+- ✅ Volumes persistentes (com confirmação)
+- ✅ Entradas no /etc/hosts (com confirmação)
+
+**Use quando:**
+
+- Problemas graves sem solução clara
+- Quer começar 100% do zero
+- Vai recriar o ambiente completo
+
+### Processo Completo de Reinstalação
+
+```bash
+# 1. Destroy completo
+cd local
+make destroy
+# Confirme as opções interativas (volumes e /etc/hosts)
+
+# 2. Reinstalar
+make setup
+
+# 3. Verificar
+make status
+make urls
+```
+
+### Backup Antes de Destroy
+
+**SEMPRE faça backup antes de destruir:**
+
+```bash
+# Backup completo
+make backup
+
+# Backup manual de recursos importantes
+kubectl get all -A -o yaml > backup-all-resources.yaml
+kubectl get configmaps -A -o yaml > backup-configmaps.yaml
+kubectl get secrets -A -o yaml > backup-secrets.yaml
+```
+
+Os backups ficam em: `/Volumes/Backup/nexo-cloudlab/backups/`
+
 ## Quando Pedir Ajuda
 
 Se nada funcionar, colete informações e peça ajuda:

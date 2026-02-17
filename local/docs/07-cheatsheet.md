@@ -248,6 +248,7 @@ sum(rate(http_requests_total[5m]))
 histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
 ```
 
+<!-- Elasticsearch foi removido (muito pesado para dev local)
 ## 🔍 Elasticsearch
 
 ```bash
@@ -272,6 +273,7 @@ curl -X GET "localhost:9200/filebeat-*/_count?pretty"
 # Deletar índice
 curl -X DELETE "localhost:9200/filebeat-2026.02.01?pretty"
 ```
+-->
 
 ## 🎛️ Helm
 
@@ -513,7 +515,7 @@ make install-deps
 make create-cluster
 make install-argocd
 make install-observability
-make install-logging
+# make install-logging  # Removido (Elasticsearch muito pesado)
 
 # Gestão
 make start
@@ -534,7 +536,7 @@ make port-forward SERVICE=nexo-be PORT=3000
 # Dashboards
 make dashboard     # ArgoCD
 make grafana       # Grafana
-make kibana        # Kibana
+# make kibana      # Kibana (Removido)
 make prometheus    # Prometheus
 
 # Troubleshoot

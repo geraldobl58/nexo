@@ -54,15 +54,14 @@ helm upgrade --install elasticsearch elastic/elasticsearch \
   --namespace $NAMESPACE \
   --create-namespace \
   --values /tmp/elasticsearch-values.yaml \
-  --wait \
-  --timeout 10m
+  --timeout 15m
 
 # Aguardar Elasticsearch ficar pronto
-echo -e "${YELLOW}⏳ Aguardando Elasticsearch ficar pronto...${NC}"
+echo -e "${YELLOW}⏳ Aguardando Elasticsearch ficar pronto (pode levar vários minutos)...${NC}"
 kubectl wait --for=condition=ready pod \
   --selector=app=elasticsearch-master \
   --namespace=$NAMESPACE \
-  --timeout=600s
+  --timeout=900s || echo "⚠️  Elasticsearch ainda inicializando..."
 
 # Instalar Kibana
 echo -e "${YELLOW}📦 Instalando Kibana...${NC}"
@@ -89,20 +88,31 @@ kibanaConfig:
   kibana.yml: |
     server.host: "0.0.0.0"
     elasticsearch.hosts: [ "http://elasticsearch-master:9200" ]
+
+# Resources para não sobrecarregar
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
 EOF
 
 helm upgrade --install kibana elastic/kibana \
   --namespace $NAMESPACE \
   --values /tmp/kibana-values.yaml \
-  --wait \
-  --timeout 10m
+  --timeout 20m \
+  --wait=false
 
 # Aguardar Kibana ficar pronto
-echo -e "${YELLOW}⏳ Aguardando Kibana ficar pronto...${NC}"
+echo -e "${YELLOW}⏳ Aguardando Kibana ficar pronto (pode levar vários minutos)...${NC}"
+sleep 30
+
 kubectl wait --for=condition=ready pod \
   --selector=app=kibana \
   --namespace=$NAMESPACE \
-  --timeout=300s
+  --timeout=900s 2>/dev/null || echo "⚠️  Kibana ainda inicializando..."
 
 # Instalar Filebeat para coletar logs
 echo -e "${YELLOW}📦 Instalando Filebeat...${NC}"
@@ -158,7 +168,7 @@ EOF
 helm upgrade --install filebeat elastic/filebeat \
   --namespace $NAMESPACE \
   --values /tmp/filebeat-values.yaml \
-  --wait
+  --timeout 10m
 
 # Criar índices no Kibana
 echo -e "${YELLOW}🔧 Configurando índices no Kibana...${NC}"

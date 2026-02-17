@@ -173,20 +173,21 @@ helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheu
   --namespace $NAMESPACE \
   --create-namespace \
   --values /tmp/prometheus-values.yaml \
-  --wait \
-  --timeout 10m
+  --timeout 15m
 
-# Aguardar pods ficarem prontos
-echo -e "${YELLOW}⏳ Aguardando pods ficarem prontos...${NC}"
+# Aguardar pods ficarem prontos (sem --wait no helm para melhor controle)
+echo -e "${YELLOW}⏳ Aguardando pods ficarem prontos (isso pode levar alguns minutos)...${NC}"
 kubectl wait --for=condition=ready pod \
   --selector=app.kubernetes.io/name=grafana \
   --namespace=$NAMESPACE \
-  --timeout=300s
+  --timeout=600s || echo "⚠️  Grafana ainda inicializando..."
 
 kubectl wait --for=condition=ready pod \
   --selector=app.kubernetes.io/name=prometheus \
   --namespace=$NAMESPACE \
-  --timeout=300s
+  --timeout=600s || echo "⚠️  Prometheus ainda inicializando..."
+
+echo -e "${GREEN}✅ Stack de observabilidade instalada (pods podem ainda estar inicializando)${NC}"
 
 # Criar ServiceMonitor para ArgoCD
 echo -e "${YELLOW}📊 Configurando ServiceMonitor para ArgoCD...${NC}"

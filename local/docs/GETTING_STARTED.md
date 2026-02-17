@@ -33,10 +33,11 @@ A infraestrutura completa de CloudLab foi configurada. Aqui está um resumo do q
 │   │   ├── 01-create-cluster.sh     ✅ Criar cluster + auto /etc/hosts
 │   │   ├── 02-install-argocd.sh     ✅ ArgoCD + Ingress
 │   │   ├── 03-install-observability.sh ✅ Prometheus + Grafana
-│   │   ├── 04-install-elasticsearch.sh ✅ ELK Stack
+│   │   ├── 04-install-elasticsearch.sh ❌ ELK Stack (REMOVIDO - muito pesado)
 │   │   ├── 05-deploy-apps.sh        ✅ Deploy aplicações
-│   │   ├── 06-install-harbor.sh     ✅ Harbor Registry
-│   │   ├── 99-show-urls.sh          ✅ Mostrar todas URLs
+│   │   ├── 06-install-harbor.sh     ❌ Harbor Registry (REMOVIDO - usa ghcr.io)
+│   ├── configure-hosts.sh       ✅ Configurar hosts (sem duplicar)
+   │   ├── update-hosts.sh          ✅ Atualizar hosts (recriar todos)│   │   ├── 99-show-urls.sh          ✅ Mostrar todas URLs
 │   │   └── troubleshoot.sh          ✅ Diagnóstico automático
 │   │
 │   ├── helm/
@@ -50,7 +51,7 @@ A infraestrutura completa de CloudLab foi configurada. Aqui está um resumo do q
 │       ├── 02-kubernetes.md         ✅ Gerenciamento do cluster
 │       ├── 03-argocd.md             ✅ GitOps workflows
 │       ├── 04-observability.md      ✅ Prometheus + Grafana
-│       ├── 05-logging.md            ✅ Elasticsearch + Kibana
+│       ├── 05-logging.md            ❌ Elasticsearch + Kibana (REMOVIDO)
 │       ├── 06-applications.md       ✅ Deploy e gestão de apps
 │       ├── 07-troubleshooting.md    ✅ Problemas comuns
 │       ├── 08-cheatsheet.md         ✅ Comandos úteis
@@ -88,15 +89,15 @@ make setup
 ./scripts/01-create-cluster.sh
 ./scripts/02-install-argocd.sh
 ./scripts/03-install-observability.sh
-./scripts/04-install-elasticsearch.sh
-./scripts/06-install-harbor.sh
+# ./scripts/04-install-elasticsearch.sh  # REMOVIDO - muito pesado
+# ./scripts/06-install-harbor.sh         # REMOVIDO - usa ghcr.io
 ./scripts/05-deploy-apps.sh
 
 # Ver todas as URLs de acesso
 make urls
 ```
 
-**Tempo estimado:** 15-20 minutos
+**Tempo estimado:** 10-15 minutos
 
 ---
 
@@ -109,23 +110,20 @@ Acesse: `Settings > Secrets and variables > Actions`
 **Secrets obrigatórios:**
 
 ```bash
-HARBOR_USERNAME=admin
-HARBOR_PASSWORD=Harbor12345
 ARGOCD_AUTH_TOKEN=<obter do ArgoCD>
-GITHUB_TOKEN=<seu_token_github_aqui>
+DISCORD_WEBHOOK=<webhook do Discord para notificações>
 ```
 
-**Como obter os tokens:**
+> ℹ️ **NOTA:** O `GITHUB_TOKEN` é **automaticamente fornecido** pelo GitHub Actions.
+> Você **NÃO precisa criar este secret manualmente**.
+> GitHub não permite criar secrets com o nome `GITHUB_TOKEN` - ele é reservado.
+
+**Como obter o token do ArgoCD:**
 
 ```bash
 # Token do ArgoCD:
 argocd login argocd.nexo.local --insecure --username admin
 argocd account generate-token --account github-actions
-
-# Token do GitHub:
-# Acesse: https://github.com/settings/tokens/new
-# Permissões: repo, write:packages, workflow
-# Copie o token gerado (ghp_...)
 ```
 
 📖 **Documentação completa:** [.github/SECRETS.md](./.github/SECRETS.md)

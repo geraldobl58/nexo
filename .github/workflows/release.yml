@@ -125,14 +125,17 @@ jobs:
     if: always()
 
     steps:
-      - name: Slack Notification
-        uses: 8398a7/action-slack@v3
+      - name: Discord Notification
+        uses: sarisia/actions-status-discord@v1
         if: always()
         with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
           status: ${{ job.status }}
-          text: |
-            Release ${{ needs.create-release.outputs.version }} deployment
-            Status: ${{ job.status }}
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+          title: "Release ${{ needs.create-release.outputs.version }}"
+          description: |
+            🚀 **Deployment Status:** ${{ job.status }}
+            📦 **Version:** ${{ needs.create-release.outputs.version }}
+            🔗 **Commit:** [${{ github.sha }}](${{ github.event.head_commit.url }})
+          color: 0x00ff00
+          username: GitHub Actions
+          avatar_url: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png

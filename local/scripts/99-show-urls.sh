@@ -32,17 +32,18 @@ echo -e "  ${BLUE}AlertManager (Alertas):${NC}"
 echo "    URL: http://alertmanager.nexo.local"
 echo ""
 
-echo -e "  ${BLUE}Kibana (Logs):${NC}"
-echo "    URL: http://kibana.nexo.local"
-echo ""
+# Kibana e Harbor foram removidos (muito pesados para dev local)
+# echo -e "  ${BLUE}Kibana (Logs):${NC}"
+# echo "    URL: http://kibana.nexo.local"
+# echo ""
 
-if kubectl get namespace harbor 2>/dev/null | grep -q harbor; then
-echo -e "  ${BLUE}Harbor (Container Registry):${NC}"
-echo "    URL: http://harbor.nexo.local"
-echo "    User: admin"
-echo "    Pass: Harbor12345"
-echo ""
-fi
+# if kubectl get namespace harbor 2>/dev/null | grep -q harbor; then
+# echo -e "  ${BLUE}Harbor (Container Registry):${NC}"
+# echo "    URL: http://harbor.nexo.local"
+# echo "    User: admin"
+# echo "    Pass: Harbor12345"
+# echo ""
+# fi
 
 echo -e "${GREEN}🌐 Aplicações por Ambiente:${NC}"
 echo ""
@@ -83,8 +84,9 @@ kubectl get pods -n argocd --no-headers 2>/dev/null | wc -l | xargs echo "  Pods
 echo "Namespace: monitoring"
 kubectl get pods -n monitoring --no-headers 2>/dev/null | wc -l | xargs echo "  Pods:"
 
-echo "Namespace: logging"
-kubectl get pods -n logging --no-headers 2>/dev/null | wc -l | xargs echo "  Pods:"
+# Namespace logging removido (Elasticsearch muito pesado)
+# echo "Namespace: logging"
+# kubectl get pods -n logging --no-headers 2>/dev/null | wc -l | xargs echo "  Pods:"
 
 echo "Namespace: nexo-local"
 kubectl get pods -n nexo-local --no-headers 2>/dev/null | wc -l | xargs echo "  Pods:"

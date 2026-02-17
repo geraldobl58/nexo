@@ -582,9 +582,9 @@ jobs:
 
 ## Próximos Passos
 
-- [07 - Troubleshooting](./07-troubleshooting.md)
-- [08 - Cheat Sheet](./08-cheatsheet.md)
+- [06 - Troubleshooting](./06-troubleshooting.md)
+- [07 - Cheat Sheet](./07-cheatsheet.md)
 
 ---
 
-**Anterior**: [05 - Logging](./05-logging.md) | **Próximo**: [07 - Troubleshooting](./07-troubleshooting.md)
+**Anterior**: [03 - Observabilidade](./03-observability.md) | **Próximo**: [06 - Troubleshooting](./06-troubleshooting.md)

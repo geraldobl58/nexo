@@ -40,22 +40,31 @@ argocd login argocd.nexo.local --insecure --username admin
 argocd account generate-token --account github-actions
 ```
 
-### GitHub (Para push de commits)
+### GitHub Token (Automático)
+
+> ℹ️ **NOTA IMPORTANTE:** O GitHub Actions **já fornece automaticamente** o secret `GITHUB_TOKEN` para todos os workflows. **Você NÃO precisa criar este secret manualmente.**
+
+O `GITHUB_TOKEN` é usado nos workflows para:
+
+- Login no container registry (Harbor/GHCR)
+- Criar releases
+- Comentar em Pull Requests
+- Etc.
+
+**GitHub reserva o nome `GITHUB_TOKEN` - você NÃO PODE criar um secret com este nome.**
+
+Se você precisar de um Personal Access Token com permissões extras (ex: para acessar outros repositórios), crie um secret com **outro nome**, como `GH_PAT`:
 
 ```
-Name: GITHUB_TOKEN
+Name: GH_PAT (ou outro nome diferente de GITHUB_TOKEN)
 Value: ghp_YOUR_PERSONAL_ACCESS_TOKEN_HERE
 ```
 
-> **⚠️ IMPORTANTE:** Gere um novo token em:
-> https://github.com/settings/tokens/new
->
-> Permissões necessárias:
-> - `repo` (full control)
-> - `write:packages`
-> - `workflow` (se usar GitHub Actions)
->
-> **NÃO commite o token real no Git!**
+Para gerar um Personal Access Token:
+
+1. Acesse: https://github.com/settings/tokens/new
+2. Escolha as permissões necessárias
+3. **NÃO commite o token no Git!**
 
 ---
 
@@ -123,12 +132,20 @@ Name: AWS_REGION
 Value: us-east-1
 ```
 
-### Slack (Notificações)
+### Discord (Notificações)
 
 ```
-Name: SLACK_WEBHOOK
-Value: https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+Name: DISCORD_WEBHOOK
+Value: https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN
 ```
+
+**Como obter o webhook do Discord:**
+
+1. Acesse as configurações do seu servidor Discord
+2. Vá em "Integrações" → "Webhooks"
+3. Clique em "Novo Webhook" ou edite um existente
+4. Copie a URL do webhook
+5. Cole como valor do secret `DISCORD_WEBHOOK`
 
 ### Sentry (Error Monitoring)
 

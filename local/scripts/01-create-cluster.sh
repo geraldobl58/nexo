@@ -74,52 +74,20 @@ kubectl wait --namespace ingress-nginx \
 
 # Configurar /etc/hosts
 echo -e "${YELLOW}🔧 Configurando DNS local...${NC}"
-HOSTS_ENTRIES="
-# Nexo CloudLab - Ferramentas
-127.0.0.1 argocd.nexo.local
-127.0.0.1 grafana.nexo.local
-127.0.0.1 prometheus.nexo.local
-127.0.0.1 alertmanager.nexo.local
-127.0.0.1 kibana.nexo.local
-127.0.0.1 harbor.nexo.local
-127.0.0.1 traefik.nexo.local
-
-# Nexo CloudLab - Aplicações Develop
-127.0.0.1 develop.nexo.local
-127.0.0.1 develop.api.nexo.local
-127.0.0.1 develop.auth.nexo.local
-
-# Nexo CloudLab - Aplicações QA
-127.0.0.1 qa.nexo.local
-127.0.0.1 qa.api.nexo.local
-127.0.0.1 qa.auth.nexo.local
-
-# Nexo CloudLab - Aplicações Staging
-127.0.0.1 staging.nexo.local
-127.0.0.1 staging.api.nexo.local
-127.0.0.1 staging.auth.nexo.local
-
-# Nexo CloudLab - Aplicações Prod (Local)
-127.0.0.1 prod.nexo.local
-127.0.0.1 prod.api.nexo.local
-127.0.0.1 prod.auth.nexo.local
-"
-
 echo -e "${BLUE}Adicionando entradas ao /etc/hosts...${NC}"
 echo -e "${YELLOW}(Requer sudo)${NC}"
 echo ""
 
-# Fazer backup do hosts
-sudo cp /etc/hosts /etc/hosts.backup-$(date +%Y%m%d-%H%M%S)
+# Chamar script de configuração de hosts
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+chmod +x "$SCRIPT_DIR/configure-hosts.sh"
+"$SCRIPT_DIR/configure-hosts.sh" true  # true = modo silencioso
 
-# Remover entradas antigas do Nexo CloudLab se existirem
-sudo sed -i '' '/# Nexo CloudLab/d' /etc/hosts 2>/dev/null || true
-sudo sed -i '' '/nexo.local/d' /etc/hosts 2>/dev/null || true
-
-# Adicionar novas entradas
-echo "$HOSTS_ENTRIES" | sudo tee -a /etc/hosts > /dev/null
-echo -e "${GREEN}✅ Entradas adicionadas ao /etc/hosts${NC}"
-echo -e "${BLUE}ℹ️  Backup salvo em /etc/hosts.backup-*${NC}"
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✅ DNS local configurado${NC}"
+else
+    echo -e "${YELLOW}⚠️  Erro ao configurar DNS. Execute manualmente: make update-hosts${NC}"
+fi
 
 # Verificar tudo
 echo ""

@@ -24,7 +24,7 @@ install: ## Instala todas as dependências e cria o cluster completo
 	@./scripts/01-create-cluster.sh
 	@./scripts/02-install-argocd.sh
 	@./scripts/03-install-observability.sh
-	@./scripts/04-install-elasticsearch.sh
+	# @./scripts/04-install-elasticsearch.sh  # DESABILITADO - muito pesado
 	@echo "$(GREEN)✅ CloudLab instalado com sucesso!$(RESET)"
 	@make urls
 
@@ -36,9 +36,13 @@ create-cluster: ## Cria apenas o cluster Kubernetes
 	@chmod +x scripts/01-create-cluster.sh
 	@./scripts/01-create-cluster.sh
 
-update-hosts: ## Atualiza o /etc/hosts com os domínios do CloudLab
+update-hosts: ## Atualiza o /etc/hosts com os domínios do CloudLab (recria tudo)
 	@chmod +x scripts/update-hosts.sh
 	@./scripts/update-hosts.sh
+
+configure-hosts: ## Adiciona apenas hosts faltando ao /etc/hosts (sem duplicar)
+	@chmod +x scripts/configure-hosts.sh
+	@./scripts/configure-hosts.sh
 
 install-argocd: ## Instala apenas o ArgoCD
 	@chmod +x scripts/02-install-argocd.sh
@@ -48,9 +52,9 @@ install-observability: ## Instala apenas a stack de observabilidade
 	@chmod +x scripts/03-install-observability.sh
 	@./scripts/03-install-observability.sh
 
-install-logging: ## Instala apenas o Elasticsearch/Kibana
-	@chmod +x scripts/04-install-elasticsearch.sh
-	@./scripts/04-install-elasticsearch.sh
+# install-logging: ## Instala apenas o Elasticsearch/Kibana (DESABILITADO - muito pesado)
+# 	@chmod +x scripts/04-install-elasticsearch.sh
+# 	@./scripts/04-install-elasticsearch.sh
 
 deploy-apps: ## Deploy das aplicações via ArgoCD
 	@chmod +x scripts/05-deploy-apps.sh
@@ -68,18 +72,24 @@ stop: ## Para o cluster (mas mantém dados)
 
 restart: stop start ## Reinicia o cluster
 
-delete: ## Deleta o cluster completamente (CUIDADO!)
+destroy: ## Destroi TUDO (interactive): releases, namespaces, cluster, volumes, hosts
+	@echo "$(RED)🗑️  Destroy completo do CloudLab...$(RESET)"
+	@chmod +x destroy.sh
+	@./destroy.sh
+
+delete: ## Deleta apenas o cluster k3d (mantém volumes)
 	@echo "$(YELLOW)⚠️  Deletando cluster...$(RESET)"
 	@k3d cluster delete nexo-local
 	@echo "$(YELLOW)✅ Cluster deletado$(RESET)"
 
-clean: delete ## Remove cluster e limpa dados do SSD
+clean: delete ## Remove cluster e limpa dados do SSD (sem confirmação)
 	@echo "$(YELLOW)🧹 Limpando dados...$(RESET)"
-	@rm -rf /Volumes/Backup/nexo-cloudlab/data/*
-	@rm -rf /Volumes/Backup/nexo-cloudlab/postgres/*
-	@rm -rf /Volumes/Backup/nexo-cloudlab/prometheus/*
-	@rm -rf /Volumes/Backup/nexo-cloudlab/grafana/*
-	@rm -rf /Volumes/Backup/nexo-cloudlab/elasticsearch/*
+	@sudo rm -rf /Volumes/Backup/nexo-cloudlab/data/* 2>/dev/null || true
+	@sudo rm -rf /Volumes/Backup/nexo-cloudlab/postgres/* 2>/dev/null || true
+	@sudo rm -rf /Volumes/Backup/nexo-cloudlab/prometheus/* 2>/dev/null || true
+	@sudo rm -rf /Volumes/Backup/nexo-cloudlab/grafana/* 2>/dev/null || true
+	# @sudo rm -rf /Volumes/Backup/nexo-cloudlab/elasticsearch/* 2>/dev/null || true  # Removido
+	# @sudo rm -rf /Volumes/Backup/nexo-cloudlab/harbor/* 2>/dev/null || true  # Removido
 	@echo "$(GREEN)✅ Limpeza concluída$(RESET)"
 
 status: ## Mostra status do cluster
@@ -145,8 +155,8 @@ dashboard: ## Abre o dashboard do ArgoCD
 grafana: ## Abre o Grafana
 	@open http://grafana.local.nexo.dev
 
-kibana: ## Abre o Kibana
-	@open http://kibana.local.nexo.dev
+# kibana: ## Abre o Kibana (REMOVIDO)
+# 	@open http://kibana.local.nexo.dev
 
 prometheus: ## Abre o Prometheus
 	@open http://prometheus.local.nexo.dev

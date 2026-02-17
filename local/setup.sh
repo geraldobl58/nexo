@@ -30,12 +30,11 @@ NC='\033[0m'
 echo ""
 echo -e "${BLUE}🎯 Etapas do Setup:${NC}"
 echo "1. Instalar dependências (brew, k3d, kubectl, helm, k9s...)"
-echo "2. Criar cluster Kubernetes local (1 server + 2 workers)"
+echo "2. Criar cluster Kubernetes local (1 server + 6 agents)"
 echo "3. Instalar ArgoCD para GitOps"
 echo "4. Instalar stack de observabilidade (Prometheus + Grafana)"
-echo "5. Instalar stack de logging (Elasticsearch + Kibana)"
 echo ""
-echo "Tempo estimado: 15-20 minutos"
+echo "Tempo estimado: 10-15 minutos"
 echo ""
 read -p "Iniciar setup? (y/N): " -n 1 -r
 echo
@@ -49,29 +48,29 @@ echo -e "${GREEN}🚀 Iniciando setup completo...${NC}"
 echo ""
 
 # Step 1
-echo -e "${YELLOW}📦 ETAPA 1/5: Instalando dependências...${NC}"
+echo -e "${YELLOW}📦 ETAPA 1/4: Instalando dependências...${NC}"
 ./scripts/00-install-deps.sh
 echo ""
 
 # Step 2
-echo -e "${YELLOW}🎯 ETAPA 2/5: Criando cluster Kubernetes...${NC}"
+echo -e "${YELLOW}🎯 ETAPA 2/4: Criando cluster Kubernetes...${NC}"
 ./scripts/01-create-cluster.sh
 echo ""
 
 # Step 3
-echo -e "${YELLOW}🔧 ETAPA 3/5: Instalando ArgoCD...${NC}"
+echo -e "${YELLOW}🔧 ETAPA 3/4: Instalando ArgoCD...${NC}"
 ./scripts/02-install-argocd.sh
 echo ""
 
 # Step 4
-echo -e "${YELLOW}📊 ETAPA 4/5: Instalando Observabilidade...${NC}"
+echo -e "${YELLOW}📊 ETAPA 4/4: Instalando Observabilidade...${NC}"
 ./scripts/03-install-observability.sh
 echo ""
 
-# Step 5
-echo -e "${YELLOW}🔍 ETAPA 5/5: Instalando Logging...${NC}"
-./scripts/04-install-elasticsearch.sh
-echo ""
+# Step 5 - Elasticsearch/Kibana (DESABILITADO - muito pesado)
+# echo -e "${YELLOW}🔍 ETAPA 5/5: Instalando Logging...${NC}"
+# ./scripts/04-install-elasticsearch.sh
+# echo ""
 
 # Final
 echo ""

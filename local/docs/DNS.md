@@ -9,10 +9,13 @@ http://argocd.nexo.local
 http://grafana.nexo.local
 http://prometheus.nexo.local
 http://alertmanager.nexo.local
+```
+
+<!-- Removidos (muito pesados para dev local):
 http://kibana.nexo.local
 http://harbor.nexo.local
 http://traefik.nexo.local
-```
+-->
 
 ### 🚀 Develop
 

@@ -60,7 +60,7 @@ Este diretório contém os workflows de CI/CD para o projeto Nexo.
 - 🐳 Build multi-platform (amd64, arm64)
 - 📦 Push para GitHub Container Registry (ghcr.io)
 - 📝 Atualiza Helm values de produção
-- 🔔 Notifica via Slack
+- 🔔 Notifica via Discord
 
 **Como usar:**
 
