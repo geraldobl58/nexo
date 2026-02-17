@@ -1,0 +1,305 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexo-apps-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  nexo-applications.json: |-
+    {
+      "dashboard": {
+        "title": "Nexo CloudLab - Applications Performance",
+        "tags": ["nexo", "applications", "performance"],
+        "timezone": "America/Sao_Paulo",
+        "editable": true,
+        "graphTooltip": 1,
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "10s",
+        "panels": [
+          {
+            "id": 1,
+            "title": "🖥️ Backend - CPU Usage",
+            "type": "graph",
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 0,
+              "y": 0
+            },
+            "targets": [
+              {
+                "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"nexo-.*\", pod=~\"nexo-be-.*\"}[5m])) by (namespace)",
+                "legendFormat": "{{ namespace }}",
+                "refId": "A"
+              }
+            ],
+            "yaxes": [
+              {
+                "format": "short",
+                "label": "CPU Cores"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "title": "🖥️ Backend - Memory Usage",
+            "type": "graph",
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 12,
+              "y": 0
+            },
+            "targets": [
+              {
+                "expr": "sum(container_memory_working_set_bytes{namespace=~\"nexo-.*\", pod=~\"nexo-be-.*\"}) by (namespace) / 1024 / 1024",
+                "legendFormat": "{{ namespace }}",
+                "refId": "A"
+              }
+            ],
+            "yaxes": [
+              {
+                "format": "decmbytes",
+                "label": "Memory"
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "title": "🌐 Frontend - CPU Usage",
+            "type": "graph",
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 0,
+              "y": 8
+            },
+            "targets": [
+              {
+                "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"nexo-.*\", pod=~\"nexo-fe-.*\"}[5m])) by (namespace)",
+                "legendFormat": "{{ namespace }}",
+                "refId": "A"
+              }
+            ],
+            "yaxes": [
+              {
+                "format": "short",
+                "label": "CPU Cores"
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "title": "🌐 Frontend - Memory Usage",
+            "type": "graph",
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 12,
+              "y": 8
+            },
+            "targets": [
+              {
+                "expr": "sum(container_memory_working_set_bytes{namespace=~\"nexo-.*\", pod=~\"nexo-fe-.*\"}) by (namespace) / 1024 / 1024",
+                "legendFormat": "{{ namespace }}",
+                "refId": "A"
+              }
+            ],
+            "yaxes": [
+              {
+                "format": "decmbytes",
+                "label": "Memory"
+              }
+            ]
+          },
+          {
+            "id": 5,
+            "title": "🔐 Auth (Keycloak) - CPU Usage",
+            "type": "graph",
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 0,
+              "y": 16
+            },
+            "targets": [
+              {
+                "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"nexo-.*\", pod=~\"nexo-auth-.*\"}[5m])) by (namespace)",
+                "legendFormat": "{{ namespace }}",
+                "refId": "A"
+              }
+            ],
+            "yaxes": [
+              {
+                "format": "short",
+                "label": "CPU Cores"
+              }
+            ]
+          },
+          {
+            "id": 6,
+            "title": "🔐 Auth (Keycloak) - Memory Usage",
+            "type": "graph",
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 12,
+              "y": 16
+            },
+            "targets": [
+              {
+                "expr": "sum(container_memory_working_set_bytes{namespace=~\"nexo-.*\", pod=~\"nexo-auth-.*\"}) by (namespace) / 1024 / 1024",
+                "legendFormat": "{{ namespace }}",
+                "refId": "A"
+              }
+            ],
+            "yaxes": [
+              {
+                "format": "decmbytes",
+                "label": "Memory"
+              }
+            ]
+          },
+          {
+            "id": 7,
+            "title": "📈 Comparação de Recursos por Aplicação",
+            "type": "bargauge",
+            "gridPos": {
+              "h": 8,
+              "w": 24,
+              "x": 0,
+              "y": 24
+            },
+            "targets": [
+              {
+                "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"nexo-.*\"}[5m])) by (pod)",
+                "legendFormat": "{{ pod }}",
+                "refId": "A"
+              }
+            ],
+            "options": {
+              "orientation": "horizontal",
+              "displayMode": "gradient"
+            }
+          },
+          {
+            "id": 8,
+            "title": "🔄 Comparação de Pods por Ambiente",
+            "type": "piechart",
+            "gridPos": {
+              "h": 8,
+              "w": 8,
+              "x": 0,
+              "y": 32
+            },
+            "targets": [
+              {
+                "expr": "count(kube_pod_info{namespace=~\"nexo-.*\"}) by (namespace)",
+                "legendFormat": "{{ namespace }}",
+                "refId": "A"
+              }
+            ]
+          },
+          {
+            "id": 9,
+            "title": "⚡ CPU Usage - Top 10 Pods",
+            "type": "table",
+            "gridPos": {
+              "h": 8,
+              "w": 8,
+              "x": 8,
+              "y": 32
+            },
+            "targets": [
+              {
+                "expr": "topk(10, sum(rate(container_cpu_usage_seconds_total{namespace=~\"nexo-.*\"}[5m])) by (namespace, pod))",
+                "format": "table",
+                "instant": true,
+                "refId": "A"
+              }
+            ]
+          },
+          {
+            "id": 10,
+            "title": "💾 Memory Usage - Top 10 Pods",
+            "type": "table",
+            "gridPos": {
+              "h": 8,
+              "w": 8,
+              "x": 16,
+              "y": 32
+            },
+            "targets": [
+              {
+                "expr": "topk(10, sum(container_memory_working_set_bytes{namespace=~\"nexo-.*\"}) by (namespace, pod) / 1024 / 1024)",
+                "format": "table",
+                "instant": true,
+                "refId": "A"
+              }
+            ]
+          },
+          {
+            "id": 11,
+            "title": "📊 Réplicas por Deployment",
+            "type": "stat",
+            "gridPos": {
+              "h": 6,
+              "w": 24,
+              "x": 0,
+              "y": 40
+            },
+            "targets": [
+              {
+                "expr": "kube_deployment_status_replicas{namespace=~\"nexo-.*\"}",
+                "legendFormat": "{{ namespace }}/{{ deployment }}",
+                "refId": "A"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": 0
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 1
+                    },
+                    {
+                      "color": "green",
+                      "value": 2
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ],
+        "templating": {
+          "list": [
+            {
+              "name": "namespace",
+              "label": "Namespace",
+              "type": "query",
+              "query": "label_values(kube_pod_info{namespace=~\"nexo-.*\"}, namespace)",
+              "current": {
+                "text": "All",
+                "value": "$__all"
+              },
+              "includeAll": true,
+              "multi": true
+            }
+          ]
+        }
+      }
+    }

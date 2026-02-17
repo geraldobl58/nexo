@@ -1,89 +1,359 @@
 #!/bin/bash
 set -e
 
-cat << "EOF"
- _   _                        ____ _                 _ _          _     
-| \ | | _____  _____         / ___| | ___  _   _  __| | |    __ _| |__  
-|  \| |/ _ \ \/ / _ \ _____ | |   | |/ _ \| | | |/ _` | |   / _` | '_ \ 
-| |\  |  __/>  < (_) |_____|| |___| | (_) | |_| | (_| | |__| (_| | |_) |
-|_| \_|\___/_/\_\___/        \____|_|\___/ \__,_|\__,_|_____\__,_|_.__/ 
-                                                                         
-🚀 Nexo CloudLab - Setup Completo
-==================================
-EOF
+# Nexo CloudLab - Setup Unificado
+# ================================
+# Este script configura todo o ambiente local do CloudLab:
+# 1. Cria cluster k3d (7 nodes)
+# 2. Instala ArgoCD para GitOps
+# 3. Instala Prometheus + Grafana
+# 4. Configura namespaces e aplicações
+# 5. Configura hosts locais
 
-echo ""
-echo "Este script irá configurar todo o CloudLab do zero."
-echo ""
-read -p "Deseja continuar? (y/N): " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "Setup cancelado."
-    exit 0
-fi
-
+RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
+CLUSTER_NAME="nexo-local"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+cat << "EOF"
+╔═══════════════════════════════════════════════════════════╗
+║                                                           ║
+║    _   _                    ____ _                 _ _    ║
+║   | \ | | _____  _____    / ___| | ___  _   _  __| | |   ║
+║   |  \| |/ _ \ \/ / _ \  | |   | |/ _ \| | | |/ _` | |   ║
+║   | |\  |  __/>  < (_) | | |___| | (_) | |_| | (_| | |__ ║
+║   |_| \_|\___/_/\_\___/   \____|_|\___/ \__,_|\__,_|____|║
+║                                                           ║
+║   Kubernetes Local Development Lab                       ║
+║   4 Ambientes: develop → qa → staging → prod             ║
+║                                                           ║
+╚═══════════════════════════════════════════════════════════╝
+EOF
+
 echo ""
-echo -e "${BLUE}🎯 Etapas do Setup:${NC}"
-echo "1. Instalar dependências (brew, k3d, kubectl, helm, k9s...)"
-echo "2. Criar cluster Kubernetes local (1 server + 6 agents)"
-echo "3. Instalar ArgoCD para GitOps"
-echo "4. Instalar stack de observabilidade (Prometheus + Grafana)"
+echo -e "${CYAN}Este script irá configurar:${NC}"
+echo "  • Cluster Kubernetes (k3d) com 7 nodes"
+echo "  • ArgoCD para GitOps automático"
+echo "  • Prometheus + Grafana para observabilidade"
+echo "  • 4 namespaces: develop, qa, staging, prod"
+echo "  • 12 aplicações (3 serviços × 4 ambientes)"
 echo ""
-echo "Tempo estimado: 10-15 minutos"
+echo -e "${YELLOW}Tempo estimado: 10-15 minutos${NC}"
 echo ""
 read -p "Iniciar setup? (y/N): " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "Setup cancelado."
+    echo -e "${RED}Setup cancelado.${NC}"
     exit 0
 fi
 
-echo ""
-echo -e "${GREEN}🚀 Iniciando setup completo...${NC}"
-echo ""
+# Função para log
+log_step() {
+    echo ""
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${YELLOW}$1${NC}"
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+}
 
-# Step 1
-echo -e "${YELLOW}📦 ETAPA 1/4: Instalando dependências...${NC}"
-./scripts/00-install-deps.sh
-echo ""
+log_substep() {
+    echo -e "${CYAN}▸ $1${NC}"
+}
 
-# Step 2
-echo -e "${YELLOW}🎯 ETAPA 2/4: Criando cluster Kubernetes...${NC}"
-./scripts/01-create-cluster.sh
-echo ""
+# ==============================================================================
+# ETAPA 1: Verificar e criar cluster k3d
+# ==============================================================================
+log_step "ETAPA 1/6: Criando Cluster Kubernetes"
 
-# Step 3
-echo -e "${YELLOW}🔧 ETAPA 3/4: Instalando ArgoCD...${NC}"
-./scripts/02-install-argocd.sh
-echo ""
+if k3d cluster list | grep -q "$CLUSTER_NAME"; then
+    echo -e "${YELLOW}⚠️  Cluster '$CLUSTER_NAME' já existe!${NC}"
+    log_substep "Cluster já configurado, prosseguindo..."
+else
+    log_substep "Preparando volumes no SSD..."
+    mkdir -p /Volumes/Backup/nexo-cloudlab/{data,postgres,prometheus,grafana}
+    
+    log_substep "Criando cluster k3d (1 server + 6 agents)..."
+    k3d cluster create --config="$SCRIPT_DIR/config/k3d-config.yaml"
+    
+    sleep 10
+    log_substep "Verificando nodes..."
+    kubectl get nodes -o wide
+fi
 
-# Step 4
-echo -e "${YELLOW}📊 ETAPA 4/4: Instalando Observabilidade...${NC}"
-./scripts/03-install-observability.sh
-echo ""
+# ==============================================================================
+# ETAPA 2: Criar namespaces
+# ==============================================================================
+log_step "ETAPA 2/6: Criando Namespaces"
 
-# Step 5 - Elasticsearch/Kibana (DESABILITADO - muito pesado)
-# echo -e "${YELLOW}🔍 ETAPA 5/5: Instalando Logging...${NC}"
-# ./scripts/04-install-elasticsearch.sh
-# echo ""
+log_substep "Criando namespaces de ambientes..."
+kubectl create namespace nexo-develop --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace nexo-qa --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace nexo-staging --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace nexo-prod --dry-run=client -o yaml | kubectl apply -f -
 
-# Final
+log_substep "Criando namespaces de infra..."
+kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl get namespaces
+
+# ==============================================================================
+# ETAPA 3: Instalar ArgoCD
+# ==============================================================================
+log_step "ETAPA 3/6: Instalando ArgoCD"
+
+log_substep "Adicionando repositório Helm..."
+helm repo add argo https://argoproj.github.io/argo-helm 2>/dev/null || true
+helm repo update
+
+log_substep "Instalando ArgoCD via Helm..."
+helm upgrade --install argocd argo/argo-cd \
+  --namespace argocd \
+  --create-namespace \
+  --set server.extraArgs[0]="--insecure" \
+  --set configs.params."server\.insecure"=true \
+  --set server.service.type=ClusterIP \
+  --set controller.metrics.enabled=true \
+  --set server.metrics.enabled=true \
+  --set repoServer.metrics.enabled=true \
+  --timeout 10m \
+  --wait
+
+log_substep "Aguardando ArgoCD ficar pronto..."
+kubectl wait --for=condition=ready pod \
+  --selector=app.kubernetes.io/name=argocd-server \
+  --namespace=argocd \
+  --timeout=300s 2>/dev/null || echo "ArgoCD ainda inicializando..."
+
+log_substep "Configurando Ingress para ArgoCD..."
+cat <<EOF | kubectl apply -f -
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-server
+  namespace: argocd
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: argocd.nexo.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: argocd-server
+            port:
+              number: 80
+EOF
+
+log_substep "Obtendo senha inicial do ArgoCD..."
+ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" 2>/dev/null | base64 -d || echo "não-disponível")
+echo -e "${GREEN}✓ ArgoCD instalado - Usuário: admin / Senha: $ARGOCD_PASSWORD${NC}"
+
+# ==============================================================================
+# ETAPA 4: Instalar Observabilidade (Prometheus + Grafana)
+# ==============================================================================
+log_step "ETAPA 4/6: Instalando Stack de Observabilidade"
+
+log_substep "Adicionando repositório Prometheus Community..."
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts 2>/dev/null || true
+helm repo update
+
+log_substep "Instalando kube-prometheus-stack..."
+cat <<EOF > /tmp/prometheus-values.yaml
+prometheus:
+  prometheusSpec:
+    retention: 7d
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+    serviceMonitorSelectorNilUsesHelmValues: false
+  
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - prometheus.nexo.local
+    paths:
+      - /
+
+grafana:
+  adminPassword: "nexo@local2026"
+  persistence:
+    enabled: false
+  
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - grafana.nexo.local
+    path: /
+
+alertmanager:
+  enabled: true
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - alertmanager.nexo.local
+    paths:
+      - /
+EOF
+
+helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --create-namespace \
+  --values /tmp/prometheus-values.yaml \
+  --timeout 10m \
+  --wait
+
+log_substep "Aguardando pods de observabilidade..."
+kubectl wait --for=condition=ready pod \
+  --selector=app.kubernetes.io/name=grafana \
+  --namespace=monitoring \
+  --timeout=300s 2>/dev/null || echo "Grafana ainda inicializando..."
+
+echo -e "${GREEN}✓ Grafana instalado - Usuário: admin / Senha: nexo@local2026${NC}"
+
+log_substep "Aplicando dashboards customizados do Grafana..."
+kubectl apply -f "$SCRIPT_DIR/k8s/grafana-dashboard-nexo.yaml"
+kubectl apply -f "$SCRIPT_DIR/k8s/grafana-dashboard-apps.yaml"
+echo -e "${GREEN}✓ Dashboards customizados aplicados${NC}"
+
+# ==============================================================================
+# ETAPA 5: Configurar ArgoCD Applications
+# ==============================================================================
+log_step "ETAPA 5/6: Configurando ArgoCD GitOps"
+
+log_substep "Aplicando ArgoCD Projects..."
+kubectl apply -f "$SCRIPT_DIR/argocd/projects/nexo-environments.yaml"
+
+log_substep "Aplicando ApplicationSets..."
+kubectl apply -f "$SCRIPT_DIR/argocd/applicationsets/nexo-apps.yaml"
+
+log_substep "Aguardando ApplicationSets criar aplicações..."
+sleep 5
+
+echo -e "${GREEN}✓ 12 aplicações configuradas (3 serviços × 4 ambientes)${NC}"
+
+# ==============================================================================
+# ETAPA 6: Configurar /etc/hosts
+# ==============================================================================
+log_step "ETAPA 6/6: Configurando DNS Local (/etc/hosts)"
+
+HOSTS_ENTRIES="
+# Nexo CloudLab - Ferramentas
+127.0.0.1 argocd.nexo.local
+127.0.0.1 grafana.nexo.local
+127.0.0.1 prometheus.nexo.local
+127.0.0.1 alertmanager.nexo.local
+
+# Nexo CloudLab - Apps Develop
+127.0.0.1 develop-be.nexo.local
+127.0.0.1 develop-fe.nexo.local
+127.0.0.1 develop-auth.nexo.local
+
+# Nexo CloudLab - Apps QA
+127.0.0.1 qa-be.nexo.local
+127.0.0.1 qa-fe.nexo.local
+127.0.0.1 qa-auth.nexo.local
+
+# Nexo CloudLab - Apps Staging
+127.0.0.1 staging-be.nexo.local
+127.0.0.1 staging-fe.nexo.local
+127.0.0.1 staging-auth.nexo.local
+
+# Nexo CloudLab - Apps Prod
+127.0.0.1 be.nexo.local
+127.0.0.1 fe.nexo.local
+127.0.0.1 auth.nexo.local
+"
+
+# Remover entradas antigas do Nexo CloudLab
+sudo sed -i '' '/# Nexo CloudLab/d' /etc/hosts 2>/dev/null || true
+sudo sed -i '' '/nexo\.local/d' /etc/hosts 2>/dev/null || true
+
+# Adicionar novas entradas
+echo "$HOSTS_ENTRIES" | sudo tee -a /etc/hosts > /dev/null
+
+log_substep "/etc/hosts configurado com 16 domínios"
+
+# ==============================================================================
+# FINALIZAÇÃO
+# ==============================================================================
 echo ""
-echo -e "${GREEN}✨ Setup Completo! ✨${NC}"
+echo -e "${GREEN}╔═══════════════════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║                                                           ║${NC}"
+echo -e "${GREEN}║              ✨  SETUP CONCLUÍDO COM SUCESSO!  ✨         ║${NC}"
+echo -e "${GREEN}║                                                           ║${NC}"
+echo -e "${GREEN}╚═══════════════════════════════════════════════════════════╝${NC}"
 echo ""
-./scripts/99-show-urls.sh
+echo -e "${CYAN}🔧 FERRAMENTAS INSTALADAS:${NC}"
 echo ""
-echo -e "${BLUE}📚 Próximos Passos:${NC}"
+echo -e "  🎯 ${YELLOW}ArgoCD${NC}         → http://argocd.nexo.local"
+echo -e "     Usuário: admin | Senha: $ARGOCD_PASSWORD"
 echo ""
-echo "1. Acesse os dashboards (URLs acima)"
-echo "2. Leia a documentação: docs/README.md"
-echo "3. Deploy suas apps: make deploy-apps"
-echo "4. Explore com k9s: k9s"
+echo -e "  📊 ${YELLOW}Grafana${NC}        → http://grafana.nexo.local"
+echo -e "     Usuário: admin | Senha: nexo@local2026"
+echo -e "     Dashboards: Kubernetes Cluster, Pods, Node Exporter, NGINX Ingress"
+echo -e "     + Nexo Overview, Nexo Applications Performance"
 echo ""
-echo -e "${GREEN}🥷 Você é um DevOps Ninja agora!${NC}"
+echo -e "  🔍 ${YELLOW}Prometheus${NC}     → http://prometheus.nexo.local"
+echo -e "  🚨 ${YELLOW}AlertManager${NC}   → http://alertmanager.nexo.local"
+echo ""
+echo -e "${CYAN}🚀 APLICAÇÕES (12 total):${NC}"
+echo ""
+echo -e "  ${BLUE}[DEVELOP]${NC}"
+echo -e "    • Backend:  http://develop-be.nexo.local"
+echo -e "    • Frontend: http://develop-fe.nexo.local"
+echo -e "    • Auth:     http://develop-auth.nexo.local"
+echo ""
+echo -e "  ${BLUE}[QA]${NC}"
+echo -e "    • Backend:  http://qa-be.nexo.local"
+echo -e "    • Frontend: http://qa-fe.nexo.local"
+echo -e "    • Auth:     http://qa-auth.nexo.local"
+echo ""
+echo -e "  ${BLUE}[STAGING]${NC}"
+echo -e "    • Backend:  http://staging-be.nexo.local"
+echo -e "    • Frontend: http://staging-fe.nexo.local"
+echo -e "    • Auth:     http://staging-auth.nexo.local"
+echo ""
+echo -e "  ${BLUE}[PROD]${NC}"
+echo -e "    • Backend:  http://be.nexo.local"
+echo -e "    • Frontend: http://fe.nexo.local"
+echo -e "    • Auth:     http://auth.nexo.local"
+echo ""
+echo -e "${YELLOW}⚠️  IMPORTANTE:${NC}"
+echo -e "   As aplicações podem estar com status 'Degraded' até você configurar o GitHub token:"
+echo -e ""
+echo -e "   ${GREEN}Opção 1 (Recomendado):${NC} Configurar no .env"
+echo -e "   1. Editar arquivo .env na raiz do projeto"
+echo -e "   2. Adicionar seu token: GITHUB_TOKEN=ghp_xxxxx"
+echo -e "   3. Executar: bash local/scripts/create-ghcr-secrets.sh"
+echo -e ""
+echo -e "   ${GREEN}Opção 2:${NC} Passar token diretamente"
+echo -e "   bash local/scripts/create-ghcr-secrets.sh <TOKEN>"
+echo -e ""
+echo -e "   ${GREEN}Opção 3:${NC} Tornar packages públicos no GitHub"
+echo -e "   https://github.com/geraldobl58?tab=packages"
+echo ""
+echo -e "${CYAN}📚 PRÓXIMOS PASSOS:${NC}"
+echo -e "   • Verificar status:  ${GREEN}make status${NC}"
+echo -e "   • Explorar cluster:  ${GREEN}k9s${NC}"
+echo -e "   • Ver logs:          ${GREEN}kubectl logs -f <pod> -n <namespace>${NC}"
+echo -e "   • Destruir tudo:     ${GREEN}make destroy${NC}"
+echo ""
+echo -e "${GREEN}🎉 Você tem um CloudLab profissional rodando localmente!${NC}"
 echo ""

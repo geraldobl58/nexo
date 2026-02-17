@@ -60,81 +60,61 @@ A plataforma Nexo inclui uma infraestrutura completa de CloudLab local para dese
 
 ```bash
 # Instalação completa com um comando
-cd local
 make setup
 
-# Ou passo a passo
-./scripts/00-install-deps.sh      # Instalar k3d, kubectl, helm, k9s
-./scripts/01-create-cluster.sh    # Criar cluster k3s com 3 nodes
-./scripts/02-install-argocd.sh    # Instalar ArgoCD
-./scripts/03-install-observability.sh  # Prometheus + Grafana
-./scripts/04-install-elasticsearch.sh  # ELK Stack
-./scripts/06-install-harbor.sh    # Harbor Registry
-./scripts/05-deploy-apps.sh       # Deploy aplicações via ArgoCD
+# Verificar status de tudo
+make status
 
-# Ver todas as URLs de acesso
-make urls
+# Destruir ambiente completamente
+make destroy
 ```
+
+That's it! Apenas 3 comandos para gerenciar todo o CloudLab! 🚀
 
 ### Ferramentas Instaladas
 
-| Ferramenta   | URL                            | Usuário | Senha         |
-| ------------ | ------------------------------ | ------- | ------------- |
-| ArgoCD       | http://argocd.nexo.local       | admin   | Ver CLI       |
-| Grafana      | http://grafana.nexo.local      | admin   | prom-operator |
-| Prometheus   | http://prometheus.nexo.local   | -       | -             |
-| AlertManager | http://alertmanager.nexo.local | -       | -             |
-| Kibana       | http://kibana.nexo.local       | -       | -             |
-| Harbor       | http://harbor.nexo.local       | admin   | Harbor12345   |
-| Traefik      | http://traefik.nexo.local      | -       | -             |
+| Ferramenta   | URL                            | Usuário | Senha           |
+| ------------ | ------------------------------ | ------- | --------------- |
+| ArgoCD       | http://argocd.nexo.local       | admin   | \*(veja status) |
+| Grafana      | http://grafana.nexo.local      | admin   | nexo@local2026  |
+| Prometheus   | http://prometheus.nexo.local   | -       | -               |
+| AlertManager | http://alertmanager.nexo.local | -       | -               |
 
-### Ambientes Locais
+### Ambientes Locais (4 ambientes completos)
 
 Todos os ambientes mapeados em `/etc/hosts` automaticamente:
 
 ```
 # Develop
-http://develop.nexo.local
-http://develop.api.nexo.local
-http://develop.auth.nexo.local
+http://develop-be.nexo.local
+http://develop-fe.nexo.local
+http://develop-auth.nexo.local
 
 # QA
-http://qa.nexo.local
-http://qa.api.nexo.local
-http://qa.auth.nexo.local
+http://qa-be.nexo.local
+http://qa-fe.nexo.local
+http://qa-auth.nexo.local
 
 # Staging
-http://staging.nexo.local
-http://staging.api.nexo.local
-http://staging.auth.nexo.local
+http://staging-be.nexo.local
+http://staging-fe.nexo.local
+http://staging-auth.nexo.local
 
-# Production (local)
-http://prod.nexo.local
-http://prod.api.nexo.local
-http://prod.auth.nexo.local
+# Production (sem prefixo)
+http://be.nexo.local
+http://fe.nexo.local
+http://auth.nexo.local
 ```
 
-### Documentação CloudLab
+### O que o setup cria?
 
-Documentação completa em: [`local/docs/`](./local/docs/README.md)
-
-1. **[Instalação](./local/docs/01-installation.md)** - Setup e troubleshooting
-2. **[Kubernetes](./local/docs/02-kubernetes.md)** - Cluster management
-3. **[ArgoCD](./local/docs/03-argocd.md)** - GitOps workflows
-4. **[Observabilidade](./local/docs/04-observability.md)** - Prometheus + Grafana
-5. **[Logging](./local/docs/05-logging.md)** - Elasticsearch + Kibana
-6. **[Aplicações](./local/docs/06-applications.md)** - Deploy e gestão
-7. **[Troubleshooting](./local/docs/07-troubleshooting.md)** - Problemas comuns
-8. **[Cheat Sheet](./local/docs/08-cheatsheet.md)** - Comandos úteis
-9. **[GitHub Integration](./local/docs/09-github-integration.md)** - CI/CD setup
-10. **[Arquitetura](./local/docs/10-architecture.md)** - Diagramas da infraestrutura
-11. **[Ambientes e Domínios](./local/docs/11-environments-and-domains.md)** - HTTP local vs HTTPS produção
-
-### Guias Essenciais
-
-- **[BRANCHES.md](./BRANCHES.md)** - Estratégia de branches (develop, qa, staging, main)
-- **[NEXT_STEPS.md](./NEXT_STEPS.md)** - Próximas ações: aumentar cluster, criar branches
-- **[GETTING_STARTED.md](./GETTING_STARTED.md)** - Guia de início rápido completo
+- ✅ **Cluster k3d** com 7 nodes (1 server + 6 agents)
+- ✅ **4 namespaces** (nexo-develop, nexo-qa, nexo-staging, nexo-prod)
+- ✅ **ArgoCD** para GitOps automático
+- ✅ **Prometheus + Grafana + AlertManager** para observabilidade
+- ✅ **12 aplicações** (3 serviços × 4 ambientes) gerenciadas pelo ArgoCD
+- ✅ **16 domínios** configurados automaticamente no /etc/hosts
+- ✅ **Dashboards do Grafana** com métricas de Kubernetes, pods, nodes e NGINX Ingress
 
 ---
 
@@ -229,42 +209,56 @@ Toda a documentação está consolidada em [`/documentation`](documentation/READ
 
 ## 🛠️ Comandos
 
-### K3D / Kubernetes
+### CloudLab - Gerenciamento Completo
 
 ```bash
-cd local
-./scripts/setup.sh      # 🚀 Setup completo K3D
-./scripts/destroy.sh    # 🗑️  Destruir cluster
-./scripts/status.sh     # 📊 Status do cluster
-make pods               # 📋 Listar pods
-make logs-be            # 📜 Logs backend
-make logs-fe            # 📜 Logs frontend
-make logs-auth          # 📜 Logs Keycloak
+# Setup completo (cluster + ArgoCD + observabilidade + apps)
+make setup
+
+# Verificar status de todos os componentes
+make status
+
+# Destruir ambiente completamente
+make destroy
+
+# Ou executar diretamente:
+bash local/setup.sh       # Setup completo
+bash local/status.sh      # Ver status detalhado
+bash local/destroy.sh     # Destruir tudo
 ```
 
-### Recuperação ArgoCD (Apps Travados/Degraded)
+### Kubernetes - Operações Diárias
 
 ```bash
-# Via Makefile (recomendado)
-make apps-status-dev    # 📊 Status de todas as apps (develop)
-make heal               # 🩹 Auto-heal todos os ambientes
-make heal-dev           # 🩹 Auto-heal apenas develop
-make reset-unknown-dev  # 🔄 Reseta apps com status Unknown
-make quick-fix-dev      # 🔧 Fix rápido (restart pods)
-make fix-be-dev         # 🔧 Fix completo do backend
+# Ver todos os pods
+kubectl get pods --all-namespaces
 
-# Via script direto
-cd local
-./scripts/argocd-recovery.sh status develop         # Status detalhado
-./scripts/argocd-recovery.sh reset-unknown develop  # Reset Unknown
-./scripts/argocd-recovery.sh quick-fix develop      # Fix rápido
-./scripts/argocd-recovery.sh fix nexo-be develop    # Fix completo
-./scripts/argocd-recovery.sh cheatsheet             # Referência rápida
+# Ver pods de um ambiente específico
+kubectl get pods -n nexo-develop
+kubectl get pods -n nexo-qa
+kubectl get pods -n nexo-staging
+kubectl get pods -n nexo-prod
 
-# Para outros ambientes, substitua 'develop' por: prod
+# Logs de um pod
+kubectl logs -f <pod-name> -n <namespace>
+
+# Explorar interativamente (requer k9s)
+k9s
 ```
 
-> 📖 Veja [Troubleshooting](documentation/troubleshooting.md) para guia completo.
+### ArgoCD - Gerenciamento de Apps
+
+```bash
+# Listar aplicações
+kubectl get applications -n argocd
+
+# Ver detalhes de uma app
+kubectl describe application nexo-be-develop -n argocd
+
+# Forçar sincronização manual (se necessário)
+kubectl patch application nexo-be-develop -n argocd \
+  --type merge -p '{"operation":{"initiatedBy":{"username":"admin"},"sync":{}}}'
+```
 
 ### Desenvolvimento
 
@@ -290,14 +284,18 @@ nexo/
 │   ├── auth/            # Auth utils
 │   ├── config/          # Config compartilhada
 │   └── ui/              # UI components
-├── local/               # 🏗️ Infraestrutura K3D
-│   ├── argocd/          # ArgoCD apps/projects
-│   ├── helm/            # Helm charts
-│   ├── k3d/             # Config do cluster
-│   ├── k8s/             # Manifests Kubernetes
-│   ├── observability/   # (removido para lab)
-│   └── scripts/         # Setup scripts
-├── documentation/       # 📚 Toda documentação
+├── local/               # 🏗️ CloudLab Local (tudo aqui!)
+│   ├── argocd/          # ArgoCD projects + applicationsets
+│   ├── helm/            # Helm charts (nexo-be, nexo-fe, nexo-auth)
+│   ├── k8s/             # Manifests Kubernetes extras
+│   ├── config/          # Configurações do cluster k3d
+│   ├── scripts/         # Scripts auxiliares
+│   ├── docs/            # Documentação detalhada do CloudLab
+│   ├── setup.sh         # ⭐ Setup completo (1 comando!)
+│   ├── status.sh        # ⭐ Verificar status
+│   └── destroy.sh       # ⭐ Destruir tudo
+├── documentation/       # 📚 Documentação geral do projeto
+├── Makefile             # Comandos: setup, status, destroy
 └── .github/
     └── workflows/       # CI/CD pipelines
 ```
@@ -308,10 +306,14 @@ nexo/
 
 Todos os ambientes rodam no **mesmo cluster K3D**, separados por **namespaces**:
 
-| Namespace      | Branch    | URL                | Deploy             |
-| -------------- | --------- | ------------------ | ------------------ |
-| `nexo-develop` | `develop` | develop.nexo.local | Automático         |
-| `nexo-prod`    | `main`    | prod.nexo.local    | Manual + Aprovação |
+| Namespace      | Branch    | URL                   | Deploy       | Auto-Sync |
+| -------------- | --------- | --------------------- | ------------ | --------- |
+| `nexo-develop` | `develop` | develop-\*.nexo.local | Automático   | Sim       |
+| `nexo-qa`      | `qa`      | qa-\*.nexo.local      | Automático   | Sim       |
+| `nexo-staging` | `staging` | staging-\*.nexo.local | Automático   | Sim       |
+| `nexo-prod`    | `main`    | \*.nexo.local         | Automático\* | Sim       |
+
+**Observação**: Todos os ambientes têm auto-sync habilitado no ArgoCD. Quando você faz push para a branch correspondente, o ArgoCD detecta a mudança e atualiza automaticamente o ambiente.
 
 ---
 

@@ -1,15 +1,17 @@
-# 🌍 Ambientes Nexo Platform
+# 🌍 Ambientes CloudLab Local
 
 ## Visão Geral
 
-A plataforma Nexo possui **4 ambientes** mapeados para branches Git específicas:
+O CloudLab Nexo possui **4 ambientes** completos rodando localmente:
 
-| Ambiente   | Branch    | Namespace      | URL Base                     | Auto-Deploy |
-| ---------- | --------- | -------------- | ---------------------------- | ----------- |
-| Develop    | `develop` | `nexo-develop` | `develop.g3developer.online` | ✅ Sim      |
-| QA         | `qa`      | `nexo-qa`      | `qa.g3developer.online`      | ✅ Sim      |
-| Staging    | `staging` | `nexo-staging` | `staging.g3developer.online` | ✅ Sim      |
-| Production | `main`    | `nexo-prod`    | `g3developer.online`         | ✅ Sim      |
+| Ambiente   | Branch    | Namespace      | URL Base           | Auto-Deploy |
+| ---------- | --------- | -------------- | ------------------ | ----------- |
+| Develop    | `develop` | `nexo-develop` | `develop.nexo.local` | ✅ Sim      |
+| QA         | `qa`      | `nexo-qa`      | `qa.nexo.local`      | ✅ Sim      |
+| Staging    | `staging` | `nexo-staging` | `staging.nexo.local` | ✅ Sim      |
+| Production | `main`    | `nexo-prod`    | `nexo.local`         | ✅ Sim      |
+
+> 💡 **100% LOCAL:** Todos os ambientes rodam em k3d no seu Mac, sem dependências de cloud.
 
 ---
 
@@ -23,9 +25,9 @@ A plataforma Nexo possui **4 ambientes** mapeados para branches Git específicas
 
 #### URLs:
 
-- **Frontend:** https://develop.g3developer.online
-- **Backend API:** https://develop.api.g3developer.online
-- **Auth (Keycloak):** https://develop.auth.g3developer.online
+- **Frontend:** http://develop.nexo.local
+- **Backend API:** http://develop.api.nexo.local
+- **Auth (Keycloak):** http://develop.auth.nexo.local
 
 #### Características:
 
@@ -62,9 +64,9 @@ git push origin feature/nova-feature
 
 #### URLs:
 
-- **Frontend:** https://qa.g3developer.online
-- **Backend API:** https://qa.api.g3developer.online
-- **Auth (Keycloak):** https://qa.auth.g3developer.online
+- **Frontend:** http://qa.nexo.local
+- **Backend API:** http://qa.api.nexo.local
+- **Auth (Keycloak):** http://qa.auth.nexo.local
 
 #### Características:
 
@@ -104,9 +106,9 @@ git push origin qa
 
 #### URLs:
 
-- **Frontend:** https://staging.g3developer.online
-- **Backend API:** https://staging.api.g3developer.online
-- **Auth (Keycloak):** https://staging.auth.g3developer.online
+- **Frontend:** http://staging.nexo.local
+- **Backend API:** http://staging.api.nexo.local
+- **Auth (Keycloak):** http://staging.auth.nexo.local
 
 #### Características:
 
@@ -144,13 +146,13 @@ git push origin staging
 
 **Branch:** `main`  
 **Namespace:** `nexo-prod`  
-**Propósito:** Ambiente de produção para usuários finais
+**Propósito:** Ambiente de produção (simulado localmente)
 
 #### URLs:
 
-- **Frontend:** https://g3developer.online
-- **Backend API:** https://api.g3developer.online
-- **Auth (Keycloak):** https://auth.g3developer.online
+- **Frontend:** http://nexo.local
+- **Backend API:** http://api.nexo.local
+- **Auth (Keycloak):** http://auth.nexo.local
 
 #### Características:
 
