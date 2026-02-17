@@ -9,6 +9,9 @@ image:
 imagePullSecrets:
   - name: ghcr-secret
 
+# Keycloak management port (health + metrics)
+managementPort: 9000
+
 # Usar start-dev em develop para hot-reload de temas
 args:
   - start-dev
@@ -31,14 +34,20 @@ ingress:
 livenessProbe:
   enabled: true
   path: /health/live
+  port: management
   initialDelaySeconds: 240
   periodSeconds: 15
+  timeoutSeconds: 5
+  failureThreshold: 20
 
 readinessProbe:
   enabled: true
   path: /health/ready
+  port: management
   initialDelaySeconds: 180
   periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 20
 
 resources:
   limits:
