@@ -4,8 +4,8 @@
 
 O CloudLab Nexo possui **4 ambientes** completos rodando localmente:
 
-| Ambiente   | Branch    | Namespace      | URL Base           | Auto-Deploy |
-| ---------- | --------- | -------------- | ------------------ | ----------- |
+| Ambiente   | Branch    | Namespace      | URL Base             | Auto-Deploy |
+| ---------- | --------- | -------------- | -------------------- | ----------- |
 | Develop    | `develop` | `nexo-develop` | `develop.nexo.local` | ✅ Sim      |
 | QA         | `qa`      | `nexo-qa`      | `qa.nexo.local`      | ✅ Sim      |
 | Staging    | `staging` | `nexo-staging` | `staging.nexo.local` | ✅ Sim      |
