@@ -49,7 +49,7 @@ prometheus:
     enabled: true
     ingressClassName: nginx
     hosts:
-      - prometheus.local.nexo.dev
+      - prometheus.nexo.local
     paths:
       - /
 
@@ -65,8 +65,13 @@ grafana:
     enabled: true
     ingressClassName: nginx
     hosts:
-      - grafana.local.nexo.dev
+      - grafana.nexo.local
     path: /
+  
+  # Desabilitar datasource automático criado pelo sidecar (evita conflito)
+  sidecar:
+    datasources:
+      defaultDatasourceEnabled: false
   
   # Dashboards automáticos
   dashboardProviders:
@@ -129,7 +134,7 @@ alertmanager:
     enabled: true
     ingressClassName: nginx
     hosts:
-      - alertmanager.local.nexo.dev
+      - alertmanager.nexo.local
     paths:
       - /
   
@@ -276,15 +281,15 @@ echo ""
 echo -e "${BLUE}📊 Informações de Acesso:${NC}"
 echo ""
 echo "  Grafana:"
-echo "    URL: http://grafana.local.nexo.dev"
-echo "    Usuário: admin"
-echo "    Senha: nexo@local2026"
+echo "    URL: http://grafana.nexo.local"
+echo "    User: admin"
+echo "    Pass: nexo@local2026"
 echo ""
 echo "  Prometheus:"
-echo "    URL: http://prometheus.local.nexo.dev"
+echo "    URL: http://prometheus.nexo.local"
 echo ""
 echo "  AlertManager:"
-echo "    URL: http://alertmanager.local.nexo.dev"
+echo "    URL: http://alertmanager.nexo.local"
 echo ""
 echo -e "${BLUE}📦 Comandos úteis:${NC}"
 echo "  kubectl get pods -n monitoring"

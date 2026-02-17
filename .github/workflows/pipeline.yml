@@ -10,6 +10,8 @@
 #
 # Branch → Environment:
 #   develop → nexo-develop
+#   qa → nexo-qa
+#   staging → nexo-staging
 #   main → nexo-prod
 #
 # Registry: ghcr.io (sem rate limits como DockerHub)
@@ -21,6 +23,8 @@ on:
   push:
     branches:
       - develop
+      - qa
+      - staging
       - main
     paths:
       - "apps/**"
@@ -31,6 +35,8 @@ on:
   pull_request:
     branches:
       - develop
+      - qa
+      - staging
       - main
     paths:
       - "apps/**"
@@ -156,6 +162,14 @@ jobs:
             develop)
               echo "environment=develop" >> $GITHUB_OUTPUT
               echo "namespace=nexo-develop" >> $GITHUB_OUTPUT
+              ;;
+            qa)
+              echo "environment=qa" >> $GITHUB_OUTPUT
+              echo "namespace=nexo-qa" >> $GITHUB_OUTPUT
+              ;;
+            staging)
+              echo "environment=staging" >> $GITHUB_OUTPUT
+              echo "namespace=nexo-staging" >> $GITHUB_OUTPUT
               ;;
             main)
               echo "environment=prod" >> $GITHUB_OUTPUT

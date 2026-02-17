@@ -59,7 +59,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: argocd.local.nexo.dev
+  - host: argocd.nexo.local
     http:
       paths:
       - path: /
@@ -86,7 +86,7 @@ echo ""
 echo -e "${GREEN}✅ ArgoCD instalado com sucesso!${NC}"
 echo ""
 echo -e "${BLUE}📊 Informações de Acesso:${NC}"
-echo "  URL: https://argocd.local.nexo.dev"
+echo "  URL: http://argocd.nexo.local"
 echo "  Usuário: admin"
 echo "  Senha: $ARGOCD_PASSWORD"
 echo ""
@@ -94,19 +94,19 @@ echo -e "${YELLOW}💾 Salvando credenciais...${NC}"
 cat <<EOF > "$(pwd)/argocd-credentials.txt"
 ArgoCD Credentials
 ==================
-URL: https://argocd.local.nexo.dev
+URL: http://argocd.nexo.local
 Username: admin
 Password: $ARGOCD_PASSWORD
 
 CLI Login:
-argocd login argocd.local.nexo.dev --username admin --password $ARGOCD_PASSWORD --insecure
+argocd login argocd.nexo.local --username admin --password $ARGOCD_PASSWORD --insecure
 EOF
 
 echo -e "${GREEN}✅ Credenciais salvas em argocd-credentials.txt${NC}"
 echo ""
 echo -e "${BLUE}📦 Comandos úteis:${NC}"
 echo "  kubectl get pods -n argocd"
-echo "  argocd login argocd.local.nexo.dev --insecure"
+echo "  argocd login argocd.nexo.local --insecure"
 echo "  argocd app list"
 echo ""
 echo "Próximo passo: ./scripts/03-install-observability.sh"

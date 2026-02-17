@@ -65,9 +65,9 @@ sudo tee -a /etc/hosts > /dev/null << 'EOF'
 127.0.0.1 staging.auth.nexo.local
 
 # Nexo CloudLab - Aplicações Prod (Local)
-127.0.0.1 prod.nexo.local
-127.0.0.1 prod.api.nexo.local
-127.0.0.1 prod.auth.nexo.local
+127.0.0.1 nexo.local
+127.0.0.1 api.nexo.local
+127.0.0.1 auth.nexo.local
 
 # Nexo CloudLab - END (não remova esta linha)
 EOF

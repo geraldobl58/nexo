@@ -1,20 +1,20 @@
 # ============================================================================
 # ArgoCD ApplicationSet - Multi-Environment Deployment (DigitalOcean)
 # ============================================================================
-# Branch Flow: feature/* → develop → main (production)
+# Branch Flow: feature/* → develop → qa → staging → main (production)
 # Registry: ghcr.io/geraldobl58/*
 # TLS: Let's Encrypt (letsencrypt-prod) via cert-manager
 # Domains: *.g3developer.online (DigitalOcean DNS)
 # Database: DigitalOcean Managed PostgreSQL (via K8s Secrets)
 #
-# Ambientes: develop (auto-sync) + prod (auto-sync)
-# Lab/estudo: recursos mínimos, 2 ambientes, sem monitoring
+# Ambientes: develop, qa, staging, prod (todos com auto-sync)
+# Lab/estudo: recursos mínimos, 4 ambientes completos
 #
 # Nota: Separado em 2 ApplicationSets porque o template do ArgoCD
 # não suporta booleans dinâmicos via generators (prune/selfHeal).
 # ============================================================================
 
-# --- Auto-sync environment (develop) ---
+# --- Auto-sync environments (develop, qa, staging) ---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -29,6 +29,12 @@ spec:
                 - env: develop
                   namespace: nexo-develop
                   branch: develop
+                - env: qa
+                  namespace: nexo-qa
+                  branch: qa
+                - env: staging
+                  namespace: nexo-staging
+                  branch: staging
           - list:
               elements:
                 - service: nexo-be

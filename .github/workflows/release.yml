@@ -108,14 +108,19 @@ jobs:
         run: |
           VERSION=${{ needs.create-release.outputs.version }}
 
-          # Atualizar values-prod.yaml
-          sed -i "s|tag:.*|tag: \"${VERSION}\"|" \
-            infra/helm/${{ matrix.app }}/values-prod.yaml
+          # Atualizar values-prod.yaml (compatible with macOS and Linux)
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            sed -i '' "s|tag:.*|tag: \"${VERSION}\"|" \
+              infra/helm/${{ matrix.app }}/values-prod.yaml
+          else
+            sed -i "s|tag:.*|tag: \"${VERSION}\"|" \
+              infra/helm/${{ matrix.app }}/values-prod.yaml
+          fi
 
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add infra/helm/${{ matrix.app }}/values-prod.yaml
-          git commit -m "chore: release ${{ matrix.app }} ${VERSION}" || exit 0
+          git commit -m "chore: release ${{ matrix.app }} ${VERSION} [skip ci]" || exit 0
           git push
 
   notify:
