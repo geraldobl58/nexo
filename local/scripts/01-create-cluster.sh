@@ -44,9 +44,11 @@ kubectl get nodes -o wide
 
 # Criar namespaces
 echo -e "${YELLOW}🏗️  Criando namespaces...${NC}"
-kubectl create namespace nexo-local || true
+kubectl create namespace nexo-develop || true
+kubectl create namespace nexo-qa || true
+kubectl create namespace nexo-staging || true
+kubectl create namespace nexo-prod || true
 kubectl create namespace monitoring || true
-kubectl create namespace logging || true
 kubectl create namespace argocd || true
 
 # Aplicar StorageClass
@@ -78,16 +80,43 @@ echo -e "${BLUE}Adicionando entradas ao /etc/hosts...${NC}"
 echo -e "${YELLOW}(Requer sudo)${NC}"
 echo ""
 
-# Chamar script de configuração de hosts
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-chmod +x "$SCRIPT_DIR/configure-hosts.sh"
-"$SCRIPT_DIR/configure-hosts.sh" true  # true = modo silencioso
+# Entradas de hosts para o CloudLab
+HOSTS_ENTRIES="
+# Nexo CloudLab - Ferramentas
+127.0.0.1 argocd.nexo.local
+127.0.0.1 grafana.nexo.local
+127.0.0.1 prometheus.nexo.local
+127.0.0.1 alertmanager.nexo.local
 
-if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✅ DNS local configurado${NC}"
-else
-    echo -e "${YELLOW}⚠️  Erro ao configurar DNS. Execute manualmente: make update-hosts${NC}"
-fi
+# Nexo CloudLab - Apps Develop
+127.0.0.1 develop-be.nexo.local
+127.0.0.1 develop-fe.nexo.local
+127.0.0.1 develop-auth.nexo.local
+
+# Nexo CloudLab - Apps QA
+127.0.0.1 qa-be.nexo.local
+127.0.0.1 qa-fe.nexo.local
+127.0.0.1 qa-auth.nexo.local
+
+# Nexo CloudLab - Apps Staging
+127.0.0.1 staging-be.nexo.local
+127.0.0.1 staging-fe.nexo.local
+127.0.0.1 staging-auth.nexo.local
+
+# Nexo CloudLab - Apps Prod
+127.0.0.1 be.nexo.local
+127.0.0.1 fe.nexo.local
+127.0.0.1 auth.nexo.local
+"
+
+# Remover entradas antigas do Nexo CloudLab
+sudo sed -i '' '/# Nexo CloudLab/d' /etc/hosts 2>/dev/null || true
+sudo sed -i '' '/nexo\.local/d' /etc/hosts 2>/dev/null || true
+
+# Adicionar novas entradas
+echo "$HOSTS_ENTRIES" | sudo tee -a /etc/hosts > /dev/null
+
+echo -e "${GREEN}✅ DNS local configurado${NC}"
 
 # Verificar tudo
 echo ""
@@ -97,7 +126,7 @@ echo -e "${BLUE}📊 Informações do Cluster:${NC}"
 echo "  Cluster: $CLUSTER_NAME"
 echo "  Context: k3d-$CLUSTER_NAME"
 echo "  Nodes: $(kubectl get nodes --no-headers | wc -l)"
-echo "  Namespaces: nexo-local, monitoring, logging, argocd"
+echo "  Namespaces: nexo-develop, nexo-qa, nexo-staging, nexo-prod, monitoring, argocd"
 echo ""
 echo -e "${BLUE}📦 Comandos úteis:${NC}"
 echo "  kubectl get nodes"

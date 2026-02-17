@@ -1,4 +1,4 @@
-# Values for Production environment (DigitalOcean)
+# Values for Production environment
 replicaCount: 1
 
 image:
@@ -6,13 +6,15 @@ image:
   tag: "latest"
   pullPolicy: Always
 
+imagePullSecrets:
+  - name: ghcr-secret
 
 ingress:
   enabled: true
   className: "nginx"
   annotations:
   hosts:
-    - host: api.nexo.local
+    - host: be.nexo.local
       paths:
         - path: /
           pathType: Prefix

@@ -1,4 +1,4 @@
-# Values for Staging environment (DigitalOcean)
+# Values for Staging environment
 replicaCount: 1
 
 image:
@@ -6,13 +6,15 @@ image:
   tag: "staging-latest"
   pullPolicy: Always
 
+imagePullSecrets:
+  - name: ghcr-secret
 
 ingress:
   enabled: true
   className: "nginx"
   annotations:
   hosts:
-    - host: staging.nexo.local
+    - host: staging-fe.nexo.local
       paths:
         - path: /
           pathType: Prefix
@@ -31,8 +33,8 @@ autoscaling:
 env:
   NODE_ENV: production
   API_URL: http://nexo-be-staging:3000
-  NEXT_PUBLIC_API_URL: http://staging.api.nexo.local
-  NEXT_PUBLIC_KEYCLOAK_URL: http://staging.auth.nexo.local
+  NEXT_PUBLIC_API_URL: http://staging-be.nexo.local
+  NEXT_PUBLIC_KEYCLOAK_URL: http://staging-auth.nexo.local
   NEXT_PUBLIC_KEYCLOAK_REALM: nexo
   NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: nexo-web
 

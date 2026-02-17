@@ -14,7 +14,7 @@ ingress:
   className: "nginx"
   annotations:
   hosts:
-    - host: develop.api.nexo.local
+    - host: develop-be.nexo.local
       paths:
         - path: /
           pathType: Prefix
@@ -36,7 +36,7 @@ env:
   LOG_LEVEL: debug
   SWAGGER_ENABLED: "true"
   METRICS_ENABLED: "true"
-  KEYCLOAK_URL: "http://develop.auth.nexo.local"
+  KEYCLOAK_URL: "http://develop-auth.nexo.local"
   KEYCLOAK_INTERNAL_URL: "http://nexo-auth-develop:8080"
   KEYCLOAK_REALM: nexo
 

@@ -1,4 +1,4 @@
-# Values for Production environment (DigitalOcean)
+# Values for Production environment
 replicaCount: 1
 
 image:
@@ -6,6 +6,8 @@ image:
   tag: "latest"
   pullPolicy: Always
 
+imagePullSecrets:
+  - name: ghcr-secret
 
 # Modo start-dev para Lab (nós com recursos limitados)
 args:

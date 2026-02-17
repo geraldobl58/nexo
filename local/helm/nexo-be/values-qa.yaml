@@ -1,4 +1,4 @@
-# Values for QA environment (DigitalOcean)
+# Values for QA environment
 replicaCount: 1
 
 image:
@@ -6,13 +6,15 @@ image:
   tag: "qa-latest"
   pullPolicy: Always
 
+imagePullSecrets:
+  - name: ghcr-secret
 
 ingress:
   enabled: true
   className: "nginx"
   annotations:
   hosts:
-    - host: qa.api.nexo.local
+    - host: qa-be.nexo.local
       paths:
         - path: /
           pathType: Prefix
@@ -34,7 +36,7 @@ env:
   LOG_LEVEL: info
   SWAGGER_ENABLED: "true"
   METRICS_ENABLED: "true"
-  KEYCLOAK_URL: "http://qa.auth.nexo.local"
+  KEYCLOAK_URL: "http://qa-auth.nexo.local"
   KEYCLOAK_INTERNAL_URL: "http://nexo-auth-qa:8080"
   KEYCLOAK_REALM: nexo
 

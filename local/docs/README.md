@@ -1,253 +1,140 @@
-# 🚀 Nexo CloudLab Local - DevOps Ninja Edition
+# Nexo CloudLab - Documentation
 
-Ambiente de desenvolvimento local completo que simula uma infraestrutura cloud profissional para prática e desenvolvimento de aplicações com stack DevOps completa.
+> Local Kubernetes development platform with 4 environments, GitOps, and full observability.
 
-## 🎯 Objetivo
-
-Criar um ambiente local robusto para:
-
-- Desenvolvimento e testes de aplicações
-- Prática de DevOps e infraestrutura como código
-- Simulação de ambientes de produção
-- Aprendizado de ferramentas enterprise
-
-## 🛠️ Stack Completa
-
-- **Kubernetes**: k3d (K3s local) - Cluster Kubernetes leve e completo
-- **GitOps**: ArgoCD - Continuous Deployment
-- **Observability**: Prometheus, Grafana, AlertManager
-- **Logging**: Elasticsearch + Kibana + Filebeat
-- **Container Registry**: Harbor (registry local)
-- **Storage**: Volumes persistentes em SSD externo (/Volumes/Backup)
-- **Ingress**: Traefik (incluído no k3d)
-- **Service Mesh**: Opcional - Linkerd/Istio
-
-## 📋 Pré-requisitos
-
-- Docker Desktop (macOS)
-- 8GB+ RAM disponível
-- SSD Externo montado em `/Volumes/Backup`
-- Homebrew instalado
-
-## 🚀 Quick Start
-
-### Setup Automático (Recomendado)
+## Quick Start
 
 ```bash
-cd local
-make setup
-# ou
-./setup.sh
-```
+# 1. Setup completo (cluster + ArgoCD + Prometheus + Grafana)
+cd local && make setup
 
-### Setup Manual (Passo a Passo)
-
-```bash
-# 1. Instalar dependências
-./scripts/00-install-deps.sh
-
-# 2. Criar cluster Kubernetes local
-./scripts/01-create-cluster.sh
-
-# 3. Instalar ArgoCD
-./scripts/02-install-argocd.sh
-
-# 4. Instalar stack de observabilidade
-./scripts/03-install-observability.sh
-
-# 5. Instalar Elasticsearch Stack
-./scripts/04-install-elasticsearch.sh
-
-# 6. Instalar Harbor Registry (opcional)
-./scripts/06-install-harbor.sh
-
-# 7. Deploy das aplicações
-./scripts/05-deploy-apps.sh
-
-# 8. Acessar dashboards
-./scripts/99-show-urls.sh
-# ou
-make urls
-```
-
-## 📖 Documentação
-
-- [00 - Instalação e Configuração](./00-installation.md)
-- [01 - Kubernetes Local (k3d)](./01-kubernetes.md)
-- [02 - ArgoCD GitOps](./02-argocd.md)
-- [03 - Observabilidade](./03-observability.md)
-- [04 - Logging (ELK)](./04-logging.md)
-- [05 - Deploy de Aplicações](./05-applications.md)
-- [06 - Troubleshooting](./06-troubleshooting.md)
-- [07 - Comandos Úteis](./07-cheatsheet.md)
-- [08 - GitHub Integration](./08-github-integration.md)
-- [09 - Arquitetura CloudLab](./09-architecture.md)
-- [10 - Ambientes e Domínios](./10-environments-and-domains.md)
-- [11 - Configuração de DNS](./11-dns-configuration.md)
-
-## 🌐 URLs de Acesso
-
-Após instalação completa:
-
-### Ferramentas
-
-```
-ArgoCD:           http://argocd.nexo.local
-Grafana:          http://grafana.nexo.local
-Prometheus:       http://prometheus.nexo.local
-AlertManager:     http://alertmanager.nexo.local
-Kibana:           http://kibana.nexo.local
-Harbor Registry:  http://harbor.nexo.local
-Traefik:          http://traefik.nexo.local
-```
-
-### Aplicações por Ambiente
-
-```
-# Develop
-Frontend:         http://develop.nexo.local
-API:              http://develop.api.nexo.local
-Auth:             http://develop.auth.nexo.local
-
-# QA
-Frontend:         http://qa.nexo.local
-API:              http://qa.api.nexo.local
-Auth:             http://qa.auth.nexo.local
-
-# Setup completo
-make setup
-
-# Status do cluster
+# 2. Verificar status
 make status
 
-# Ver todas as URLs
-make urls
-
-# Abrir dashboards
-make dashboard        # ArgoCD
-make grafana          # Grafana
-make kibana           # Kibana
-make prometheus       # Prometheus
-
-# Gerenciamento
-make start            # Iniciar cluster
-make stop             # Parar cluster
-make restart          # Reiniciar cluster
-
-# Troubleshooting
-make troubleshoot     # Diagnóstico completo
-make top              # Ver uso de recursos
-
-# Limpeza
-make clean            # Limpar tudo
-make backup           # Backup completo
-
-# Ver logs
-make logs SERVICE=nexo-be NAMESPACE=nexo-local
-
-# Interface visual
-k9s
-# Limpar tudo
-make clean
-
-# Backup completo
-make backup
-
-# Restaurar backup
-make restore
-
-# Ver logs
-make logs SERVICE=nexo-be
-
-# Port-forward de serviços
-make port-forward SERVICE=nexo-be PORT=3000
+# 3. Destruir tudo
+make destroy
 ```
 
-## 📦 Estrutura
+## Stack
+
+| Component | Tool | Purpose |
+|-----------|------|---------|
+| Cluster | k3d (k3s in Docker) | 1 server + 6 agents |
+| Ingress | NGINX Ingress Controller | Routing + Load Balancing |
+| GitOps | ArgoCD | Continuous Deployment |
+| Monitoring | Prometheus + Grafana | Metrics + Dashboards |
+| Alerting | AlertManager | Alert notification |
+| Auth | Keycloak | Identity + SSO |
+
+## URLs
+
+### Tools
+
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| ArgoCD | http://argocd.nexo.local | `admin` / (run `make urls`) |
+| Grafana | http://grafana.nexo.local | `admin` / `nexo@local2026` |
+| Prometheus | http://prometheus.nexo.local | — |
+| AlertManager | http://alertmanager.nexo.local | — |
+
+### Applications
+
+| Env | Frontend | Backend | Auth |
+|-----|----------|---------|------|
+| **Develop** | http://develop-fe.nexo.local | http://develop-be.nexo.local | http://develop-auth.nexo.local |
+| **QA** | http://qa-fe.nexo.local | http://qa-be.nexo.local | http://qa-auth.nexo.local |
+| **Staging** | http://staging-fe.nexo.local | http://staging-be.nexo.local | http://staging-auth.nexo.local |
+| **Prod** | http://fe.nexo.local | http://be.nexo.local | http://auth.nexo.local |
+
+## Make Commands
+
+```
+make setup         # Setup completo (primeira vez)
+make start         # Iniciar cluster parado
+make stop          # Parar cluster
+make restart       # Reiniciar cluster
+make destroy       # Destruir tudo
+make status        # Status completo
+make urls          # Mostrar URLs e credenciais
+make logs          # Logs: make logs SERVICE=nexo-be NAMESPACE=nexo-develop
+make k9s           # Interface visual para K8s
+make top           # Uso de CPU/memória
+make grafana       # Abrir Grafana no browser
+make argocd        # Abrir ArgoCD no browser
+make troubleshoot  # Diagnóstico de problemas
+```
+
+## Git Flow → Environments
+
+```
+feature/* → develop → qa → staging → main
+              ↓         ↓       ↓        ↓
+          nexo-develop  nexo-qa  nexo-staging  nexo-prod
+```
+
+## Directory Structure
 
 ```
 local/
-├── README.md                 # Este arquivo
-├── Makefile                  # Comandos facilitados
-├── config/                   # Configurações do cluster
-│   ├── k3d-config.yaml      # Configuração k3d
-│   └── storage-class.yaml   # StorageClass para SSD externo
-├── scripts/                  # Scripts de instalação e gestão
-│   ├── 00-install-deps.sh
-│   ├── 01-create-cluster.sh
-│   ├── 02-install-argocd.sh
-│   ├── 03-install-observability.sh
-│   ├── 04-install-elasticsearch.sh
-│   ├── 05-deploy-apps.sh
-│   └── 99-show-urls.sh
-├── argocd/                   # Configurações ArgoCD local
-│   ├── apps/                 # Applications
-│   └── projects/             # Projects
-├── observability/            # Stack Prometheus + Grafana
-│   ├── prometheus/
-│   ├── grafana/
-│   └── alertmanager/
-├── logging/                  # Stack Elasticsearch
-│   ├── elasticsearch/
-│   ├── kibana/
-│   └── filebeat/
-├── helm/                     # Helm values local
-│   ├── nexo-be/
-│   ├── nexo-fe/
-│   └── nexo-auth/
-└── docs/                     # Documentação detalhada
+├── Makefile                    # Comandos make
+├── setup.sh                   # Setup automatizado
+├── destroy.sh                 # Destroy interativo
+├── status.sh                  # Status detalhado
+├── config/
+│   ├── k3d-config.yaml        # Configuração do cluster
+│   ├── secrets.example.yaml   # Template de secrets
+│   └── storage-class.yaml     # StorageClass para SSD
+├── scripts/
+│   ├── 00-install-deps.sh     # Instalar dependências
+│   ├── 01-create-cluster.sh   # Criar cluster k3d
+│   ├── 02-install-argocd.sh   # Instalar ArgoCD
+│   ├── 03-install-observability.sh  # Prometheus + Grafana
+│   ├── 99-show-urls.sh        # Mostrar URLs
+│   └── create-ghcr-secrets.sh # Criar secrets do GHCR
+├── helm/
+│   ├── nexo-be/               # Helm chart: Backend (NestJS)
+│   ├── nexo-fe/               # Helm chart: Frontend (Next.js)
+│   └── nexo-auth/             # Helm chart: Auth (Keycloak)
+├── argocd/
+│   ├── projects/              # ArgoCD Projects (4 envs)
+│   └── applicationsets/       # ApplicationSets (12 apps)
+├── k8s/
+│   ├── grafana-dashboard-nexo.yaml    # Dashboard: Overview
+│   ├── grafana-dashboard-apps.yaml    # Dashboard: App Performance
+│   └── servicemonitor-apps.yaml       # ServiceMonitors
+└── docs/                      # ← Você está aqui
+    ├── README.md              # Este arquivo
+    ├── 01-installation.md     # Pré-requisitos e instalação
+    ├── 02-architecture.md     # Arquitetura completa
+    ├── 03-kubernetes.md       # Guia de Kubernetes/k3d
+    ├── 04-argocd.md           # Guia do ArgoCD
+    ├── 05-applications.md     # Deploy de aplicações
+    ├── 06-observability.md    # Prometheus + Grafana + Alertas
+    ├── 07-environments.md     # 4 ambientes e promoção
+    ├── 08-troubleshooting.md  # Resolução de problemas
+    └── 09-cheatsheet.md       # Referência de comandos
 ```
 
-## 🔥 Features
+## Documentation Index
 
-✅ Cluster Kubernetes multi-node local  
-✅ GitOps com ArgoCD  
-✅ Métricas com Prometheus  
-✅ Dashboards com Grafana  
-✅ Alertas com AlertManager  
-✅ Logs centralizados com Elasticsearch  
-✅ Visualização de logs com Kibana  
-✅ Container Registry local (Harbor)  
-✅ Ingress com TLS (self-signed)  
-✅ Persistent Volumes em SSD externo  
-✅ Network Policies  
-✅ Resource Limits otimizados  
-✅ Auto-scaling (HPA)  
-✅ Service Mesh (opcional)
+| # | Document | Description |
+|---|----------|-------------|
+| 01 | [Installation](01-installation.md) | Prerequisites, hardware, installation steps |
+| 02 | [Architecture](02-architecture.md) | System design, components, diagrams |
+| 03 | [Kubernetes](03-kubernetes.md) | k3d cluster, namespaces, networking, storage |
+| 04 | [ArgoCD](04-argocd.md) | GitOps, sync policies, ApplicationSets |
+| 05 | [Applications](05-applications.md) | Deploy workflow, Helm charts, rollbacks |
+| 06 | [Observability](06-observability.md) | Prometheus, Grafana, alerts, dashboards |
+| 07 | [Environments](07-environments.md) | 4 environments, promotion flow, GHCR secrets |
+| 08 | [Troubleshooting](08-troubleshooting.md) | Common problems and solutions |
+| 09 | [Cheatsheet](09-cheatsheet.md) | kubectl, k3d, ArgoCD, PromQL commands |
 
-## 💡 Dicas
-
-- Use `k9s` para gerenciar o cluster visualmente
-- Configure aliases no shell para comandos kubectl
-- Monitore recursos com `kubectl top nodes/pods`
-- Use port-forward para debug de serviços
-- Backup regular com `make backup`
-
-## 🐛 Troubleshooting
-
-Se algo não funcionar:
+## GHCR Setup (Private Images)
 
 ```bash
-# Ver logs do cluster
-./scripts/troubleshoot.sh
+# 1. Set token in .env (root of project)
+GITHUB_TOKEN=ghp_your_token_here
 
-# Ver status de todos pods
-kubectl get pods -A
-
-# Ver eventos
-kubectl get events -A --sort-by='.lastTimestamp'
-
-# Reiniciar um namespace
-kubectl delete pods --all -n nexo-local
+# 2. Create secrets in all namespaces
+bash local/scripts/create-ghcr-secrets.sh
 ```
-
-## 📚 Recursos
-
-- [k3d Documentation](https://k3d.io/)
-- [ArgoCD Documentation](https://argo-cd.readthedocs.io/)
-- [Prometheus Operator](https://prometheus-operator.dev/)
-- [Elastic Stack](https://www.elastic.co/guide/)
-
----
-
-**Ambiente preparado para DevOps Ninja! 🥷**
