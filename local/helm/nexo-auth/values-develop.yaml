@@ -6,6 +6,9 @@ image:
   tag: "develop-079ac8cdce90e49299db0dbd3125b7871a968f9b"
   pullPolicy: Always
 
+imagePullSecrets:
+  - name: ghcr-secret
+
 
 # Usar start-dev em develop para hot-reload de temas
 args:
