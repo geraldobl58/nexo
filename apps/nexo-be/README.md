@@ -173,19 +173,22 @@ A API estara disponivel em `http://localhost:3333` e a documentacao Swagger em `
 
 Acesse o admin do Keycloak em `http://localhost:8080` com as credenciais `admin`/`admin`.
 
-### Passo 1 — Desabilitar SSL nos Realms (desenvolvimento)
+### Passo 1 — Verificar que o Keycloak está rodando
 
-O Keycloak exige HTTPS por padrao. Para desenvolvimento local via HTTP, execute:
+O Keycloak roda em modo `start-dev` com HTTP habilitado e HTTPS desabilitado.
+Não é necessário configurar `sslRequired` manualmente — o modo dev já desabilita automaticamente.
 
 ```bash
-docker exec nexo-auth-dev /opt/keycloak/bin/kcadm.sh \
-  config credentials --server http://localhost:8080 --realm master --user admin --password admin
+# Verificar se o Keycloak está pronto
+curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/realms/master
+# Esperado: 200
 
-docker exec nexo-auth-dev /opt/keycloak/bin/kcadm.sh \
-  update realms/master -s sslRequired=NONE
+# Confirmar acesso ao admin console
+open http://localhost:8080/admin
+# Login: admin / admin
 ```
 
-> Repita para o realm `nexo` apos cria-lo: `kcadm.sh update realms/nexo -s sslRequired=NONE`
+> **Nota:** Toda a plataforma opera em HTTP. Não há configuração de HTTPS/TLS/SSL em nenhum ambiente.
 
 ### Passo 2 — Criar o Realm
 
@@ -194,12 +197,8 @@ docker exec nexo-auth-dev /opt/keycloak/bin/kcadm.sh \
 3. Preencha:
    - **Realm name:** `nexo`
 4. Clique em **Create**
-5. Desabilite SSL no novo realm:
 
-```bash
-docker exec nexo-auth-dev /opt/keycloak/bin/kcadm.sh \
-  update realms/nexo -s sslRequired=NONE
-```
+> **Nota:** Em modo `start-dev`, o SSL já está desabilitado por padrão para todos os realms.
 
 ### Passo 3 — Criar o Client do Backend (nexo-api)
 
