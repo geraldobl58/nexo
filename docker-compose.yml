@@ -20,7 +20,7 @@ services:
       POSTGRES_USER: nexo
       POSTGRES_PASSWORD: nexo_password
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - /Volumes/Backup/nexo-cloudlab/data/postgres:/var/lib/postgresql/data
       - ./infra/docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
     networks:
       - nexo-network
@@ -77,7 +77,7 @@ services:
       # Logging
       KC_LOG_LEVEL: INFO
     volumes:
-      - keycloak-data:/opt/keycloak/data
+      - /Volumes/Backup/nexo-cloudlab/data/keycloak:/opt/keycloak/data
       - ./apps/nexo-auth/themes:/opt/keycloak/themes
     networks:
       - nexo-network
@@ -100,10 +100,9 @@ networks:
     name: nexo-network
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# Volumes - Docker Managed
+# Volumes - External SSD (/Volumes/Backup/nexo-cloudlab/data/)
 # ═══════════════════════════════════════════════════════════════════════════════
-volumes:
-  postgres-data:
-    name: nexo-postgres-data
-  keycloak-data:
-    name: nexo-keycloak-data
+# Os dados são persistidos diretamente no SSD externo via bind mounts.
+# Diretórios:
+#   - /Volumes/Backup/nexo-cloudlab/data/postgres
+#   - /Volumes/Backup/nexo-cloudlab/data/keycloak
