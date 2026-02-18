@@ -9,6 +9,9 @@ image:
 imagePullSecrets:
   - name: ghcr-secret
 
+# Keycloak management port (health + metrics)
+managementPort: 9000
+
 # Usar start para Staging (production mode)
 args:
   - start
