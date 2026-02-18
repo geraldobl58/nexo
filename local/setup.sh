@@ -226,6 +226,14 @@ grafana:
   persistence:
     enabled: false
   
+  sidecar:
+    dashboards:
+      enabled: true
+      folderAnnotation: grafana_folder
+      provider:
+        foldersFromFilesStructure: true
+        allowUiUpdates: true
+  
   ingress:
     enabled: true
     ingressClassName: nginx
@@ -263,6 +271,10 @@ log_substep "Aplicando dashboards customizados do Grafana..."
 kubectl apply -f "$SCRIPT_DIR/k8s/grafana-dashboard-nexo.yaml"
 kubectl apply -f "$SCRIPT_DIR/k8s/grafana-dashboard-apps.yaml"
 echo -e "${GREEN}✓ Dashboards customizados aplicados${NC}"
+
+log_substep "Aplicando ServiceMonitors para métricas das aplicações..."
+kubectl apply -f "$SCRIPT_DIR/k8s/servicemonitor-apps.yaml"
+echo -e "${GREEN}✓ ServiceMonitors aplicados (nexo-be, nexo-fe, nexo-auth)${NC}"
 
 # ==============================================================================
 # ETAPA 5: Configurar ArgoCD Applications
