@@ -19,6 +19,8 @@ services:
       POSTGRES_DB: nexo_db
       POSTGRES_USER: nexo
       POSTGRES_PASSWORD: nexo_password
+      # PGDATA em subdiretório evita conflito com ._* metadata do macOS no SSD
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./local/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
