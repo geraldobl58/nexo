@@ -98,7 +98,6 @@ networks:
   nexo-network:
     driver: bridge
     name: nexo-network
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # Volumes - External SSD (/Volumes/Backup/nexo-cloudlab/data/)
 # ═══════════════════════════════════════════════════════════════════════════════

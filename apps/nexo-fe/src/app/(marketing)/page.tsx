@@ -2,7 +2,7 @@ const MarketingPage = () => {
   return (
     <div>
       <div>
-        <p>Deploy</p>
+        <p>Vamos iniciar o desenvolvimento do Nexo Platform!</p>
       </div>
     </div>
   );
