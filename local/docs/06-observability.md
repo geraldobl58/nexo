@@ -84,7 +84,58 @@ make alertmanager
 
 ## Dashboards Pré-configurados
 
-### 1. Cluster Overview (Dashboard 7249)
+### Nexo CloudLab (Folder)
+
+Os dashboards customizados do Nexo ficam na pasta **Nexo CloudLab** no Grafana:
+
+#### Nexo CloudLab - Overview
+
+Visão geral de todos os ambientes (develop, qa, staging, prod):
+
+- Pods running por ambiente
+- Uso de memória e CPU por namespace
+- Status dos pods por ambiente (tabelas)
+- Pod restarts nos últimos 30 min
+- Uptime dos deployments
+
+#### Backend API (nexo-be)
+
+Dashboard dedicado ao backend com filtro por namespace:
+
+- Status e réplicas por namespace
+- CPU e Memory usage (timeseries por pod)
+- Network RX/TX
+- Pod restarts
+- Comparação CPU vs Memory por namespace
+
+#### Frontend (nexo-fe)
+
+Dashboard dedicado ao frontend com filtro por namespace:
+
+- Status e réplicas por namespace
+- CPU e Memory usage (timeseries por pod)
+- Network RX/TX
+- Pod restarts
+- Comparação CPU vs Memory por namespace
+
+#### Auth / Keycloak (nexo-auth)
+
+Dashboard dedicado ao Keycloak com filtro por namespace:
+
+- Status e réplicas por namespace
+- CPU e Memory usage (timeseries por pod)
+- Network RX/TX
+- Pod restarts
+- Comparação CPU vs Memory por namespace
+
+> **Nota:** Todos os dashboards possuem variável `$namespace` que permite
+> filtrar por `nexo-develop`, `nexo-qa`, `nexo-staging` ou `nexo-prod`.
+
+### Dashboards Built-in do Kubernetes
+
+Além dos dashboards customizados, o kube-prometheus-stack inclui:
+
+#### Cluster Overview (Dashboard 7249)
 
 Visão geral do cluster:
 
