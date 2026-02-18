@@ -434,11 +434,8 @@ x509: certificate signed by unknown authority
 
 #### Para ambiente local
 
-A plataforma opera inteiramente em **HTTP** — não há HTTPS/TLS configurado em nenhum ambiente.
-Se este erro aparecer, verifique se algum serviço está tentando acessar endpoints HTTPS.
-
 ```yaml
-# Garantir que ingress NÃO redireciona para HTTPS
+# Desabilitar TLS verificatio em ingress
 ingress:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
@@ -471,26 +468,7 @@ keycloak.init({ onLoad: "check-sso", pkceMethod: "S256" });
 keycloak.init({ onLoad: "check-sso" });
 ```
 
-> **Nota:** Toda a plataforma opera em HTTP — PKCE S256 não é utilizado em nenhum ambiente.
-
-#### Sintoma: Keycloak "HTTPS required"
-
-O Keycloak exibe "We are sorry... HTTPS required" ao acessar o admin console.
-
-#### Causa
-
-O realm no banco de dados foi inicializado com `sslRequired=ALL` ou `sslRequired=EXTERNAL` de uma execução anterior que não usava `start-dev`.
-
-#### Solução
-
-1. Parar os containers: `docker compose down`
-2. Limpar os dados do PostgreSQL no SSD: `sudo rm -rf /Volumes/Backup/nexo-cloudlab/data/postgres`
-3. Recriar o diretório: `mkdir -p /Volumes/Backup/nexo-cloudlab/data/postgres`
-4. Subir novamente: `docker compose up -d`
-
-O Keycloak em modo `start-dev` inicializa os realms com `sslRequired=NONE` automaticamente.
-
-> **Importante:** Isso apaga TODOS os dados do Keycloak e PostgreSQL. Exporte configs antes se necessário.
+> **Nota:** Em produção com HTTPS real, pode-se reativar PKCE S256 para maior segurança.
 
 #### Sintoma: Keycloak 503 Service Temporarily Unavailable
 
@@ -516,40 +494,74 @@ Se o Keycloak em QA/staging fica em CrashLoopBackOff, verifique se está usando 
 ```yaml
 # values-qa.yaml / values-staging.yaml
 keycloak:
-  args: "start-dev"  # ✅ Dev mode (mais rápido, sem build otimizado)
+  args: "start-dev" # ✅ Dev mode (mais rápido, sem build otimizado)
   # args: "start"    # ❌ Production mode (requer configurações extras)
 ```
 
-### 12. PostgreSQL não inicia no SSD Externo (macOS)
+#### Sintoma: Keycloak "HTTPS required" (Docker Compose)
 
-#### Sintoma
+Ao acessar `http://localhost:8080/admin/`, o Keycloak exibe "We are sorry... HTTPS required".
+
+#### Causa
+
+Dados antigos do Keycloak com `sslRequired=EXTERNAL` nos realms, ou falta de configuração HTTP.
+
+#### Solução
+
+1. Limpar dados antigos e reiniciar:
+
+```bash
+docker compose down -v
+docker compose up -d
+```
+
+2. Garantir que o `docker-compose.yml` tenha as env vars corretas:
+
+```yaml
+environment:
+  KC_HTTP_ENABLED: "true"
+  KC_HOSTNAME: "http://localhost:8080"
+  KC_HOSTNAME_STRICT: "false"
+  KC_PROXY_HEADERS: "xforwarded"
+```
+
+### 12. Docker Compose - PostgreSQL no SSD Externo
+
+#### Sintoma: "dependency postgres failed to start" / container unhealthy
 
 ```
-find: /var/lib/postgresql/data/._.metadata_never_index: Operation not permitted
-dependency failed to start: container nexo-postgres-dev is unhealthy
+Container nexo-postgres-dev  Error dependency postgres failed to start
 ```
 
 #### Causa
 
-macOS cria arquivos `._*` (AppleDouble metadata) em volumes externos (SSD). O PostgreSQL no container Alpine não consegue ler esses arquivos, causando falha no entrypoint.
+O SSD externo (exFAT/HFS+) cria resource forks do macOS (`._*` files) nos bind mounts diretos. O PostgreSQL não consegue ler esses arquivos e falha no startup.
 
 #### Solução
 
-O `docker-compose.yml` usa `PGDATA` apontando para um subdiretório `pgdata/` dentro do volume:
+Usar Docker named volumes com driver local (bind) ao invés de bind mounts diretos:
 
 ```yaml
-environment:
-  PGDATA: /var/lib/postgresql/data/pgdata  # Subdiretório limpo
+# ✅ Named volume com driver local (evita ._* files)
+volumes:
+  postgres-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /Volumes/Backup/nexo-cloudlab/data/postgres
+
+# ❌ Bind mount direto no SSD (cria ._* files)
 volumes:
   - /Volumes/Backup/nexo-cloudlab/data/postgres:/var/lib/postgresql/data
 ```
 
-Se o problema persistir, limpe os dados e reinicie:
+Se o problema persistir, limpar os dados e reiniciar:
 
 ```bash
-docker compose down
-sudo rm -rf /Volumes/Backup/nexo-cloudlab/data/postgres
+rm -rf /Volumes/Backup/nexo-cloudlab/data/postgres
 mkdir -p /Volumes/Backup/nexo-cloudlab/data/postgres
+docker compose down -v
 docker compose up -d
 ```
 
