@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/geraldobl58/nexo-auth
-  tag: "develop"
+  tag: "staging-2c344367dfc86d7d70387e2f9f8cc4f64dbc2d22"
   pullPolicy: Always
 
 imagePullSecrets:
@@ -71,4 +71,4 @@ podDisruptionBudget:
   enabled: false
 
 podAnnotations:
-  app.kubernetes.io/commit: "pending"
+  app.kubernetes.io/commit: "2c34436"
