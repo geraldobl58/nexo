@@ -19,8 +19,10 @@ services:
       POSTGRES_DB: nexo_db
       POSTGRES_USER: nexo
       POSTGRES_PASSWORD: nexo_password
+      # PGDATA em subdiretório evita conflito com ._* metadata do macOS no SSD externo
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - /Volumes/Backup/nexo-cloudlab/data/postgres:/var/lib/postgresql/data
       - ./infra/docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
     networks:
       - nexo-network
@@ -48,8 +50,8 @@ services:
     command:
       - start-dev
       - --http-enabled=true
-      - --hostname=http://localhost:8080
       - --http-port=8080
+      - --hostname-strict=false
     restart: unless-stopped
     ports:
       - "8080:8080"
@@ -65,6 +67,10 @@ services:
       KC_DB_USERNAME: nexo
       KC_DB_PASSWORD: nexo_password
 
+      # HTTP Only (sem HTTPS)
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+
       # Health/Metrics
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
@@ -77,7 +83,7 @@ services:
       # Logging
       KC_LOG_LEVEL: INFO
     volumes:
-      - keycloak-data:/opt/keycloak/data
+      - /Volumes/Backup/nexo-cloudlab/data/keycloak:/opt/keycloak/data
       - ./apps/nexo-auth/themes:/opt/keycloak/themes
     networks:
       - nexo-network
@@ -98,12 +104,10 @@ networks:
   nexo-network:
     driver: bridge
     name: nexo-network
-
 # ═══════════════════════════════════════════════════════════════════════════════
-# Volumes - Docker Managed
+# Volumes - External SSD (/Volumes/Backup/nexo-cloudlab/data/)
 # ═══════════════════════════════════════════════════════════════════════════════
-volumes:
-  postgres-data:
-    name: nexo-postgres-data
-  keycloak-data:
-    name: nexo-keycloak-data
+# Os dados são persistidos diretamente no SSD externo via bind mounts.
+# Diretórios:
+#   - /Volumes/Backup/nexo-cloudlab/data/postgres
+#   - /Volumes/Backup/nexo-cloudlab/data/keycloak
