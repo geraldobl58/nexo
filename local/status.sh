@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Nexo CloudLab - Status do Ambiente
-# ===================================
-# Verifica o status de todos os componentes do CloudLab
+# Nexo CloudLab Ninja - Status do Ambiente
+# =========================================
+# Verifica o status de todos os componentes do CloudLab Ninja
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -22,7 +22,7 @@ cat << "EOF"
 ║   | |\  |  __/>  < (_) | | |___| | (_) | |_| | (_| | |__ ║
 ║   |_| \_|\___/_/\_\___/   \____|_|\___/ \__,_|\__,_|____|║
 ║                                                           ║
-║   CloudLab Status Report                                 ║
+║   🥷 CloudLab Ninja - Status Report                      ║
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
 EOF
@@ -241,7 +241,7 @@ DEGRADED_APPS=$(kubectl get applications -n argocd --no-headers 2>/dev/null | gr
 if [ "$DEGRADED_APPS" -gt "0" ]; then
     echo -e "${YELLOW}⚠️  ATENÇÃO:${NC} $DEGRADED_APPS aplicações degradadas"
     echo -e "   Possível causa: ImagePullBackOff (imagens privadas)"
-    echo -e "   Solução: ${GREEN}bash local/scripts/create-ghcr-secrets.sh <GITHUB_TOKEN>${NC}"
+    echo -e "   Solução: ${GREEN}bash local/create-ghcr-secrets.sh <GITHUB_TOKEN>${NC}"
     echo ""
 fi
 

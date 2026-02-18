@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Nexo CloudLab - Destruir Ambiente
-# ==================================
-# Remove completamente o CloudLab local:
+# Nexo CloudLab Ninja - Destruir Ambiente
+# ========================================
+# Remove completamente o CloudLab Ninja local:
 # - Deleta cluster k3d
 # - Remove entradas do /etc/hosts
 # - Limpa contexto do kubeconfig
@@ -25,7 +25,7 @@ cat << "EOF"
 ║   | |\  |  __/>  < (_) | | |___| | (_) | |_| | (_| | |__ ║
 ║   |_| \_|\___/_/\_\___/   \____|_|\___/ \__,_|\__,_|____|║
 ║                                                           ║
-║   Destroy CloudLab Environment                           ║
+║   🥷 Destroy CloudLab Ninja                              ║
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
 EOF

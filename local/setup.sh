@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-# Nexo CloudLab - Setup Unificado
-# ================================
-# Este script configura todo o ambiente local do CloudLab:
+# Nexo CloudLab Ninja - Setup Unificado
+# ======================================
+# Este script configura todo o ambiente local do CloudLab Ninja:
 # 1. Cria cluster k3d (7 nodes)
 # 2. Instala ArgoCD para GitOps
 # 3. Instala Prometheus + Grafana
@@ -29,7 +29,7 @@ cat << "EOF"
 ║   | |\  |  __/>  < (_) | | |___| | (_) | |_| | (_| | |__ ║
 ║   |_| \_|\___/_/\_\___/   \____|_|\___/ \__,_|\__,_|____|║
 ║                                                           ║
-║   Kubernetes Local Development Lab                       ║
+║   🥷 CloudLab Ninja - Kubernetes Local                    ║
 ║   4 Ambientes: develop → qa → staging → prod             ║
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
@@ -341,10 +341,10 @@ echo -e ""
 echo -e "   ${GREEN}Opção 1 (Recomendado):${NC} Configurar no .env"
 echo -e "   1. Editar arquivo .env na raiz do projeto"
 echo -e "   2. Adicionar seu token: GITHUB_TOKEN=ghp_xxxxx"
-echo -e "   3. Executar: bash local/scripts/create-ghcr-secrets.sh"
+echo -e "   3. Executar: bash local/create-ghcr-secrets.sh"
 echo -e ""
 echo -e "   ${GREEN}Opção 2:${NC} Passar token diretamente"
-echo -e "   bash local/scripts/create-ghcr-secrets.sh <TOKEN>"
+echo -e "   bash local/create-ghcr-secrets.sh <TOKEN>"
 echo -e ""
 echo -e "   ${GREEN}Opção 3:${NC} Tornar packages públicos no GitHub"
 echo -e "   https://github.com/geraldobl58?tab=packages"
