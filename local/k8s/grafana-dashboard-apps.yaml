@@ -1,295 +1,26 @@
+# ============================================================================
+# Grafana Dashboard - nexo-be (Backend API)
+# ============================================================================
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: nexo-apps-dashboard
+  name: nexo-dashboard-backend
   namespace: monitoring
   labels:
     grafana_dashboard: "1"
   annotations:
     grafana_folder: "Nexo CloudLab"
 data:
-  nexo-applications.json: |-
+  nexo-backend.json: |-
     {
-      "title": "Nexo CloudLab - Applications Performance",
-      "tags": [
-        "nexo",
-        "applications",
-        "performance"
-      ],
+      "uid": "nexo-backend",
+      "title": "Backend API (nexo-be)",
+      "tags": ["nexo", "backend", "api"],
       "timezone": "America/Sao_Paulo",
       "editable": true,
       "graphTooltip": 1,
-      "time": {
-        "from": "now-1h",
-        "to": "now"
-      },
+      "time": { "from": "now-1h", "to": "now" },
       "refresh": "10s",
-      "panels": [
-        {
-          "id": 1,
-          "title": "🖥️ Backend - CPU Usage",
-          "type": "graph",
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 0
-          },
-          "targets": [
-            {
-              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"nexo-.*\", pod=~\"nexo-be-.*\"}[5m])) by (namespace)",
-              "legendFormat": "{{ namespace }}",
-              "refId": "A"
-            }
-          ],
-          "yaxes": [
-            {
-              "format": "short",
-              "label": "CPU Cores"
-            }
-          ]
-        },
-        {
-          "id": 2,
-          "title": "🖥️ Backend - Memory Usage",
-          "type": "graph",
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 0
-          },
-          "targets": [
-            {
-              "expr": "sum(container_memory_working_set_bytes{namespace=~\"nexo-.*\", pod=~\"nexo-be-.*\"}) by (namespace) / 1024 / 1024",
-              "legendFormat": "{{ namespace }}",
-              "refId": "A"
-            }
-          ],
-          "yaxes": [
-            {
-              "format": "decmbytes",
-              "label": "Memory"
-            }
-          ]
-        },
-        {
-          "id": 3,
-          "title": "🌐 Frontend - CPU Usage",
-          "type": "graph",
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 8
-          },
-          "targets": [
-            {
-              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"nexo-.*\", pod=~\"nexo-fe-.*\"}[5m])) by (namespace)",
-              "legendFormat": "{{ namespace }}",
-              "refId": "A"
-            }
-          ],
-          "yaxes": [
-            {
-              "format": "short",
-              "label": "CPU Cores"
-            }
-          ]
-        },
-        {
-          "id": 4,
-          "title": "🌐 Frontend - Memory Usage",
-          "type": "graph",
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 8
-          },
-          "targets": [
-            {
-              "expr": "sum(container_memory_working_set_bytes{namespace=~\"nexo-.*\", pod=~\"nexo-fe-.*\"}) by (namespace) / 1024 / 1024",
-              "legendFormat": "{{ namespace }}",
-              "refId": "A"
-            }
-          ],
-          "yaxes": [
-            {
-              "format": "decmbytes",
-              "label": "Memory"
-            }
-          ]
-        },
-        {
-          "id": 5,
-          "title": "🔐 Auth (Keycloak) - CPU Usage",
-          "type": "graph",
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 16
-          },
-          "targets": [
-            {
-              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"nexo-.*\", pod=~\"nexo-auth-.*\"}[5m])) by (namespace)",
-              "legendFormat": "{{ namespace }}",
-              "refId": "A"
-            }
-          ],
-          "yaxes": [
-            {
-              "format": "short",
-              "label": "CPU Cores"
-            }
-          ]
-        },
-        {
-          "id": 6,
-          "title": "🔐 Auth (Keycloak) - Memory Usage",
-          "type": "graph",
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 16
-          },
-          "targets": [
-            {
-              "expr": "sum(container_memory_working_set_bytes{namespace=~\"nexo-.*\", pod=~\"nexo-auth-.*\"}) by (namespace) / 1024 / 1024",
-              "legendFormat": "{{ namespace }}",
-              "refId": "A"
-            }
-          ],
-          "yaxes": [
-            {
-              "format": "decmbytes",
-              "label": "Memory"
-            }
-          ]
-        },
-        {
-          "id": 7,
-          "title": "📈 Comparação de Recursos por Aplicação",
-          "type": "bargauge",
-          "gridPos": {
-            "h": 8,
-            "w": 24,
-            "x": 0,
-            "y": 24
-          },
-          "targets": [
-            {
-              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"nexo-.*\"}[5m])) by (pod)",
-              "legendFormat": "{{ pod }}",
-              "refId": "A"
-            }
-          ],
-          "options": {
-            "orientation": "horizontal",
-            "displayMode": "gradient"
-          }
-        },
-        {
-          "id": 8,
-          "title": "🔄 Comparação de Pods por Ambiente",
-          "type": "piechart",
-          "gridPos": {
-            "h": 8,
-            "w": 8,
-            "x": 0,
-            "y": 32
-          },
-          "targets": [
-            {
-              "expr": "count(kube_pod_info{namespace=~\"nexo-.*\"}) by (namespace)",
-              "legendFormat": "{{ namespace }}",
-              "refId": "A"
-            }
-          ]
-        },
-        {
-          "id": 9,
-          "title": "⚡ CPU Usage - Top 10 Pods",
-          "type": "table",
-          "gridPos": {
-            "h": 8,
-            "w": 8,
-            "x": 8,
-            "y": 32
-          },
-          "targets": [
-            {
-              "expr": "topk(10, sum(rate(container_cpu_usage_seconds_total{namespace=~\"nexo-.*\"}[5m])) by (namespace, pod))",
-              "format": "table",
-              "instant": true,
-              "refId": "A"
-            }
-          ]
-        },
-        {
-          "id": 10,
-          "title": "💾 Memory Usage - Top 10 Pods",
-          "type": "table",
-          "gridPos": {
-            "h": 8,
-            "w": 8,
-            "x": 16,
-            "y": 32
-          },
-          "targets": [
-            {
-              "expr": "topk(10, sum(container_memory_working_set_bytes{namespace=~\"nexo-.*\"}) by (namespace, pod) / 1024 / 1024)",
-              "format": "table",
-              "instant": true,
-              "refId": "A"
-            }
-          ]
-        },
-        {
-          "id": 11,
-          "title": "📊 Réplicas por Deployment",
-          "type": "stat",
-          "gridPos": {
-            "h": 6,
-            "w": 24,
-            "x": 0,
-            "y": 40
-          },
-          "targets": [
-            {
-              "expr": "kube_deployment_status_replicas{namespace=~\"nexo-.*\"}",
-              "legendFormat": "{{ namespace }}/{{ deployment }}",
-              "refId": "A"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "red",
-                    "value": 0
-                  },
-                  {
-                    "color": "yellow",
-                    "value": 1
-                  },
-                  {
-                    "color": "green",
-                    "value": 2
-                  }
-                ]
-              }
-            }
-          }
-        }
-      ],
       "templating": {
         "list": [
           {
@@ -297,13 +28,296 @@ data:
             "label": "Namespace",
             "type": "query",
             "query": "label_values(kube_pod_info{namespace=~\"nexo-.*\"}, namespace)",
-            "current": {
-              "text": "All",
-              "value": "$__all"
-            },
+            "current": { "text": "All", "value": "$__all" },
             "includeAll": true,
-            "multi": true
+            "multi": true,
+            "refresh": 2
           }
         ]
-      }
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Status",
+          "type": "stat",
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+          "targets": [{ "expr": "count(kube_pod_status_phase{namespace=~\"$namespace\", pod=~\"nexo-be-.*\", phase=\"Running\"})", "legendFormat": "Running Pods", "refId": "A" }],
+          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "red", "value": 0 }, { "color": "green", "value": 1 }] } } }
+        },
+        {
+          "id": 2,
+          "title": "Réplicas por Namespace",
+          "type": "stat",
+          "gridPos": { "h": 4, "w": 18, "x": 6, "y": 0 },
+          "targets": [{ "expr": "kube_deployment_status_replicas_ready{namespace=~\"$namespace\", deployment=~\"nexo-be.*\"}", "legendFormat": "{{ namespace }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" } } }
+        },
+        {
+          "id": 3,
+          "title": "CPU Usage",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+          "targets": [{ "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\", pod=~\"nexo-be-.*\", container!=\"\", container!=\"POD\"}[5m])) by (namespace, pod)", "legendFormat": "{{ namespace }} / {{ pod }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "short", "custom": { "fillOpacity": 10, "showPoints": "never" } } }
+        },
+        {
+          "id": 4,
+          "title": "Memory Usage",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+          "targets": [{ "expr": "sum(container_memory_working_set_bytes{namespace=~\"$namespace\", pod=~\"nexo-be-.*\", container!=\"\", container!=\"POD\"}) by (namespace, pod) / 1024 / 1024", "legendFormat": "{{ namespace }} / {{ pod }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "decmbytes", "custom": { "fillOpacity": 10, "showPoints": "never" } } }
+        },
+        {
+          "id": 5,
+          "title": "Network RX",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+          "targets": [{ "expr": "sum(rate(container_network_receive_bytes_total{namespace=~\"$namespace\", pod=~\"nexo-be-.*\"}[5m])) by (namespace, pod)", "legendFormat": "{{ namespace }} / {{ pod }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "Bps", "custom": { "fillOpacity": 10, "showPoints": "never" } } }
+        },
+        {
+          "id": 6,
+          "title": "Network TX",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+          "targets": [{ "expr": "sum(rate(container_network_transmit_bytes_total{namespace=~\"$namespace\", pod=~\"nexo-be-.*\"}[5m])) by (namespace, pod)", "legendFormat": "{{ namespace }} / {{ pod }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "Bps", "custom": { "fillOpacity": 10, "showPoints": "never" } } }
+        },
+        {
+          "id": 7,
+          "title": "Pod Restarts",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+          "targets": [{ "expr": "increase(kube_pod_container_status_restarts_total{namespace=~\"$namespace\", pod=~\"nexo-be-.*\"}[30m])", "legendFormat": "{{ namespace }} / {{ pod }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "custom": { "fillOpacity": 10, "showPoints": "never" } } }
+        },
+        {
+          "id": 8,
+          "title": "CPU vs Memory (Comparação por Namespace)",
+          "type": "bargauge",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+          "targets": [
+            { "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\", pod=~\"nexo-be-.*\", container!=\"\", container!=\"POD\"}[5m])) by (namespace) * 1000", "legendFormat": "{{ namespace }} CPU (mCores)", "refId": "A" },
+            { "expr": "sum(container_memory_working_set_bytes{namespace=~\"$namespace\", pod=~\"nexo-be-.*\", container!=\"\", container!=\"POD\"}) by (namespace) / 1024 / 1024", "legendFormat": "{{ namespace }} MEM (Mi)", "refId": "B" }
+          ],
+          "options": { "orientation": "horizontal", "displayMode": "gradient" }
+        }
+      ]
+    }
+---
+# ============================================================================
+# Grafana Dashboard - nexo-fe (Frontend)
+# ============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexo-dashboard-frontend
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "Nexo CloudLab"
+data:
+  nexo-frontend.json: |-
+    {
+      "uid": "nexo-frontend",
+      "title": "Frontend (nexo-fe)",
+      "tags": ["nexo", "frontend", "nextjs"],
+      "timezone": "America/Sao_Paulo",
+      "editable": true,
+      "graphTooltip": 1,
+      "time": { "from": "now-1h", "to": "now" },
+      "refresh": "10s",
+      "templating": {
+        "list": [
+          {
+            "name": "namespace",
+            "label": "Namespace",
+            "type": "query",
+            "query": "label_values(kube_pod_info{namespace=~\"nexo-.*\"}, namespace)",
+            "current": { "text": "All", "value": "$__all" },
+            "includeAll": true,
+            "multi": true,
+            "refresh": 2
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Status",
+          "type": "stat",
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+          "targets": [{ "expr": "count(kube_pod_status_phase{namespace=~\"$namespace\", pod=~\"nexo-fe-.*\", phase=\"Running\"})", "legendFormat": "Running Pods", "refId": "A" }],
+          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "red", "value": 0 }, { "color": "green", "value": 1 }] } } }
+        },
+        {
+          "id": 2,
+          "title": "Réplicas por Namespace",
+          "type": "stat",
+          "gridPos": { "h": 4, "w": 18, "x": 6, "y": 0 },
+          "targets": [{ "expr": "kube_deployment_status_replicas_ready{namespace=~\"$namespace\", deployment=~\"nexo-fe.*\"}", "legendFormat": "{{ namespace }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" } } }
+        },
+        {
+          "id": 3,
+          "title": "CPU Usage",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+          "targets": [{ "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\", pod=~\"nexo-fe-.*\", container!=\"\", container!=\"POD\"}[5m])) by (namespace, pod)", "legendFormat": "{{ namespace }} / {{ pod }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "short", "custom": { "fillOpacity": 10, "showPoints": "never" } } }
+        },
+        {
+          "id": 4,
+          "title": "Memory Usage",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+          "targets": [{ "expr": "sum(container_memory_working_set_bytes{namespace=~\"$namespace\", pod=~\"nexo-fe-.*\", container!=\"\", container!=\"POD\"}) by (namespace, pod) / 1024 / 1024", "legendFormat": "{{ namespace }} / {{ pod }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "decmbytes", "custom": { "fillOpacity": 10, "showPoints": "never" } } }
+        },
+        {
+          "id": 5,
+          "title": "Network RX",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+          "targets": [{ "expr": "sum(rate(container_network_receive_bytes_total{namespace=~\"$namespace\", pod=~\"nexo-fe-.*\"}[5m])) by (namespace, pod)", "legendFormat": "{{ namespace }} / {{ pod }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "Bps", "custom": { "fillOpacity": 10, "showPoints": "never" } } }
+        },
+        {
+          "id": 6,
+          "title": "Network TX",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+          "targets": [{ "expr": "sum(rate(container_network_transmit_bytes_total{namespace=~\"$namespace\", pod=~\"nexo-fe-.*\"}[5m])) by (namespace, pod)", "legendFormat": "{{ namespace }} / {{ pod }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "Bps", "custom": { "fillOpacity": 10, "showPoints": "never" } } }
+        },
+        {
+          "id": 7,
+          "title": "Pod Restarts",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+          "targets": [{ "expr": "increase(kube_pod_container_status_restarts_total{namespace=~\"$namespace\", pod=~\"nexo-fe-.*\"}[30m])", "legendFormat": "{{ namespace }} / {{ pod }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "custom": { "fillOpacity": 10, "showPoints": "never" } } }
+        },
+        {
+          "id": 8,
+          "title": "CPU vs Memory (Comparação por Namespace)",
+          "type": "bargauge",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+          "targets": [
+            { "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\", pod=~\"nexo-fe-.*\", container!=\"\", container!=\"POD\"}[5m])) by (namespace) * 1000", "legendFormat": "{{ namespace }} CPU (mCores)", "refId": "A" },
+            { "expr": "sum(container_memory_working_set_bytes{namespace=~\"$namespace\", pod=~\"nexo-fe-.*\", container!=\"\", container!=\"POD\"}) by (namespace) / 1024 / 1024", "legendFormat": "{{ namespace }} MEM (Mi)", "refId": "B" }
+          ],
+          "options": { "orientation": "horizontal", "displayMode": "gradient" }
+        }
+      ]
+    }
+---
+# ============================================================================
+# Grafana Dashboard - nexo-auth (Keycloak)
+# ============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexo-dashboard-auth
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "Nexo CloudLab"
+data:
+  nexo-auth.json: |-
+    {
+      "uid": "nexo-auth",
+      "title": "Auth / Keycloak (nexo-auth)",
+      "tags": ["nexo", "auth", "keycloak"],
+      "timezone": "America/Sao_Paulo",
+      "editable": true,
+      "graphTooltip": 1,
+      "time": { "from": "now-1h", "to": "now" },
+      "refresh": "10s",
+      "templating": {
+        "list": [
+          {
+            "name": "namespace",
+            "label": "Namespace",
+            "type": "query",
+            "query": "label_values(kube_pod_info{namespace=~\"nexo-.*\"}, namespace)",
+            "current": { "text": "All", "value": "$__all" },
+            "includeAll": true,
+            "multi": true,
+            "refresh": 2
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Status",
+          "type": "stat",
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+          "targets": [{ "expr": "count(kube_pod_status_phase{namespace=~\"$namespace\", pod=~\"nexo-auth-.*\", phase=\"Running\"})", "legendFormat": "Running Pods", "refId": "A" }],
+          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "red", "value": 0 }, { "color": "green", "value": 1 }] } } }
+        },
+        {
+          "id": 2,
+          "title": "Réplicas por Namespace",
+          "type": "stat",
+          "gridPos": { "h": 4, "w": 18, "x": 6, "y": 0 },
+          "targets": [{ "expr": "kube_deployment_status_replicas_ready{namespace=~\"$namespace\", deployment=~\"nexo-auth.*\"}", "legendFormat": "{{ namespace }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" } } }
+        },
+        {
+          "id": 3,
+          "title": "CPU Usage",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+          "targets": [{ "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\", pod=~\"nexo-auth-.*\", container!=\"\", container!=\"POD\"}[5m])) by (namespace, pod)", "legendFormat": "{{ namespace }} / {{ pod }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "short", "custom": { "fillOpacity": 10, "showPoints": "never" } } }
+        },
+        {
+          "id": 4,
+          "title": "Memory Usage",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+          "targets": [{ "expr": "sum(container_memory_working_set_bytes{namespace=~\"$namespace\", pod=~\"nexo-auth-.*\", container!=\"\", container!=\"POD\"}) by (namespace, pod) / 1024 / 1024", "legendFormat": "{{ namespace }} / {{ pod }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "decmbytes", "custom": { "fillOpacity": 10, "showPoints": "never" } } }
+        },
+        {
+          "id": 5,
+          "title": "Network RX",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+          "targets": [{ "expr": "sum(rate(container_network_receive_bytes_total{namespace=~\"$namespace\", pod=~\"nexo-auth-.*\"}[5m])) by (namespace, pod)", "legendFormat": "{{ namespace }} / {{ pod }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "Bps", "custom": { "fillOpacity": 10, "showPoints": "never" } } }
+        },
+        {
+          "id": 6,
+          "title": "Network TX",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+          "targets": [{ "expr": "sum(rate(container_network_transmit_bytes_total{namespace=~\"$namespace\", pod=~\"nexo-auth-.*\"}[5m])) by (namespace, pod)", "legendFormat": "{{ namespace }} / {{ pod }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "Bps", "custom": { "fillOpacity": 10, "showPoints": "never" } } }
+        },
+        {
+          "id": 7,
+          "title": "Pod Restarts",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+          "targets": [{ "expr": "increase(kube_pod_container_status_restarts_total{namespace=~\"$namespace\", pod=~\"nexo-auth-.*\"}[30m])", "legendFormat": "{{ namespace }} / {{ pod }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "custom": { "fillOpacity": 10, "showPoints": "never" } } }
+        },
+        {
+          "id": 8,
+          "title": "CPU vs Memory (Comparação por Namespace)",
+          "type": "bargauge",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+          "targets": [
+            { "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\", pod=~\"nexo-auth-.*\", container!=\"\", container!=\"POD\"}[5m])) by (namespace) * 1000", "legendFormat": "{{ namespace }} CPU (mCores)", "refId": "A" },
+            { "expr": "sum(container_memory_working_set_bytes{namespace=~\"$namespace\", pod=~\"nexo-auth-.*\", container!=\"\", container!=\"POD\"}) by (namespace) / 1024 / 1024", "legendFormat": "{{ namespace }} MEM (Mi)", "refId": "B" }
+          ],
+          "options": { "orientation": "horizontal", "displayMode": "gradient" }
+        }
+      ]
     }
