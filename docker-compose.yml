@@ -19,11 +19,9 @@ services:
       POSTGRES_DB: nexo_db
       POSTGRES_USER: nexo
       POSTGRES_PASSWORD: nexo_password
-      # PGDATA em subdiretório evita conflito com ._* metadata do macOS no SSD externo
-      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      - /Volumes/Backup/nexo-cloudlab/data/postgres:/var/lib/postgresql/data
-      - ./infra/docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
+      - postgres-data:/var/lib/postgresql/data
+      - ./local/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
     networks:
       - nexo-network
     healthcheck:
@@ -49,9 +47,7 @@ services:
     container_name: nexo-auth-dev
     command:
       - start-dev
-      - --http-enabled=true
       - --http-port=8080
-      - --hostname-strict=false
     restart: unless-stopped
     ports:
       - "8080:8080"
@@ -67,9 +63,11 @@ services:
       KC_DB_USERNAME: nexo
       KC_DB_PASSWORD: nexo_password
 
-      # HTTP Only (sem HTTPS)
-      KC_HOSTNAME_STRICT: "false"
+      # HTTP Only - Sem HTTPS em desenvolvimento
       KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME: "http://localhost:8080"
+      KC_HOSTNAME_STRICT: "false"
+      KC_PROXY_HEADERS: "xforwarded"
 
       # Health/Metrics
       KC_HEALTH_ENABLED: "true"
@@ -83,7 +81,7 @@ services:
       # Logging
       KC_LOG_LEVEL: INFO
     volumes:
-      - /Volumes/Backup/nexo-cloudlab/data/keycloak:/opt/keycloak/data
+      - keycloak-data:/opt/keycloak/data
       - ./apps/nexo-auth/themes:/opt/keycloak/themes
     networks:
       - nexo-network
@@ -104,10 +102,26 @@ networks:
   nexo-network:
     driver: bridge
     name: nexo-network
+
 # ═══════════════════════════════════════════════════════════════════════════════
-# Volumes - External SSD (/Volumes/Backup/nexo-cloudlab/data/)
+# 💾 Volumes - Persistidos no SSD externo (/Volumes/Backup/nexo-cloudlab/)
 # ═══════════════════════════════════════════════════════════════════════════════
-# Os dados são persistidos diretamente no SSD externo via bind mounts.
-# Diretórios:
-#   - /Volumes/Backup/nexo-cloudlab/data/postgres
-#   - /Volumes/Backup/nexo-cloudlab/data/keycloak
+# Usar Docker named volumes com driver local apontando para o SSD externo.
+# Isso evita problemas com resource forks do macOS (arquivos ._*) que corrompem
+# o PostgreSQL quando usado com bind mounts diretos no SSD.
+# ═══════════════════════════════════════════════════════════════════════════════
+volumes:
+  postgres-data:
+    name: nexo-postgres-data
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /Volumes/Backup/nexo-cloudlab/data/postgres
+  keycloak-data:
+    name: nexo-keycloak-data
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /Volumes/Backup/nexo-cloudlab/data/keycloak
