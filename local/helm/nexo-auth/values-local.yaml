@@ -81,7 +81,9 @@ env:
         name: nexo-secrets
         key: db-password
   - name: KC_HOSTNAME
-    value: "develop-auth.nexo.local"
+    value: "http://develop-auth.nexo.local"
+  - name: KC_HOSTNAME_STRICT
+    value: "false"
   - name: KC_HTTP_ENABLED
     value: "true"
   - name: KEYCLOAK_ADMIN

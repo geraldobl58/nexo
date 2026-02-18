@@ -434,8 +434,11 @@ x509: certificate signed by unknown authority
 
 #### Para ambiente local
 
+A plataforma opera inteiramente em **HTTP** — não há HTTPS/TLS configurado em nenhum ambiente.
+Se este erro aparecer, verifique se algum serviço está tentando acessar endpoints HTTPS.
+
 ```yaml
-# Desabilitar TLS verificatio em ingress
+# Garantir que ingress NÃO redireciona para HTTPS
 ingress:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
@@ -468,7 +471,26 @@ keycloak.init({ onLoad: "check-sso", pkceMethod: "S256" });
 keycloak.init({ onLoad: "check-sso" });
 ```
 
-> **Nota:** Em produção com HTTPS real, pode-se reativar PKCE S256 para maior segurança.
+> **Nota:** Toda a plataforma opera em HTTP — PKCE S256 não é utilizado em nenhum ambiente.
+
+#### Sintoma: Keycloak "HTTPS required"
+
+O Keycloak exibe "We are sorry... HTTPS required" ao acessar o admin console.
+
+#### Causa
+
+O realm no banco de dados foi inicializado com `sslRequired=ALL` ou `sslRequired=EXTERNAL` de uma execução anterior que não usava `start-dev`.
+
+#### Solução
+
+1. Parar os containers: `docker compose down`
+2. Limpar os dados do PostgreSQL no SSD: `sudo rm -rf /Volumes/Backup/nexo-cloudlab/data/postgres`
+3. Recriar o diretório: `mkdir -p /Volumes/Backup/nexo-cloudlab/data/postgres`
+4. Subir novamente: `docker compose up -d`
+
+O Keycloak em modo `start-dev` inicializa os realms com `sslRequired=NONE` automaticamente.
+
+> **Importante:** Isso apaga TODOS os dados do Keycloak e PostgreSQL. Exporte configs antes se necessário.
 
 #### Sintoma: Keycloak 503 Service Temporarily Unavailable
 
@@ -496,6 +518,39 @@ Se o Keycloak em QA/staging fica em CrashLoopBackOff, verifique se está usando 
 keycloak:
   args: "start-dev"  # ✅ Dev mode (mais rápido, sem build otimizado)
   # args: "start"    # ❌ Production mode (requer configurações extras)
+```
+
+### 12. PostgreSQL não inicia no SSD Externo (macOS)
+
+#### Sintoma
+
+```
+find: /var/lib/postgresql/data/._.metadata_never_index: Operation not permitted
+dependency failed to start: container nexo-postgres-dev is unhealthy
+```
+
+#### Causa
+
+macOS cria arquivos `._*` (AppleDouble metadata) em volumes externos (SSD). O PostgreSQL no container Alpine não consegue ler esses arquivos, causando falha no entrypoint.
+
+#### Solução
+
+O `docker-compose.yml` usa `PGDATA` apontando para um subdiretório `pgdata/` dentro do volume:
+
+```yaml
+environment:
+  PGDATA: /var/lib/postgresql/data/pgdata  # Subdiretório limpo
+volumes:
+  - /Volumes/Backup/nexo-cloudlab/data/postgres:/var/lib/postgresql/data
+```
+
+Se o problema persistir, limpe os dados e reinicie:
+
+```bash
+docker compose down
+sudo rm -rf /Volumes/Backup/nexo-cloudlab/data/postgres
+mkdir -p /Volumes/Backup/nexo-cloudlab/data/postgres
+docker compose up -d
 ```
 
 ---

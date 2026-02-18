@@ -7,7 +7,7 @@ export class HealthController {
   @Get('/health')
   check() {
     return {
-      status: 'Deploy',
+      status: 'Vamos iniciar o desenvolvimento do Nexo Platform!',
       timestamp: new Date().toISOString(),
     };
   }
@@ -15,7 +15,7 @@ export class HealthController {
   @Get('/metrics')
   metrics() {
     return {
-      status: 'Deploy',
+      status: 'Vamos iniciar o desenvolvimento do Nexo Platform!',
       timestamp: new Date().toISOString(),
     };
   }
