@@ -12,9 +12,9 @@ imagePullSecrets:
 # Keycloak management port (health + metrics)
 managementPort: 9000
 
-# Usar start para QA (production mode)
+# Usar start-dev para Lab (QA com recursos limitados)
 args:
-  - start
+  - start-dev
   - --http-enabled=true
   - --hostname-strict=false
   - --metrics-enabled=true

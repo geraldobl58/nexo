@@ -73,7 +73,7 @@ git push origin feature/nova-feature
 - ✅ Auto-deploy ao fazer push
 - ✅ Swagger habilitado
 - ✅ Log level: `info`
-- ✅ Keycloak em production mode
+- ✅ Keycloak em dev mode (`start-dev`)
 - ✅ NODE_ENV: `production`
 - ✅ Ambiente estável para testes
 
@@ -115,7 +115,7 @@ git push origin qa
 - ✅ Auto-deploy ao fazer push
 - ✅ Swagger habilitado
 - ✅ Log level: `info`
-- ✅ Configurações idênticas à produção
+- ✅ Keycloak em dev mode (`start-dev`)
 - ✅ NODE_ENV: `production`
 - ✅ Ambiente para testes de aceite (UAT)
 

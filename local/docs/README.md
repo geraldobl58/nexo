@@ -131,7 +131,7 @@ local/
 │   └── applicationsets/       # ApplicationSets (12 apps)
 ├── k8s/
 │   ├── grafana-dashboard-nexo.yaml    # Dashboard: Overview
-│   ├── grafana-dashboard-apps.yaml    # Dashboard: App Performance
+│   ├── grafana-dashboard-apps.yaml    # Dashboards: Backend, Frontend, Auth (por app)
 │   └── servicemonitor-apps.yaml       # ServiceMonitors
 └── docs/                      # ← Você está aqui
     ├── README.md              # Este arquivo

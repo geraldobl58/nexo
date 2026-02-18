@@ -124,10 +124,10 @@ Namespace: monitoring
 │  │   http://grafana.nexo.local             │             │
 │  │                                          │             │
 │  │  Dashboards:                             │             │
-│  │  • Kubernetes Cluster Monitoring         │             │
-│  │  • Node Exporter Full                    │             │
-│  │  • Pod Resource Usage                    │             │
-│  │  • Persistent Volumes                    │             │
+│  │  • Nexo CloudLab - Overview              │             │
+│  │  • Nexo CloudLab - Backend API           │             │
+│  │  • Nexo CloudLab - Frontend              │             │
+│  │  • Nexo CloudLab - Auth/Keycloak         │             │
 │  └──────────────────────────────────────────┘             │
 └──────────────────────────────────────────────────────────┘
 

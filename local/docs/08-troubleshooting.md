@@ -442,6 +442,64 @@ ingress:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
 ```
 
+### 11. Keycloak / Auth Issues
+
+#### Sintoma: "Web Crypto API is not available"
+
+O frontend exibe erro no console:
+
+```
+Web Crypto API is not available
+```
+
+#### Causa
+
+O `keycloak-js` foi configurado com `pkceMethod: "S256"`, que utiliza a Web Crypto API (`crypto.subtle`). Essa API só está disponível em **secure contexts** (HTTPS ou localhost). Como o CloudLab usa HTTP com domínios `.nexo.local`, o browser bloqueia o acesso.
+
+#### Solução
+
+Remover `pkceMethod: "S256"` do `keycloak.init()` em `auth-provider.tsx`:
+
+```typescript
+// ❌ Não funciona em HTTP
+keycloak.init({ onLoad: "check-sso", pkceMethod: "S256" });
+
+// ✅ Funciona em HTTP
+keycloak.init({ onLoad: "check-sso" });
+```
+
+> **Nota:** Em produção com HTTPS real, pode-se reativar PKCE S256 para maior segurança.
+
+#### Sintoma: Keycloak 503 Service Temporarily Unavailable
+
+O Keycloak retorna 503 durante o startup. Isso é **normal** — o Keycloak leva 2-4 minutos para inicializar completamente.
+
+#### Solução
+
+```bash
+# Verificar se o pod está rodando
+kubectl get pods -n nexo-develop -l app=nexo-auth
+
+# Aguardar readiness probe (180-240s initial delay)
+kubectl wait --for=condition=ready pod -l app=nexo-auth -n nexo-develop --timeout=300s
+
+# Testar endpoint
+curl -s -o /dev/null -w "%{http_code}" http://develop-auth.nexo.local/realms/master
+```
+
+#### Sintoma: Keycloak em loop de restart (QA/Staging)
+
+Se o Keycloak em QA/staging fica em CrashLoopBackOff, verifique se está usando `start-dev` e não `start`:
+
+```yaml
+# values-qa.yaml / values-staging.yaml
+keycloak:
+  args: "start-dev"  # ✅ Dev mode (mais rápido, sem build otimizado)
+  # args: "start"    # ❌ Production mode (requer configurações extras)
+```
+
+---
+
 ## Comandos de Emergência
 
 ### Restart Everything
