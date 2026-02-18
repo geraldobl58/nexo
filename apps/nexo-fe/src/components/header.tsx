@@ -28,14 +28,14 @@ export const Header = () => {
   };
 
   return (
-    <div className="flex items-center justify-between p-4 shadow-sm bg-[#E5E7EB]">
+    <div className="flex items-center justify-between p-4 shadow-sm border-b bg-violet-50">
       <Logo />
       <NavBar />
       <div className="flex items-center space-x-4">
         <Button variant="link" onClick={handleLogin}>
           Entrar
         </Button>
-        <Button className="rounded-2xl shadow-sm">
+        <Button className="h-12 rounded-2xl shadow-md font-bold">
           <Link href="/panel" className="flex items-center space-x-1">
             <span>Anuncie Grátis</span>
           </Link>
