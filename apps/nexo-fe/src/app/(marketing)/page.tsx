@@ -2,7 +2,7 @@ const MarketingPage = () => {
   return (
     <div>
       <div>
-        <p>Test1</p>
+        <p>Test2</p>
       </div>
     </div>
   );

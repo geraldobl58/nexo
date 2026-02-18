@@ -4,12 +4,12 @@
 
 O CloudLab Nexo possui **4 ambientes** completos rodando localmente:
 
-| Ambiente   | Branch    | Namespace      | URL Base             | Auto-Deploy |
-| ---------- | --------- | -------------- | -------------------- | ----------- |
-| Develop    | `develop` | `nexo-develop` | `develop.nexo.local` | ✅ Sim      |
-| QA         | `qa`      | `nexo-qa`      | `qa.nexo.local`      | ✅ Sim      |
-| Staging    | `staging` | `nexo-staging` | `staging.nexo.local` | ✅ Sim      |
-| Production | `main`    | `nexo-prod`    | `nexo.local`         | ✅ Sim      |
+| Ambiente   | Branch    | Namespace      | URL Base                          | Auto-Deploy |
+| ---------- | --------- | -------------- | --------------------------------- | ----------- |
+| Develop    | `develop` | `nexo-develop` | `develop-{fe,be,auth}.nexo.local` | ✅ Sim      |
+| QA         | `qa`      | `nexo-qa`      | `qa-{fe,be,auth}.nexo.local`      | ✅ Sim      |
+| Staging    | `staging` | `nexo-staging` | `staging-{fe,be,auth}.nexo.local` | ✅ Sim      |
+| Production | `main`    | `nexo-prod`    | `{fe,be,auth}.nexo.local`         | ✅ Sim      |
 
 > 💡 **100% LOCAL:** Todos os ambientes rodam em k3d no seu Mac, sem dependências de cloud.
 
@@ -25,9 +25,9 @@ O CloudLab Nexo possui **4 ambientes** completos rodando localmente:
 
 #### URLs:
 
-- **Frontend:** http://develop.nexo.local
-- **Backend API:** http://develop.api.nexo.local
-- **Auth (Keycloak):** http://develop.auth.nexo.local
+- **Frontend:** http://develop-fe.nexo.local
+- **Backend API:** http://develop-be.nexo.local
+- **Auth (Keycloak):** http://develop-auth.nexo.local
 
 #### Características:
 
@@ -64,9 +64,9 @@ git push origin feature/nova-feature
 
 #### URLs:
 
-- **Frontend:** http://qa.nexo.local
-- **Backend API:** http://qa.api.nexo.local
-- **Auth (Keycloak):** http://qa.auth.nexo.local
+- **Frontend:** http://qa-fe.nexo.local
+- **Backend API:** http://qa-be.nexo.local
+- **Auth (Keycloak):** http://qa-auth.nexo.local
 
 #### Características:
 
@@ -106,9 +106,9 @@ git push origin qa
 
 #### URLs:
 
-- **Frontend:** http://staging.nexo.local
-- **Backend API:** http://staging.api.nexo.local
-- **Auth (Keycloak):** http://staging.auth.nexo.local
+- **Frontend:** http://staging-fe.nexo.local
+- **Backend API:** http://staging-be.nexo.local
+- **Auth (Keycloak):** http://staging-auth.nexo.local
 
 #### Características:
 
@@ -150,8 +150,8 @@ git push origin staging
 
 #### URLs:
 
-- **Frontend:** http://nexo.local
-- **Backend API:** http://api.nexo.local
+- **Frontend:** http://fe.nexo.local
+- **Backend API:** http://be.nexo.local
 - **Auth (Keycloak):** http://auth.nexo.local
 
 #### Características:

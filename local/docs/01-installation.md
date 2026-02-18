@@ -130,14 +130,13 @@ sudo nano /etc/hosts
 Adicionar:
 
 ```
-127.0.0.1 argocd.local.nexo.dev
-127.0.0.1 grafana.local.nexo.dev
-127.0.0.1 prometheus.local.nexo.dev
-127.0.0.1 alertmanager.local.nexo.dev
-127.0.0.1 kibana.local.nexo.dev
-127.0.0.1 nexo-be.local.nexo.dev
-127.0.0.1 nexo-fe.local.nexo.dev
-127.0.0.1 nexo-auth.local.nexo.dev
+127.0.0.1 argocd.nexo.local
+127.0.0.1 grafana.nexo.local
+127.0.0.1 prometheus.nexo.local
+127.0.0.1 alertmanager.nexo.local
+127.0.0.1 develop-be.nexo.local
+127.0.0.1 develop-fe.nexo.local
+127.0.0.1 develop-auth.nexo.local
 ```
 
 Ou automaticamente durante a instalação quando solicitado.

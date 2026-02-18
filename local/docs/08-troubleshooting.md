@@ -145,7 +145,7 @@ kubectl create secret generic <name> --from-literal=key=value -n <namespace>
 #### Sintoma
 
 ```bash
-curl http://nexo-be.local.nexo.dev
+curl http://develop-be.nexo.local
 # Connection refused / 404
 ```
 
@@ -182,7 +182,7 @@ helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
 cat /etc/hosts | grep local.nexo.dev
 
 # Adicionar se não existir
-echo "127.0.0.1 nexo-be.local.nexo.dev" | sudo tee -a /etc/hosts
+echo "127.0.0.1 develop-be.nexo.local" | sudo tee -a /etc/hosts
 ```
 
 **Service não existe**

@@ -47,7 +47,7 @@ make urls
 # Abrir dashboard
 make dashboard
 
-# URL: http://argocd.local.nexo.dev
+# URL: http://argocd.nexo.local
 # User: admin
 # Pass: Obtido do secret
 ```
@@ -57,7 +57,7 @@ make dashboard
 ```bash
 # Fazer login
 ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
-argocd login argocd.local.nexo.dev --username admin --password "$ARGOCD_PASSWORD" --insecure
+argocd login argocd.nexo.local --username admin --password "$ARGOCD_PASSWORD" --insecure
 
 # Verificar versão
 argocd version
@@ -461,8 +461,8 @@ git commit -m "feat: nova feature"
 git push
 
 # 2. Build e push da imagem
-docker build -t registry.nexo.local:5000/nexo-be:v1.2.3 .
-docker push registry.nexo.local:5000/nexo-be:v1.2.3
+docker build -t ghcr.io/geraldobl58/nexo-be:v1.2.3 .
+docker push ghcr.io/geraldobl58/nexo-be:v1.2.3
 
 # 3. Atualizar Helm values
 # Editar local/helm/nexo-be/values-local.yaml

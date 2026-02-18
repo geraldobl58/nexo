@@ -142,26 +142,24 @@ cd local
 
 **Pronto!** Em ~5 minutos você terá:
 
-- ✅ Cluster K3D com 3 nodes
+- ✅ Cluster K3D com 7 nodes (1 server + 6 agents)
 - ✅ ArgoCD rodando
-- ✅ 2 ambientes: develop, prod
-- ✅ 6 aplicações deployadas via ArgoCD
+- ✅ 4 ambientes: develop, qa, staging, prod
+- ✅ 12 aplicações deployadas via ArgoCD
+- ✅ Prometheus + Grafana + AlertManager
 
 ### Acessos
 
-Adicione ao `/etc/hosts`:
+O `make setup` configura `/etc/hosts` automaticamente. URLs:
 
-```
-127.0.0.1 develop.nexo.local develop.api.nexo.local develop.auth.nexo.local
-127.0.0.1 prod.nexo.local prod.api.nexo.local prod.auth.nexo.local
-```
-
-| Serviço     | URL                            | Credenciais |
-| ----------- | ------------------------------ | ----------- |
-| 🖥️ Frontend | http://develop.nexo.local      | -           |
-| ⚙️ Backend  | http://develop.api.nexo.local  | -           |
-| 🔐 Keycloak | http://develop.auth.nexo.local | admin/admin |
-| � ArgoCD    | http://localhost:30080         | admin/(\*)  |
+| Serviço       | URL                            | Credenciais          |
+| ------------- | ------------------------------ | -------------------- |
+| 🖥️ Frontend   | http://develop-fe.nexo.local   | -                    |
+| ⚙️ Backend    | http://develop-be.nexo.local   | -                    |
+| 🔐 Keycloak   | http://develop-auth.nexo.local | admin/admin          |
+| 🚀 ArgoCD     | http://argocd.nexo.local       | admin/\*(status)     |
+| 📊 Grafana    | http://grafana.nexo.local      | admin/nexo@local2026 |
+| 📈 Prometheus | http://prometheus.nexo.local   | -                    |
 
 > (\*) Execute `kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d`
 

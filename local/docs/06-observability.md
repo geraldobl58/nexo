@@ -50,7 +50,7 @@ O CloudLab inclui uma stack completa de observabilidade:
 # Abrir Grafana
 make grafana
 
-# URL: http://grafana.local.nexo.dev
+# URL: http://grafana.nexo.local
 # User: admin
 # Pass: nexo@local2026
 
@@ -65,7 +65,7 @@ open http://localhost:3000
 # Abrir Prometheus
 make prometheus
 
-# URL: http://prometheus.local.nexo.dev
+# URL: http://prometheus.nexo.local
 
 # Queries úteis:
 # up                                    # Status dos targets
@@ -79,7 +79,7 @@ make prometheus
 # Abrir AlertManager
 make alertmanager
 
-# URL: http://alertmanager.local.nexo.dev
+# URL: http://alertmanager.nexo.local
 ```
 
 ## Dashboards Pré-configurados
@@ -376,7 +376,7 @@ kube_event_count
 
 ### Criar Dashboard Customizado
 
-1. **Acessar Grafana**: http://grafana.local.nexo.dev
+1. **Acessar Grafana**: http://grafana.nexo.local
 2. **Create** → **Dashboard** → **Add visualization**
 3. **Selecionar Prometheus** como datasource
 4. **Adicionar query**

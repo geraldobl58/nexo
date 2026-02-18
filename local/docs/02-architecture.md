@@ -29,21 +29,22 @@ Visão geral da infraestrutura local completa do projeto Nexo.
 │  │  │  │                                                              │  │ │ │
 │  │  │  │  • argocd         (GitOps)                                  │  │ │ │
 │  │  │  │  • monitoring     (Prometheus + Grafana)                    │  │ │ │
-│  │  │  │  • logging        (Elasticsearch + Kibana)                  │  │ │ │
-│  │  │  │  • harbor-system  (Container Registry)                      │  │ │ │
-│  │  │  │  • nexo-local     (Apps: nexo-be, nexo-fe, nexo-auth)      │  │ │ │
+│  │  │  │  • nexo-develop   (Apps: nexo-be, nexo-fe, nexo-auth)      │  │ │ │
+│  │  │  │  • nexo-qa        (Apps: nexo-be, nexo-fe, nexo-auth)      │  │ │ │
+│  │  │  │  • nexo-staging   (Apps: nexo-be, nexo-fe, nexo-auth)      │  │ │ │
+│  │  │  │  • nexo-prod      (Apps: nexo-be, nexo-fe, nexo-auth)      │  │ │ │
 │  │  │  └────────────────────────────────────────────────────────────┘  │  │ │
 │  │  └──────────────────────────────────────────────────────────────────┘  │ │
 │  └────────────────────────────────────────────────────────────────────────┘ │
 │                                                                               │
 │  ┌────────────────────────────────────────────────────────────────────────┐ │
 │  │              External SSD: /Volumes/Backup/nexo-cloudlab               │ │
-│  │         (Persistent Volumes for DBs, Elasticsearch, Harbor)            │ │
+│  │         (Persistent Volumes for DBs)                               │ │
 │  └────────────────────────────────────────────────────────────────────────┘ │
 │                                                                               │
 │  /etc/hosts mappings:                                                        │
-│  127.0.0.1  *.nexo.local *.api.nexo.local *.auth.nexo.local                 │
-│  127.0.0.1  argocd.nexo.local grafana.nexo.local harbor.nexo.local ...     │
+│  127.0.0.1  *-fe.nexo.local *-be.nexo.local *-auth.nexo.local               │
+│  127.0.0.1  argocd.nexo.local grafana.nexo.local prometheus.nexo.local ...   │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -137,75 +138,7 @@ Integrations:
 └── Alert Rules (notificações via webhook)
 ```
 
-### 4. Logging Stack (ELK)
-
-```
-Namespace: logging
-
-┌──────────────────────────────────────────────────────────┐
-│                  Elasticsearch Stack                      │
-│                                                            │
-│  ┌────────────────────────────────────────────┐          │
-│  │         Elasticsearch Cluster              │          │
-│  │              (3 nodes)                      │          │
-│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐   │          │
-│  │  │ Data-0  │  │ Data-1  │  │ Data-2  │   │          │
-│  │  └─────────┘  └─────────┘  └─────────┘   │          │
-│  └────────────────────────────────────────────┘          │
-│                      │                                     │
-│                      │                                     │
-│  ┌───────────────────▼──────────────────────┐            │
-│  │            Kibana                         │            │
-│  │   http://kibana.nexo.local                │            │
-│  │                                            │            │
-│  │  • Discover (busca de logs)               │            │
-│  │  • Dashboards (visualizações)             │            │
-│  │  • Index Patterns (app-*, k8s-*)          │            │
-│  └────────────────────────────────────────────┘            │
-│                      ▲                                     │
-│                      │                                     │
-│  ┌───────────────────┴──────────────────────┐            │
-│  │        Filebeat (DaemonSet)              │            │
-│  │  • Runs on every node                    │            │
-│  │  • Collects container logs               │            │
-│  │  • Sends to Elasticsearch                │            │
-│  └──────────────────────────────────────────┘            │
-└──────────────────────────────────────────────────────────┘
-```
-
-### 5. Container Registry (Harbor)
-
-```
-Namespace: harbor-system
-
-┌──────────────────────────────────────────────────────────┐
-│                    Harbor Registry                        │
-│          http://harbor.nexo.local                         │
-│                                                            │
-│  ┌────────────────────────────────────────────┐          │
-│  │              Harbor Core                    │          │
-│  │  • Image storage & management               │          │
-│  │  • User authentication (admin/Harbor12345)  │          │
-│  │  • Project-based access control             │          │
-│  └────────────────────────────────────────────┘          │
-│                      │                                     │
-│  ┌───────────────────┴──────────────────────┐            │
-│  │           Harbor Components               │            │
-│  │  • Registry:        Docker registry v2    │            │
-│  │  • Portal:          Web UI                │            │
-│  │  • JobService:      Async tasks           │            │
-│  │  • Trivy:           Security scanning     │            │
-│  │  • ChartMuseum:     Helm charts           │            │
-│  └──────────────────────────────────────────┘            │
-│                                                            │
-│  Projects:                                                 │
-│  ├── nexo/nexo-be                                         │
-│  ├── nexo/nexo-fe                                         │
-│  └── nexo/nexo-auth                                       │
-└──────────────────────────────────────────────────────────┘
-```
-
-### 6. Application Stack (Nexo Apps)
+### 4. Application Stack (Nexo Apps)
 
 ```
 Namespace: nexo-local
@@ -216,7 +149,7 @@ Namespace: nexo-local
 │  Frontend (Next.js)                                       │
 │  ┌────────────────────────────────────────────┐          │
 │  │  nexo-fe                                    │          │
-│  │  http://develop.nexo.local                  │          │
+│  │  http://develop-fe.nexo.local                  │          │
 │  │  ├── Replicas: 2                            │          │
 │  │  ├── Resources: 512Mi RAM, 500m CPU        │          │
 │  │  └── Env: NEXT_PUBLIC_API_URL,             │          │
@@ -228,7 +161,7 @@ Namespace: nexo-local
 │  Backend (NestJS)                                         │
 │  ┌────────────────────────────────────────────┐          │
 │  │  nexo-be                                    │          │
-│  │  http://develop.api.nexo.local              │          │
+│  │  http://develop-be.nexo.local              │          │
 │  │  ├── Replicas: 2                            │          │
 │  │  ├── Resources: 1Gi RAM, 1000m CPU         │          │
 │  │  ├── Health: /health/live, /health/ready   │          │
@@ -243,7 +176,7 @@ Namespace: nexo-local
 │  Auth Service (Keycloak)                                  │
 │  ┌────────────────────────────────────────────┐          │
 │  │  nexo-auth                                  │          │
-│  │  http://develop.auth.nexo.local             │          │
+│  │  http://develop-auth.nexo.local             │          │
 │  │  ├── Replicas: 1                            │          │
 │  │  ├── Resources: 1Gi RAM, 500m CPU          │          │
 │  │  ├── Realm: nexo                            │          │
@@ -283,7 +216,7 @@ Developer ──┐
 │          GitHub Actions Workflow                 │
 │  1. Run tests (CI)                               │
 │  2. Build Docker images                          │
-│  3. Push to Harbor (harbor.nexo.local)           │
+│  3. Push to GHCR (ghcr.io/geraldobl58)           │
 │  4. Update Helm values (Git commit)              │
 └──────────┬──────────────────────────────────────┘
            │
@@ -334,30 +267,28 @@ Developer ──┐
 │                                                          │
 │  /etc/hosts configuration (auto-managed):               │
 │                                                          │
-│  127.0.0.1  develop.nexo.local                          │
-│  127.0.0.1  develop.api.nexo.local                      │
-│  127.0.0.1  develop.auth.nexo.local                     │
+│  127.0.0.1  develop-fe.nexo.local                          │
+│  127.0.0.1  develop-be.nexo.local                      │
+│  127.0.0.1  develop-auth.nexo.local                     │
 │                                                          │
-│  127.0.0.1  qa.nexo.local                               │
-│  127.0.0.1  qa.api.nexo.local                           │
-│  127.0.0.1  qa.auth.nexo.local                          │
+│  127.0.0.1  qa-fe.nexo.local                               │
+│  127.0.0.1  qa-be.nexo.local                           │
+│  127.0.0.1  qa-auth.nexo.local                          │
 │                                                          │
-│  127.0.0.1  staging.nexo.local                          │
-│  127.0.0.1  staging.api.nexo.local                      │
-│  127.0.0.1  staging.auth.nexo.local                     │
+│  127.0.0.1  staging-fe.nexo.local                          │
+│  127.0.0.1  staging-be.nexo.local                      │
+│  127.0.0.1  staging-auth.nexo.local                     │
 │                                                          │
-│  127.0.0.1  prod.nexo.local                             │
-│  127.0.0.1  prod.api.nexo.local                         │
-│  127.0.0.1  prod.auth.nexo.local                        │
+│  127.0.0.1  fe.nexo.local                             │
+│  127.0.0.1  fe.nexo.local                               │
+│  127.0.0.1  be.nexo.local                               │
+│  127.0.0.1  auth.nexo.local                             │
 │                                                          │
 │  # Tooling                                              │
 │  127.0.0.1  argocd.nexo.local                           │
 │  127.0.0.1  grafana.nexo.local                          │
 │  127.0.0.1  prometheus.nexo.local                       │
 │  127.0.0.1  alertmanager.nexo.local                     │
-│  127.0.0.1  kibana.nexo.local                           │
-│  127.0.0.1  harbor.nexo.local                           │
-│  127.0.0.1  traefik.nexo.local                          │
 └────────────────────────────────────────────────────────┘
            │
            ▼
@@ -368,15 +299,13 @@ Developer ──┐
 │                                                          │
 │  Ingress Rules:                                         │
 │                                                          │
-│  develop.* ─────────► nexo-local namespace              │
-│  qa.*      ─────────► nexo-qa namespace                 │
-│  staging.* ─────────► nexo-staging namespace            │
-│  prod.*    ─────────► nexo-prod namespace               │
+│  develop-* ─────────► nexo-develop namespace            │
+│  qa-*      ─────────► nexo-qa namespace                 │
+│  staging-* ─────────► nexo-staging namespace            │
+│  {be,fe,auth}.nexo.local ► nexo-prod namespace          │
 │                                                          │
 │  argocd.*       ─────► argocd namespace                 │
 │  grafana.*      ─────► monitoring namespace             │
-│  kibana.*       ─────► logging namespace                │
-│  harbor.*       ─────► harbor-system namespace          │
 └────────────────────────────────────────────────────────┘
 ```
 

@@ -2,7 +2,7 @@
 replicaCount: 1
 
 image:
-  repository: registry.nexo.local:5000/nexo-be
+  repository: ghcr.io/geraldobl58/nexo-be
   pullPolicy: Always
   tag: "latest"
 
@@ -40,7 +40,7 @@ ingress:
   className: "nginx"
   annotations: {}
   hosts:
-    - host: nexo-be.local.nexo.dev
+    - host: develop-be.nexo.local
       paths:
         - path: /
           pathType: Prefix

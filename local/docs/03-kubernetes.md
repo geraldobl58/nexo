@@ -243,7 +243,7 @@ kubectl get ingress -A
 kubectl describe ingress <ingress-name> -n <namespace>
 
 # Testar ingress
-curl -H "Host: nexo-be.local.nexo.dev" http://localhost
+curl -H "Host: develop-be.nexo.local" http://localhost
 ```
 
 ### Port Forwarding
@@ -295,11 +295,11 @@ EOF
 
 ```bash
 # Registry está disponível em:
-# registry.nexo.local:5000
+# ghcr.io/geraldobl58
 
 # Fazer build e push
-docker build -t registry.nexo.local:5000/nexo-be:latest .
-docker push registry.nexo.local:5000/nexo-be:latest
+docker build -t ghcr.io/geraldobl58/nexo-be:latest .
+docker push ghcr.io/geraldobl58/nexo-be:latest
 
 # Listar imagens no registry
 curl http://localhost:5000/v2/_catalog
@@ -315,12 +315,12 @@ curl http://localhost:5000/v2/nexo-be/tags/list
 # Mas se precisar configurar manualmente:
 
 # Editar /etc/hosts
-echo "127.0.0.1 registry.nexo.local" | sudo tee -a /etc/hosts
+echo REMOVE_REGISTRY_LINE | sudo tee -a /etc/hosts
 
 # Docker Desktop → Settings → Docker Engine
 # Adicionar:
 {
-  "insecure-registries": ["registry.nexo.local:5000"]
+  "insecure-registries": ["ghcr.io/geraldobl58"]
 }
 ```
 

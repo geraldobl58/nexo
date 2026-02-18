@@ -44,19 +44,19 @@ Este guia mostra como fazer deploy das aplicações Nexo (Backend, Frontend, Aut
 cd apps/nexo-be
 
 # Build da imagem
-docker build -t registry.nexo.local:5000/nexo-be:latest .
+docker build -t ghcr.io/geraldobl58/nexo-be:latest .
 
 # Push para registry local
-docker push registry.nexo.local:5000/nexo-be:latest
+docker push ghcr.io/geraldobl58/nexo-be:latest
 
 # Repetir para nexo-fe e nexo-auth
 cd ../nexo-fe
-docker build -t registry.nexo.local:5000/nexo-fe:latest .
-docker push registry.nexo.local:5000/nexo-fe:latest
+docker build -t ghcr.io/geraldobl58/nexo-fe:latest .
+docker push ghcr.io/geraldobl58/nexo-fe:latest
 
 cd ../nexo-auth
-docker build -t registry.nexo.local:5000/nexo-auth:latest .
-docker push registry.nexo.local:5000/nexo-auth:latest
+docker build -t ghcr.io/geraldobl58/nexo-auth:latest .
+docker push ghcr.io/geraldobl58/nexo-auth:latest
 ```
 
 ### 2. Criar Secrets
@@ -190,9 +190,9 @@ kubectl get pods -n nexo-local
 kubectl get svc,ingress -n nexo-local
 
 # Testar endpoints
-curl http://nexo-be.local.nexo.dev/health
-curl http://nexo-fe.local.nexo.dev
-curl http://nexo-auth.local.nexo.dev
+curl http://develop-be.nexo.local/health
+curl http://develop-fe.nexo.local
+curl http://develop-auth.nexo.local
 ```
 
 ## Configuração dos Helm Charts
@@ -204,7 +204,7 @@ curl http://nexo-auth.local.nexo.dev
 replicaCount: 1
 
 image:
-  repository: registry.nexo.local:5000/nexo-be
+  repository: ghcr.io/geraldobl58/nexo-be
   tag: "latest"
 
 resources:
@@ -227,7 +227,7 @@ env:
 ingress:
   enabled: true
   hosts:
-    - host: nexo-be.local.nexo.dev
+    - host: develop-be.nexo.local
       paths:
         - path: /
           pathType: Prefix
@@ -240,19 +240,19 @@ ingress:
 replicaCount: 1
 
 image:
-  repository: registry.nexo.local:5000/nexo-fe
+  repository: ghcr.io/geraldobl58/nexo-fe
   tag: "latest"
 
 env:
   - name: NEXT_PUBLIC_API_URL
-    value: "http://nexo-be.local.nexo.dev"
+    value: "http://develop-be.nexo.local"
   - name: NEXT_PUBLIC_AUTH_URL
-    value: "http://nexo-auth.local.nexo.dev"
+    value: "http://develop-auth.nexo.local"
 
 ingress:
   enabled: true
   hosts:
-    - host: nexo-fe.local.nexo.dev
+    - host: develop-fe.nexo.local
 ```
 
 ### Auth (nexo-auth/Keycloak)
@@ -262,7 +262,7 @@ ingress:
 replicaCount: 1
 
 image:
-  repository: registry.nexo.local:5000/nexo-auth
+  repository: ghcr.io/geraldobl58/nexo-auth
   tag: "latest"
 
 env:
@@ -277,7 +277,7 @@ env:
 ingress:
   enabled: true
   hosts:
-    - host: nexo-auth.local.nexo.dev
+    - host: develop-auth.nexo.local
 ```
 
 ## Workflow de Desenvolvimento
@@ -296,12 +296,12 @@ git commit -m "feat: nova feature"
 ```bash
 # Com versão específica
 VERSION=v1.2.3
-docker build -t registry.nexo.local:5000/nexo-be:$VERSION .
-docker push registry.nexo.local:5000/nexo-be:$VERSION
+docker build -t ghcr.io/geraldobl58/nexo-be:$VERSION .
+docker push ghcr.io/geraldobl58/nexo-be:$VERSION
 
 # Ou latest
-docker build -t registry.nexo.local:5000/nexo-be:latest .
-docker push registry.nexo.local:5000/nexo-be:latest
+docker build -t ghcr.io/geraldobl58/nexo-be:latest .
+docker push ghcr.io/geraldobl58/nexo-be:latest
 ```
 
 ### 3. Atualizar Helm Values (se usar versão)
@@ -338,7 +338,7 @@ kubectl rollout status deployment nexo-be -n nexo-local
 kubectl get pods -n nexo-local -l app=nexo-be
 
 # Testar aplicação
-curl http://nexo-be.local.nexo.dev/health
+curl http://develop-be.nexo.local/health
 ```
 
 ## Rollback
@@ -430,7 +430,7 @@ spec:
     spec:
       containers:
         - name: migrate
-          image: registry.nexo.local:5000/nexo-be:latest
+          image: ghcr.io/geraldobl58/nexo-be:latest
           command: ["npm", "run", "migrate"]
           env:
             - name: DATABASE_URL
@@ -456,7 +456,7 @@ kubectl exec -it <nexo-be-pod> -n nexo-local -- npm run migrate
 
 ### Métricas no Grafana
 
-1. Acessar: http://grafana.local.nexo.dev
+1. Acessar: http://grafana.nexo.local
 2. Dashboard → Kubernetes Pods
 3. Filtrar por namespace: nexo-local
 
@@ -464,16 +464,16 @@ kubectl exec -it <nexo-be-pod> -n nexo-local -- npm run migrate
 
 ```bash
 # Backend health check
-curl http://nexo-be.local.nexo.dev/health
+curl http://develop-be.nexo.local/health
 
 # Ver métricas
-curl http://nexo-be.local.nexo.dev/metrics
+curl http://develop-be.nexo.local/metrics
 
 # Frontend
-curl -I http://nexo-fe.local.nexo.dev
+curl -I http://develop-fe.nexo.local
 
 # Auth
-curl http://nexo-auth.local.nexo.dev/health/ready
+curl http://develop-auth.nexo.local/health/ready
 ```
 
 ### Logs
@@ -486,7 +486,6 @@ make logs SERVICE=nexo-be
 kubectl logs -n nexo-local -l app=nexo-be --follow
 
 # No Kibana
-# http://kibana.local.nexo.dev
 # Query: kubernetes.namespace: "nexo-local"
 ```
 
@@ -558,14 +557,14 @@ jobs:
       - name: Build Image
         run: |
           cd apps/nexo-be
-          docker build -t registry.nexo.local:5000/nexo-be:${{ github.sha }} .
-          docker tag registry.nexo.local:5000/nexo-be:${{ github.sha }} \
-                     registry.nexo.local:5000/nexo-be:latest
+          docker build -t ghcr.io/geraldobl58/nexo-be:${{ github.sha }} .
+          docker tag ghcr.io/geraldobl58/nexo-be:${{ github.sha }} \
+                     ghcr.io/geraldobl58/nexo-be:latest
 
       - name: Push Image
         run: |
-          docker push registry.nexo.local:5000/nexo-be:${{ github.sha }}
-          docker push registry.nexo.local:5000/nexo-be:latest
+          docker push ghcr.io/geraldobl58/nexo-be:${{ github.sha }}
+          docker push ghcr.io/geraldobl58/nexo-be:latest
 
       - name: Update Helm Values
         run: |

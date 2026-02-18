@@ -155,7 +155,7 @@ k3d image import myimage:latest -c nexo-local
 
 ```bash
 # Login
-argocd login argocd.local.nexo.dev --username admin --insecure
+argocd login argocd.nexo.local --username admin --insecure
 
 # Listar apps
 argocd app list
@@ -315,13 +315,13 @@ docker images
 docker build -t myimage:tag .
 
 # Tag
-docker tag myimage:tag registry.nexo.local:5000/myimage:tag
+docker tag myimage:tag ghcr.io/geraldobl58/myimage:tag
 
 # Push para registry local
-docker push registry.nexo.local:5000/myimage:tag
+docker push ghcr.io/geraldobl58/myimage:tag
 
 # Pull
-docker pull registry.nexo.local:5000/myimage:tag
+docker pull ghcr.io/geraldobl58/myimage:tag
 
 # Limpar
 docker system prune -a        # Remove tudo não usado

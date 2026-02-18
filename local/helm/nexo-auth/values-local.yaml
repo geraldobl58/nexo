@@ -2,7 +2,7 @@
 replicaCount: 1
 
 image:
-  repository: registry.nexo.local:5000/nexo-auth
+  repository: ghcr.io/geraldobl58/nexo-auth
   pullPolicy: Always
   tag: "latest"
 
@@ -39,7 +39,7 @@ ingress:
   className: "nginx"
   annotations: {}
   hosts:
-    - host: nexo-auth.local.nexo.dev
+    - host: develop-auth.nexo.local
       paths:
         - path: /
           pathType: Prefix
@@ -81,7 +81,7 @@ env:
         name: nexo-secrets
         key: db-password
   - name: KC_HOSTNAME
-    value: "nexo-auth.local.nexo.dev"
+    value: "develop-auth.nexo.local"
   - name: KC_HTTP_ENABLED
     value: "true"
   - name: KEYCLOAK_ADMIN

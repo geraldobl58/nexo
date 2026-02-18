@@ -61,6 +61,8 @@ autoscaling:
   enabled: false
 
 env:
+  KEYCLOAK_ADMIN: "admin"
+  KEYCLOAK_ADMIN_PASSWORD: "admin"
   KC_HOSTNAME: "http://develop-auth.nexo.local"
   KC_HOSTNAME_STRICT: "false"
   KC_PROXY_HEADERS: "xforwarded"

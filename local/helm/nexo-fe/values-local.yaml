@@ -2,7 +2,7 @@
 replicaCount: 1
 
 image:
-  repository: registry.nexo.local:5000/nexo-fe
+  repository: ghcr.io/geraldobl58/nexo-fe
   pullPolicy: Always
   tag: "latest"
 
@@ -37,7 +37,7 @@ ingress:
   className: "nginx"
   annotations: {}
   hosts:
-    - host: nexo-fe.local.nexo.dev
+    - host: develop-fe.nexo.local
       paths:
         - path: /
           pathType: Prefix
@@ -64,9 +64,9 @@ env:
   - name: NODE_ENV
     value: "local"
   - name: NEXT_PUBLIC_API_URL
-    value: "http://nexo-be.local.nexo.dev"
+    value: "http://develop-be.nexo.local"
   - name: NEXT_PUBLIC_AUTH_URL
-    value: "http://nexo-auth.local.nexo.dev"
+    value: "http://develop-auth.nexo.local"
 
 livenessProbe:
   httpGet:
