@@ -165,8 +165,8 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/nexo-fe:${{ needs.validate.outputs.version_major }}.${{ needs.validate.outputs.version_minor }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/nexo-fe:latest
           build-args: |
-            NEXT_PUBLIC_API_URL=https://api.g3developer.online
-            NEXT_PUBLIC_KEYCLOAK_URL=https://auth.g3developer.online
+            NEXT_PUBLIC_API_URL=http://be.nexo.local
+            NEXT_PUBLIC_KEYCLOAK_URL=http://auth.nexo.local
             NEXT_PUBLIC_KEYCLOAK_REALM=nexo
             NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=nexo-web
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/nexo-fe:latest

@@ -104,8 +104,8 @@ if kubectl get deployment argocd-server -n argocd &>/dev/null; then
     echo -e "${BLUE}Applications:${NC}"
     kubectl get applications -n argocd 2>/dev/null | tail -n +2 | while read line; do
         app=$(echo "$line" | awk '{print $1}')
-        health=$(echo "$line" | awk '{print $2}')
-        sync=$(echo "$line" | awk '{print $3}')
+        sync=$(echo "$line" | awk '{print $2}')
+        health=$(echo "$line" | awk '{print $3}')
         
         if [ "$health" == "Healthy" ]; then
             health_icon="${GREEN}✓${NC}"
@@ -227,18 +227,18 @@ echo -e "${YELLOW}📋 RESUMO${NC}"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-TOTAL_PODS=$(kubectl get pods --all-namespaces --no-headers 2>/dev/null | wc -l | tr -d ' ')
-RUNNING_PODS=$(kubectl get pods --all-namespaces --no-headers 2>/dev/null | grep -c "Running" || echo "0")
-APPS_COUNT=$(kubectl get applications -n argocd --no-headers 2>/dev/null | wc -l | tr -d ' ')
-APPS_HEALTHY=$(kubectl get applications -n argocd --no-headers 2>/dev/null | grep -c "Healthy" || echo "0")
+TOTAL_PODS=$(kubectl get pods --all-namespaces --no-headers 2>/dev/null | wc -l | tr -d '[:space:]')
+RUNNING_PODS=$(kubectl get pods --all-namespaces --no-headers 2>/dev/null | grep -c "Running" || true)
+APPS_COUNT=$(kubectl get applications -n argocd --no-headers 2>/dev/null | wc -l | tr -d '[:space:]')
+APPS_HEALTHY=$(kubectl get applications -n argocd --no-headers 2>/dev/null | grep -c "Healthy" || true)
 
 echo -e "  Pods:         $RUNNING_PODS/$TOTAL_PODS running"
 echo -e "  Applications: $APPS_HEALTHY/$APPS_COUNT healthy"
 echo ""
 
 # Verificar se há problemas
-DEGRADED_APPS=$(kubectl get applications -n argocd --no-headers 2>/dev/null | grep -c "Degraded" || echo "0")
-if [ "$DEGRADED_APPS" -gt "0" ]; then
+DEGRADED_APPS=$(kubectl get applications -n argocd --no-headers 2>/dev/null | grep -c "Degraded" || true)
+if [ "${DEGRADED_APPS:-0}" -gt "0" ]; then
     echo -e "${YELLOW}⚠️  ATENÇÃO:${NC} $DEGRADED_APPS aplicações degradadas"
     echo -e "   Possível causa: ImagePullBackOff (imagens privadas)"
     echo -e "   Solução: ${GREEN}bash local/create-ghcr-secrets.sh <GITHUB_TOKEN>${NC}"

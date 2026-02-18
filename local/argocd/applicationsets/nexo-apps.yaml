@@ -1,17 +1,15 @@
 # ============================================================================
-# ArgoCD ApplicationSet - Multi-Environment Deployment (DigitalOcean)
+# ArgoCD ApplicationSet - Multi-Environment Deployment (Local CloudLab Ninja)
 # ============================================================================
-# Branch Flow: feature/* → develop → qa → staging → main (production)
+# Branch Flow: feature/* -> develop -> qa -> staging -> main (production)
 # Registry: ghcr.io/geraldobl58/*
-# TLS: Let's Encrypt (letsencrypt-prod) via cert-manager
-# Domains: *.g3developer.online (DigitalOcean DNS)
-# Database: DigitalOcean Managed PostgreSQL (via K8s Secrets)
+# Domains: *.nexo.local (local /etc/hosts)
 #
 # Ambientes: develop, qa, staging, prod (todos com auto-sync)
-# Lab/estudo: recursos mínimos, 4 ambientes completos
+# Lab/estudo: recursos minimos, 4 ambientes completos
 #
 # Nota: Separado em 2 ApplicationSets porque o template do ArgoCD
-# não suporta booleans dinâmicos via generators (prune/selfHeal).
+# nao suporta booleans dinamicos via generators (prune/selfHeal).
 # ============================================================================
 
 # --- Auto-sync environments (develop, qa, staging) ---

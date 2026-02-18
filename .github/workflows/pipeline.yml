@@ -557,14 +557,26 @@ jobs:
           ENV="${{ needs.preflight.outputs.environment }}"
           case "$ENV" in
             develop)
-              echo "NEXT_PUBLIC_API_URL=https://develop.api.g3developer.online" >> $GITHUB_OUTPUT
-              echo "NEXT_PUBLIC_KEYCLOAK_URL=https://develop.auth.g3developer.online" >> $GITHUB_OUTPUT
+              echo "NEXT_PUBLIC_API_URL=http://develop-be.nexo.local" >> $GITHUB_OUTPUT
+              echo "NEXT_PUBLIC_KEYCLOAK_URL=http://develop-auth.nexo.local" >> $GITHUB_OUTPUT
+              echo "NEXT_PUBLIC_KEYCLOAK_REALM=nexo" >> $GITHUB_OUTPUT
+              echo "NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=nexo-web" >> $GITHUB_OUTPUT
+              ;;
+            qa)
+              echo "NEXT_PUBLIC_API_URL=http://qa-be.nexo.local" >> $GITHUB_OUTPUT
+              echo "NEXT_PUBLIC_KEYCLOAK_URL=http://qa-auth.nexo.local" >> $GITHUB_OUTPUT
+              echo "NEXT_PUBLIC_KEYCLOAK_REALM=nexo" >> $GITHUB_OUTPUT
+              echo "NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=nexo-web" >> $GITHUB_OUTPUT
+              ;;
+            staging)
+              echo "NEXT_PUBLIC_API_URL=http://staging-be.nexo.local" >> $GITHUB_OUTPUT
+              echo "NEXT_PUBLIC_KEYCLOAK_URL=http://staging-auth.nexo.local" >> $GITHUB_OUTPUT
               echo "NEXT_PUBLIC_KEYCLOAK_REALM=nexo" >> $GITHUB_OUTPUT
               echo "NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=nexo-web" >> $GITHUB_OUTPUT
               ;;
             prod)
-              echo "NEXT_PUBLIC_API_URL=https://api.g3developer.online" >> $GITHUB_OUTPUT
-              echo "NEXT_PUBLIC_KEYCLOAK_URL=https://auth.g3developer.online" >> $GITHUB_OUTPUT
+              echo "NEXT_PUBLIC_API_URL=http://be.nexo.local" >> $GITHUB_OUTPUT
+              echo "NEXT_PUBLIC_KEYCLOAK_URL=http://auth.nexo.local" >> $GITHUB_OUTPUT
               echo "NEXT_PUBLIC_KEYCLOAK_REALM=nexo" >> $GITHUB_OUTPUT
               echo "NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=nexo-web" >> $GITHUB_OUTPUT
               ;;

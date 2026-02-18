@@ -7,7 +7,7 @@ export class HealthController {
   @Get('/health')
   check() {
     return {
-      status: 'API is healthy',
+      status: 'TEST API is healthy',
       timestamp: new Date().toISOString(),
     };
   }
@@ -15,7 +15,7 @@ export class HealthController {
   @Get('/metrics')
   metrics() {
     return {
-      status: 'API is healthy',
+      status: 'TEST API is healthy',
       timestamp: new Date().toISOString(),
     };
   }

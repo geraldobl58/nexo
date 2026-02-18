@@ -38,10 +38,12 @@ EOF
 echo ""
 echo -e "${CYAN}Este script irá configurar:${NC}"
 echo "  • Cluster Kubernetes (k3d) com 7 nodes"
+echo "  • NGINX Ingress Controller"
 echo "  • ArgoCD para GitOps automático"
 echo "  • Prometheus + Grafana para observabilidade"
 echo "  • 4 namespaces: develop, qa, staging, prod"
 echo "  • 12 aplicações (3 serviços × 4 ambientes)"
+echo "  • DNS local (16 domínios .nexo.local)"
 echo ""
 echo -e "${YELLOW}Tempo estimado: 10-15 minutos${NC}"
 echo ""
@@ -68,7 +70,7 @@ log_substep() {
 # ==============================================================================
 # ETAPA 1: Verificar e criar cluster k3d
 # ==============================================================================
-log_step "ETAPA 1/6: Criando Cluster Kubernetes"
+log_step "ETAPA 1/7: Criando Cluster Kubernetes"
 
 if k3d cluster list | grep -q "$CLUSTER_NAME"; then
     echo -e "${YELLOW}⚠️  Cluster '$CLUSTER_NAME' já existe!${NC}"
@@ -86,9 +88,39 @@ else
 fi
 
 # ==============================================================================
+# ETAPA 1.5: Instalar NGINX Ingress Controller
+# ==============================================================================
+log_step "ETAPA 1.5/7: Instalando NGINX Ingress Controller"
+
+log_substep "Adicionando repositório NGINX Ingress..."
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx 2>/dev/null || true
+helm repo update
+
+log_substep "Instalando NGINX Ingress Controller via Helm..."
+helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+  --namespace kube-system \
+  --set controller.publishService.enabled=true \
+  --set controller.service.type=LoadBalancer \
+  --set controller.watchIngressWithoutClass=true \
+  --set controller.hostPort.enabled=true \
+  --set controller.hostPort.ports.http=80 \
+  --set controller.hostPort.ports.https=443 \
+  --set 'controller.nodeSelector.kubernetes\.io/os=linux' \
+  --timeout 5m \
+  --wait
+
+log_substep "Aguardando NGINX Ingress ficar pronto..."
+kubectl wait --for=condition=ready pod \
+  --selector=app.kubernetes.io/name=ingress-nginx \
+  --namespace=kube-system \
+  --timeout=120s 2>/dev/null || echo "NGINX Ingress ainda inicializando..."
+
+echo -e "${GREEN}✓ NGINX Ingress Controller instalado${NC}"
+
+# ==============================================================================
 # ETAPA 2: Criar namespaces
 # ==============================================================================
-log_step "ETAPA 2/6: Criando Namespaces"
+log_step "ETAPA 2/7: Criando Namespaces"
 
 log_substep "Criando namespaces de ambientes..."
 kubectl create namespace nexo-develop --dry-run=client -o yaml | kubectl apply -f -
@@ -105,7 +137,7 @@ kubectl get namespaces
 # ==============================================================================
 # ETAPA 3: Instalar ArgoCD
 # ==============================================================================
-log_step "ETAPA 3/6: Instalando ArgoCD"
+log_step "ETAPA 3/7: Instalando ArgoCD"
 
 log_substep "Adicionando repositório Helm..."
 helm repo add argo https://argoproj.github.io/argo-helm 2>/dev/null || true
@@ -161,7 +193,7 @@ echo -e "${GREEN}✓ ArgoCD instalado - Usuário: admin / Senha: $ARGOCD_PASSWOR
 # ==============================================================================
 # ETAPA 4: Instalar Observabilidade (Prometheus + Grafana)
 # ==============================================================================
-log_step "ETAPA 4/6: Instalando Stack de Observabilidade"
+log_step "ETAPA 4/7: Instalando Stack de Observabilidade"
 
 log_substep "Adicionando repositório Prometheus Community..."
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts 2>/dev/null || true
@@ -235,7 +267,7 @@ echo -e "${GREEN}✓ Dashboards customizados aplicados${NC}"
 # ==============================================================================
 # ETAPA 5: Configurar ArgoCD Applications
 # ==============================================================================
-log_step "ETAPA 5/6: Configurando ArgoCD GitOps"
+log_step "ETAPA 5/7: Configurando ArgoCD GitOps"
 
 log_substep "Aplicando ArgoCD Projects..."
 kubectl apply -f "$SCRIPT_DIR/argocd/projects/nexo-environments.yaml"
@@ -251,7 +283,7 @@ echo -e "${GREEN}✓ 12 aplicações configuradas (3 serviços × 4 ambientes)${
 # ==============================================================================
 # ETAPA 6: Configurar /etc/hosts
 # ==============================================================================
-log_step "ETAPA 6/6: Configurando DNS Local (/etc/hosts)"
+log_step "ETAPA 6/7: Configurando DNS Local (/etc/hosts)"
 
 HOSTS_ENTRIES="
 # Nexo CloudLab - Ferramentas
@@ -288,7 +320,44 @@ sudo sed -i '' '/nexo\.local/d' /etc/hosts 2>/dev/null || true
 # Adicionar novas entradas
 echo "$HOSTS_ENTRIES" | sudo tee -a /etc/hosts > /dev/null
 
-log_substep "/etc/hosts configurado com 16 domínios"
+# Flush DNS cache (macOS trata .local como mDNS/Bonjour, precisa limpar cache)
+log_substep "Limpando cache DNS do macOS..."
+sudo dscacheutil -flushcache 2>/dev/null || true
+sudo killall -HUP mDNSResponder 2>/dev/null || true
+
+log_substep "/etc/hosts configurado com 16 domínios + cache DNS limpo"
+
+# ==============================================================================
+# ETAPA 7: Verificação Final
+# ==============================================================================
+log_step "ETAPA 7/7: Verificação Final"
+
+log_substep "Verificando NGINX Ingress Controller..."
+kubectl wait --for=condition=ready pod \
+  --selector=app.kubernetes.io/name=ingress-nginx \
+  --namespace=kube-system \
+  --timeout=60s 2>/dev/null || echo "NGINX Ingress ainda inicializando..."
+
+log_substep "Verificando conectividade dos serviços..."
+sleep 5
+
+# Usar --resolve para evitar problemas com mDNS do macOS no .local
+SERVICES_OK=0
+SERVICES_TOTAL=6
+
+for CHECK in "argocd.nexo.local ArgoCD" "grafana.nexo.local Grafana" "prometheus.nexo.local Prometheus" "alertmanager.nexo.local AlertManager" "develop-fe.nexo.local Frontend" "develop-auth.nexo.local Auth"; do
+    HOST=$(echo $CHECK | cut -d' ' -f1)
+    NAME=$(echo $CHECK | cut -d' ' -f2)
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 --resolve "${HOST}:80:127.0.0.1" "http://${HOST}" 2>/dev/null)
+    if [[ "$HTTP_CODE" =~ ^(200|301|302|303|307|404)$ ]]; then
+        echo -e "${GREEN}✓ ${NAME} acessível (HTTP ${HTTP_CODE})${NC}"
+        SERVICES_OK=$((SERVICES_OK + 1))
+    else
+        echo -e "${YELLOW}⚠️  ${NAME} ainda inicializando (HTTP ${HTTP_CODE})${NC}"
+    fi
+done
+
+echo -e "\n${GREEN}${SERVICES_OK}/${SERVICES_TOTAL} serviços respondendo${NC}"
 
 # ==============================================================================
 # FINALIZAÇÃO
