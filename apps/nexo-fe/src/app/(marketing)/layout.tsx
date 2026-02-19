@@ -6,11 +6,11 @@ type MarketingLayoutProps = {
 
 export default function MarketingLayout({ children }: MarketingLayoutProps) {
   return (
-    <div>
+    <div className="h-screen flex flex-col">
       <header>
         <Header />
       </header>
-      <main>{children}</main>
+      <main className="flex-1">{children}</main>
     </div>
   );
 }
