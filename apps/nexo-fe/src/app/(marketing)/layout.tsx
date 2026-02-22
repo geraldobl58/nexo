@@ -1,3 +1,4 @@
+import { Footer } from "@/components/layout/Footer/Footer";
 import { Header } from "@/components/layout/Header/Header";
 
 type MarketingLayoutProps = {
@@ -11,6 +12,9 @@ export default function MarketingLayout({ children }: MarketingLayoutProps) {
         <Header />
       </header>
       <main className="flex-1">{children}</main>
+      <footer>
+        <Footer />
+      </footer>
     </div>
   );
 }

@@ -9,23 +9,6 @@ export default function PanelPage() {
 
   console.log(user);
 
-  // useEffect(() => {
-  //   // Se já estiver autenticado, redireciona para o painel
-  //   if (!isLoading && isAuthenticated) {
-  //     router.replace("/panel");
-  //   }
-  // }, [isAuthenticated, isLoading, router]);
-
-  // // Mostra loading enquanto verifica autenticação
-  // if (isLoading) {
-  //   return <LoadingScreen label="Verificando autenticação..." />;
-  // }
-
-  // // Se já estiver autenticado, mostra loading enquanto redireciona
-  // if (isAuthenticated) {
-  //   return <LoadingScreen label="Redirecionando para o painel..." />;
-  // }
-
   return (
     <ProtectedRoute>
       <div className="flex items-center justify-center h-screen">
