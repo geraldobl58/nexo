@@ -1,28 +1,34 @@
+/* eslint-disable react/display-name */
 import { render, screen } from "@testing-library/react";
-import { createRef } from "react";
+import { createRef, forwardRef, useImperativeHandle } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { Carousel, type CarouselHandle } from "./Carousel";
 
 // Mock react-slick para ambiente jsdom
 vi.mock("react-slick", () => ({
-  default: ({
-    children,
-    dots,
-    beforeChange,
-  }: {
-    children: React.ReactNode;
-    dots?: boolean;
-    beforeChange?: (current: number, next: number) => void;
-  }) => (
-    <div
-      data-testid="slider"
-      data-dots={dots ? "true" : "false"}
-      onClick={() => beforeChange?.(0, 1)}
-    >
-      {children}
-    </div>
-  ),
+  default: forwardRef<
+    { slickPrev: () => void; slickNext: () => void },
+    {
+      children: React.ReactNode;
+      dots?: boolean;
+      beforeChange?: (current: number, next: number) => void;
+    }
+  >(({ children, dots, beforeChange }, ref) => {
+    useImperativeHandle(ref, () => ({
+      slickPrev: vi.fn(),
+      slickNext: vi.fn(),
+    }));
+    return (
+      <div
+        data-testid="slider"
+        data-dots={dots ? "true" : "false"}
+        onClick={() => beforeChange?.(0, 1)}
+      >
+        {children}
+      </div>
+    );
+  }),
 }));
 
 const makeItems = (count: number) =>

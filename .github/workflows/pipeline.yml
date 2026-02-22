@@ -455,6 +455,10 @@ jobs:
         run: pnpm --filter nexo-fe lint
         continue-on-error: true
 
+      - name: Test
+        run: pnpm --filter nexo-fe test
+        continue-on-error: true
+
       - name: Build
         run: pnpm --filter nexo-fe build
 
