@@ -6,7 +6,7 @@ import Drawer from "@mui/material/Drawer";
 import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
 import { Menu, X } from "lucide-react";
-import { Logo } from "./logo";
+import { Logo } from "@/components/ui/Logo/Logo";
 
 const navLinks = [
   { label: "Home", href: "/" },

@@ -1,4 +1,4 @@
-import { SectionForm } from "../app/(marketing)/components/search-form";
+import { SectionForm } from "./SearchForm";
 
 export const SectionHero = () => {
   return (

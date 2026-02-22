@@ -10,6 +10,94 @@ body {
   height: 100vh;
 }
 
+/* Slick Carousel overrides */
+.nexo-slider {
+  padding: 0 0 32px;
+}
+
+.nexo-slider .slick-list {
+  margin: 0 -8px;
+}
+
+.nexo-slider .slick-slide > div {
+  padding: 4px 0 24px;
+}
+
+.nexo-slider .slick-dots {
+  bottom: -8px;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0;
+  list-style: none;
+}
+
+.nexo-slider .slick-dots li {
+  width: auto;
+  height: auto;
+  margin: 0;
+}
+
+.nexo-slider .slick-dots li button {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border-radius: 99px;
+  background-color: #c4b5fd;
+  transition:
+    width 0.3s ease,
+    background-color 0.3s ease;
+}
+
+.nexo-slider .slick-dots li button:before {
+  display: none;
+}
+
+.nexo-slider .slick-dots li.slick-active button {
+  width: 28px;
+  background-color: #7c3aed;
+}
+
+.slick-prev,
+.slick-next {
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #7c3aed !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.85;
+  transition: opacity 0.3s ease;
+}
+
+.slick-prev:hover,
+.slick-next:hover {
+  opacity: 1;
+  background-color: #6d28d9 !important;
+}
+
+.slick-prev:before,
+.slick-next:before {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.slick-prev {
+  left: 0;
+}
+
+.slick-next {
+  right: 0;
+}
+
+.slick-disabled {
+  opacity: 0.3 !important;
+  cursor: not-allowed;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

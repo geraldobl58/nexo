@@ -6,6 +6,9 @@ import { QueryProvider } from "@/providers/query-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 import { MuiProvider } from "@/providers/mui-provider";
 
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+
 import "./globals.css";
 
 const montserrat = Montserrat({
