@@ -1,8 +1,20 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import keycloak from "@/lib/keycloak";
 import { syncMeAction } from "../actions/sync-me";
+import type { User } from "../types";
 
-const USER_QUERY_KEY = ["auth", "user"] as const;
+export const USER_QUERY_KEY = ["auth", "user"] as const;
+
+function getUserFromCookie(): User | undefined {
+  if (typeof document === "undefined") return undefined;
+  const match = document.cookie.match(/(?:^|;\s*)nexo-user=([^;]+)/);
+  if (!match) return undefined;
+  try {
+    return JSON.parse(atob(match[1])) as User;
+  } catch {
+    return undefined;
+  }
+}
 
 export function useUser(enabled: boolean) {
   const queryClient = useQueryClient();
@@ -16,6 +28,8 @@ export function useUser(enabled: boolean) {
     enabled,
     retry: 1,
     staleTime: 5 * 60 * 1000,
+    initialData: () => getUserFromCookie(),
+    initialDataUpdatedAt: 0,
   });
 
   const refreshUserData = async () => {

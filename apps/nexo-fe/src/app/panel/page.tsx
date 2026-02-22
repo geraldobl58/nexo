@@ -2,20 +2,24 @@
 
 import { ProtectedRoute, useAuth } from "@/features/auth";
 import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
 
 export default function PanelPage() {
   const { user, logout } = useAuth();
 
-  console.log(user);
-
   return (
     <ProtectedRoute>
       <div className="flex items-center justify-center h-screen">
-        <Button variant="contained">Test</Button>
-        <TextField label="Teste" variant="outlined" />
-        <div>
-          <p>Bem-vindo, {user?.name}!</p>
+        <div className="flex flex-col gap-4 p-8 border rounded-xl shadow-sm max-w-lg w-full">
+          <p className="text-lg font-semibold">
+            Bem-vindo, {user?.name ?? "—"}!
+          </p>
+
+          {user && (
+            <pre className="text-xs bg-gray-100 rounded p-3 overflow-auto">
+              {JSON.stringify(user, null, 2)}
+            </pre>
+          )}
+
           <Button variant="contained" onClick={logout}>
             Sair
           </Button>
