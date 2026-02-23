@@ -25,6 +25,7 @@ export type HeadingProps = {
   size?: "sm" | "md" | "lg" | "xl";
   align?: "left" | "center" | "right";
   badge?: string;
+  content?: React.ReactNode;
 };
 
 export const Heading = ({
@@ -34,6 +35,7 @@ export const Heading = ({
   size = "md",
   align = "left",
   badge,
+  content,
 }: HeadingProps) => {
   return (
     <div className={alignClasses[align]}>
@@ -44,12 +46,9 @@ export const Heading = ({
       )}
       <Tag className={sizeClasses[size]}>{title}</Tag>
       {description && (
-        <p
-          className={`mt-2 text-muted-foreground ${descriptionSizeClasses[size]}`}
-        >
-          {description}
-        </p>
+        <p className={`mt-2 ${descriptionSizeClasses[size]}`}>{description}</p>
       )}
+      {content && <div className="mt-4">{content}</div>}
     </div>
   );
 };

@@ -4,6 +4,7 @@ export type CardInformationProps = {
   description: string;
   variant?: "default" | "highlight" | "subtle";
   size?: "sm" | "md" | "lg";
+  align?: "left" | "center" | "right";
 };
 
 const variantClasses: Record<
@@ -36,10 +37,20 @@ export const CardInformation = ({
   description,
   variant = "default",
   size = "md",
+  align = "left",
 }: CardInformationProps) => {
+  const alignClasses: Record<
+    NonNullable<CardInformationProps["align"]>,
+    string
+  > = {
+    left: "items-start text-left",
+    center: "items-center text-center",
+    right: "items-end text-right",
+  };
+
   return (
     <div
-      className={`rounded-3xl flex flex-col ${variantClasses[variant]} ${sizeClasses[size]}`}
+      className={`rounded-3xl flex flex-col ${variantClasses[variant]} ${sizeClasses[size]} ${icon ? "items-center" : ""} ${alignClasses[align]}`}
     >
       {icon && (
         <span className="bg-white rounded-2xl p-3 w-max shadow-lg border">

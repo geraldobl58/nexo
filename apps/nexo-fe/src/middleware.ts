@@ -1,18 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { applyUserHeaders, parseUserCookie } from "@/lib/session";
 
 const protectedRoutes = ["/panel"];
-
-function parseUserCookie(
-  value: string | undefined,
-): Record<string, string> | null {
-  if (!value) return null;
-  try {
-    return JSON.parse(Buffer.from(value, "base64").toString("utf-8"));
-  } catch {
-    return null;
-  }
-}
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -30,14 +20,10 @@ export function middleware(request: NextRequest) {
   }
 
   const requestHeaders = new Headers(request.headers);
-  const userData = parseUserCookie(request.cookies.get("nexo-user")?.value);
+  const user = parseUserCookie(request.cookies.get("nexo-user")?.value);
 
-  if (userData) {
-    if (userData.name) requestHeaders.set("x-user-name", userData.name);
-    if (userData.email) requestHeaders.set("x-user-email", userData.email);
-    if (userData.role) requestHeaders.set("x-user-role", userData.role);
-    if (userData.keycloakId)
-      requestHeaders.set("x-user-id", userData.keycloakId);
+  if (user) {
+    applyUserHeaders(requestHeaders, user);
   }
 
   return NextResponse.next({ request: { headers: requestHeaders } });

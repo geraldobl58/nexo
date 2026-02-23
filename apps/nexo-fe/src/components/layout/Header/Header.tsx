@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 import { useAuth } from "@/features/auth";
@@ -12,14 +10,7 @@ import { Logo } from "@/components/ui/Logo/Logo";
 import { NavBar } from "../Navbar/Navbar";
 
 export const Header = () => {
-  const { login, isAuthenticated } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.replace("/panel");
-    }
-  }, [isAuthenticated, router]);
+  const { login, user } = useAuth();
 
   const handleLogin = async () => {
     try {
@@ -45,10 +36,16 @@ export const Header = () => {
 
         {/* Botões de ação — ocultos em mobile (ficam no sidebar) */}
         <div className="hidden md:flex items-center gap-3">
-          <Button variant="text" onClick={handleLogin}>
-            Entrar
-          </Button>
-          <Button variant="contained" component={Link} href="/panel">
+          {user ? (
+            <Button variant="text" LinkComponent={Link} href="/panel">
+              Dashboard
+            </Button>
+          ) : (
+            <Button variant="text" onClick={handleLogin}>
+              Entrar
+            </Button>
+          )}
+          <Button variant="contained" component={Link} href="/publish">
             Anuncie Grátis
           </Button>
         </div>
