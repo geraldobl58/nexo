@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
-import { MeUseCase } from '@/application/auth/me.usecase';
-import { AuthUser } from '@/domain/auth/auth-user';
-import { UserDTO } from '@/domain/user/user.repository';
+import { MeUseCase } from '@/modules/auth/application/use-cases/me.use-case';
+import { AuthUser } from '@/modules/auth/domain/entities/auth-user';
+import { UserDTO } from '@/modules/auth/domain/repositories/user.repository';
 
 describe('AuthController', () => {
   let controller: AuthController;

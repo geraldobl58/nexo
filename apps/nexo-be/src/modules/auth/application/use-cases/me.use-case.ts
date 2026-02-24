@@ -1,5 +1,8 @@
-import { AuthUser } from '@/domain/auth/auth-user';
-import { UserDTO, UserRepository } from '@/domain/user/user.repository';
+import { AuthUser } from '@/modules/auth/domain/entities/auth-user';
+import {
+  UserDTO,
+  UserRepository,
+} from '@/modules/auth/domain/repositories/user.repository';
 
 export class MeUseCase {
   constructor(private readonly users: UserRepository) {}

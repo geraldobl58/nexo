@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
-import { MeUseCase } from '@/application/auth/me.usecase';
-import { KeycloakStrategy } from '@/infrastructure/auth/keycloak.strategy';
-import { PrismaUserRepository } from '@/infrastructure/database/repositories/prisma-user.repository';
-import { AuthController } from '@/presentation/auth/auth.controller';
+import { MeUseCase } from '@/modules/auth/application/use-cases/me.use-case';
+import { KeycloakStrategy } from '@/modules/auth/infrastructure/auth/keycloak.strategy';
+import { PrismaUserRepository } from '@/modules/auth/infrastructure/prisma/prisma-user.repository';
+import { AuthController } from '@/modules/auth/infrastructure/http/auth.controller';
 import { PrismaService } from '@/libs/prisma/prisma.service';
 
 @Module({

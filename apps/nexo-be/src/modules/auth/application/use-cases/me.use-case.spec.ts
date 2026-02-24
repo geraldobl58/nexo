@@ -1,6 +1,9 @@
-import { MeUseCase } from './me.usecase';
-import { UserRepository, UserDTO } from '@/domain/user/user.repository';
-import { AuthUser } from '@/domain/auth/auth-user';
+import { MeUseCase } from './me.use-case';
+import {
+  UserRepository,
+  UserDTO,
+} from '@/modules/auth/domain/repositories/user.repository';
+import { AuthUser } from '@/modules/auth/domain/entities/auth-user';
 
 describe('MeUseCase', () => {
   let useCase: MeUseCase;

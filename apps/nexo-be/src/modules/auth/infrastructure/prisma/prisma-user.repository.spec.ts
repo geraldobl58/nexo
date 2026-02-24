@@ -1,6 +1,6 @@
 import { PrismaUserRepository } from './prisma-user.repository';
 import { PrismaService } from '@/libs/prisma/prisma.service';
-import { UserDTO } from '@/domain/user/user.repository';
+import { UserDTO } from '@/modules/auth/domain/repositories/user.repository';
 
 describe('PrismaUserRepository', () => {
   let repository: PrismaUserRepository;

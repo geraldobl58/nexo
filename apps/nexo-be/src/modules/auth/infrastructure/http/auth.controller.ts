@@ -9,8 +9,8 @@ import {
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { MeUseCase } from '@/application/auth/me.usecase';
-import { AuthUser } from '@/domain/auth/auth-user';
+import { MeUseCase } from '@/modules/auth/application/use-cases/me.use-case';
+import { AuthUser } from '@/modules/auth/domain/entities/auth-user';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from './current-user.decorator';
 import { MeResponseDto } from './me-response.dto';

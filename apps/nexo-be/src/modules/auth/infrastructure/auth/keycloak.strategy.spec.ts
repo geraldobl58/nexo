@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { KeycloakStrategy } from './keycloak.strategy';
-import { AuthUser } from '@/domain/auth/auth-user';
+import { AuthUser } from '@/modules/auth/domain/entities/auth-user';
 
 describe('KeycloakStrategy', () => {
   let strategy: KeycloakStrategy;

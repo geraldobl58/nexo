@@ -1,4 +1,7 @@
-import { UserDTO, UserRepository } from '@/domain/user/user.repository';
+import {
+  UserDTO,
+  UserRepository,
+} from '@/modules/auth/domain/repositories/user.repository';
 import { PrismaService } from '@/libs/prisma/prisma.service';
 
 export class PrismaUserRepository implements UserRepository {
