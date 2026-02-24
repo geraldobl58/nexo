@@ -10,6 +10,8 @@ describe('KeycloakStrategy', () => {
   beforeEach(async () => {
     mockConfigService = {
       getOrThrow: jest.fn(),
+      // config.get() é chamado para KEYCLOAK_INTERNAL_URL (fallback opcional)
+      get: jest.fn().mockReturnValue(undefined),
     } as any;
 
     mockConfigService.getOrThrow.mockImplementation((key: string) => {

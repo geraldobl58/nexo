@@ -9,8 +9,7 @@ import {
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { MeUseCase } from '@/modules/auth/application/use-cases/me.use-case';
-import { AuthUser } from '@/modules/auth/domain/entities/auth-user';
+import { UserEntity } from '@/modules/identity/domain/entities/user.entity';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from './current-user.decorator';
 import { MeResponseDto } from './me-response.dto';
@@ -19,8 +18,6 @@ import { MeResponseDto } from './me-response.dto';
 @ApiBearerAuth()
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly meUseCase: MeUseCase) {}
-
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
@@ -72,7 +69,8 @@ export class AuthController {
       },
     },
   })
-  async me(@CurrentUser() user: AuthUser) {
-    return this.meUseCase.execute(user);
+  // request.user is replaced by SyncUserInterceptor with the DB UserEntity
+  me(@CurrentUser() user: UserEntity): UserEntity {
+    return user;
   }
 }
