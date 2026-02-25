@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { PatternFormat } from "react-number-format";
 
 import {
   createPublishLocationSchema,
@@ -10,10 +11,11 @@ import {
 } from "../schemas/publish-location";
 import { FormField } from "@/components/ui/FormField/FormField";
 import { usePublish } from "../context/publish-context";
-import { LinearProgress } from "@mui/material";
+import { LinearProgress, TextField } from "@mui/material";
 import { StepLocationProps } from "../types/publish-location-types";
 import { DEFAULT_LAT, DEFAULT_LNG, fetchCep } from "@/lib/fect-cep";
 import { LeafletMap } from "@/lib/leaflet-map";
+import { Controller } from "react-hook-form";
 
 export const StepLocation = ({ onValidChange }: StepLocationProps) => {
   const { formData, setLocationData, setLocationValid } = usePublish();
@@ -117,12 +119,24 @@ export const StepLocation = ({ onValidChange }: StepLocationProps) => {
       <h3 className="text-2xl font-bold">Localização do imóvel</h3>
 
       <div className="w-full">
-        <FormField
+        <Controller
           control={control}
           name="zipcode"
-          label="CEP"
-          type="text"
-          error={!!errors.zipcode?.message}
+          render={({ field: { onChange, value, ref } }) => (
+            <PatternFormat
+              format="#####-###"
+              mask="_"
+              value={value}
+              onValueChange={(values) => onChange(values.value)}
+              customInput={TextField}
+              fullWidth
+              label="CEP"
+              inputRef={ref}
+              error={!!errors.zipcode?.message}
+              helperText={errors.zipcode?.message}
+              inputMode="numeric"
+            />
+          )}
         />
         {cepLoading && (
           <div className="mt-2 text-sm text-gray-500">

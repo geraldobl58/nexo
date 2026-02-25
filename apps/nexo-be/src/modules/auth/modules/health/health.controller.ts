@@ -7,7 +7,7 @@ export class HealthController {
   @Get('/health')
   check() {
     return {
-      status: 'Vamos iniciar o desenvolvimento do Nexo Platform!',
+      status: 'API is healthy and running!',
       timestamp: new Date().toISOString(),
     };
   }
@@ -15,7 +15,7 @@ export class HealthController {
   @Get('/metrics')
   metrics() {
     return {
-      status: 'Vamos iniciar o desenvolvimento do Nexo Platform!',
+      status: 'API metrics are available!',
       timestamp: new Date().toISOString(),
     };
   }

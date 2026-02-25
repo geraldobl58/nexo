@@ -11,7 +11,7 @@ import { House, Search } from "lucide-react";
 
 export const SectionForm = () => {
   return (
-    <div className="bg-white p-4 rounded-2xl space-y-6 shadow-xs w-full max-w-3xl">
+    <div className="bg-white p-4 rounded-2xl space-y-6 shadow-xs w-full max-w-6xl">
       <div className="flex space-x-1 border-b pb-4">
         <Button
           variant="text"
@@ -31,13 +31,20 @@ export const SectionForm = () => {
           color="inherit"
           className="!normal-case !text-slate-500"
         >
-          Vender
+          Imóveis Novo
+        </Button>
+        <Button
+          variant="text"
+          color="inherit"
+          className="!normal-case !text-slate-500"
+        >
+          Leilões
         </Button>
       </div>
 
       <form>
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-          <FormControl className="w-full md:!w-[220px]">
+          <FormControl className="w-full">
             <Select
               displayEmpty
               value=""
@@ -105,9 +112,9 @@ export const SectionForm = () => {
           </FormControl>
 
           <TextField
+            fullWidth
             variant="outlined"
             placeholder="Cidade, bairro ou endereço"
-            className="w-full md:!w-[360px]"
             slotProps={{
               input: {
                 startAdornment: (

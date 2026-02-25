@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import type { PublishLocationData } from "../schemas/publish-location";
+import type { PublishDetailsData } from "../schemas/publish-details";
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -16,12 +17,12 @@ import type { PublishLocationData } from "../schemas/publish-location";
 
 export interface PublishStepValidity {
   location: boolean;
-  // futuros steps adicionados aqui
+  details: boolean;
 }
 
 export interface PublishFormData {
   location: Partial<PublishLocationData>;
-  // futuros steps adicionados aqui
+  details: Partial<PublishDetailsData>;
 }
 
 interface PublishContextValue {
@@ -35,6 +36,10 @@ interface PublishContextValue {
   setLocationData: (data: Partial<PublishLocationData>) => void;
   /** Informa se o step de localização é válido */
   setLocationValid: (valid: boolean) => void;
+  /** Atualiza parcialmente os dados de detalhes */
+  setDetailsData: (data: Partial<PublishDetailsData>) => void;
+  /** Informa se o step de detalhes é válido */
+  setDetailsValid: (valid: boolean) => void;
   /** Navega para o próximo step */
   goNext: () => void;
   /** Volta um step */
@@ -68,10 +73,12 @@ export function PublishProvider({ children }: { children: ReactNode }) {
 
   const [formData, setFormData] = useState<PublishFormData>({
     location: {},
+    details: {},
   });
 
   const [stepValidity, setStepValidity] = useState<PublishStepValidity>({
     location: false,
+    details: false,
   });
 
   const setLocationData = useCallback((data: Partial<PublishLocationData>) => {
@@ -85,9 +92,21 @@ export function PublishProvider({ children }: { children: ReactNode }) {
     setStepValidity((prev) => ({ ...prev, location: valid }));
   }, []);
 
+  const setDetailsData = useCallback((data: Partial<PublishDetailsData>) => {
+    setFormData((prev) => ({
+      ...prev,
+      details: { ...prev.details, ...data },
+    }));
+  }, []);
+
+  const setDetailsValid = useCallback((valid: boolean) => {
+    setStepValidity((prev) => ({ ...prev, details: valid }));
+  }, []);
+
   const isNextDisabled = useCallback(() => {
     const step = STEPS[activeStep];
     if (step === "Localização do imóvel") return !stepValidity.location;
+    if (step === "Detalhes do imóvel") return !stepValidity.details;
     return false;
   }, [activeStep, stepValidity]);
 
@@ -107,6 +126,8 @@ export function PublishProvider({ children }: { children: ReactNode }) {
         activeStep,
         setLocationData,
         setLocationValid,
+        setDetailsData,
+        setDetailsValid,
         goNext,
         goBack,
         isNextDisabled,

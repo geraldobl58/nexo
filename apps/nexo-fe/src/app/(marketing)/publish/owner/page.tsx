@@ -9,6 +9,7 @@ import {
   PUBLISH_STEPS,
   usePublish,
 } from "../../../../features/owner/context/publish-context";
+import { StepDetails } from "@/features/owner/components/step-details";
 
 // ---------------------------------------------------------------------------
 // Conteúdo interno (precisa estar dentro do Provider para usar usePublish)
@@ -28,9 +29,7 @@ function PublishWizardContent() {
       {PUBLISH_STEPS[activeStep] === "Localização do imóvel" && (
         <StepLocation />
       )}
-      {PUBLISH_STEPS[activeStep] === "Detalhes do imóvel" && (
-        <div>Detalhes do imóvel</div>
-      )}
+      {PUBLISH_STEPS[activeStep] === "Detalhes do imóvel" && <StepDetails />}
     </StepperWizard>
   );
 }
