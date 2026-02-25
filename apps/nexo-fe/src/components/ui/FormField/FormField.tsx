@@ -51,6 +51,15 @@ export function FormField<T extends FieldValues>({
         <TextField
           {...field}
           {...props}
+          value={field.value ?? ""}
+          onChange={(e) => {
+            const raw = e.target.value;
+            if (type === "number") {
+              field.onChange(raw === "" ? undefined : Number(raw));
+            } else {
+              field.onChange(e);
+            }
+          }}
           fullWidth
           type={type}
           label={label}

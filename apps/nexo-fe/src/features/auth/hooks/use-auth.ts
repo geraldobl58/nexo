@@ -20,6 +20,8 @@ export function useAuth() {
     queryKey: AUTH_SESSION_KEY,
     queryFn: () => ({ isAuthenticated: false, isLoading: true }),
     enabled: false,
+    // Must be static to match SSR — avoids hydration mismatch.
+    // AuthProvider updates this client-side after mount.
     initialData: { isAuthenticated: false, isLoading: true },
   });
 
@@ -37,6 +39,10 @@ export function useAuth() {
   }, []);
 
   const logout = useCallback(async () => {
+    // Clear persisted tokens so the next page load starts unauthenticated
+    sessionStorage.removeItem("kc_token");
+    sessionStorage.removeItem("kc_refresh_token");
+    sessionStorage.removeItem("kc_id_token");
     queryClient.setQueryData(AUTH_SESSION_KEY, {
       isAuthenticated: false,
       isLoading: false,

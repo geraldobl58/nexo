@@ -1,16 +1,11 @@
 "use server";
 
 import { cookies } from "next/headers";
+import type { User } from "../types";
 
-export interface SessionUserData {
-  id?: string;
-  keycloakId?: string;
-  name: string;
-  email: string;
-  role?: string;
-}
+export type { User as SessionUserData };
 
-export async function setAuthCookie(userData?: SessionUserData) {
+export async function setAuthCookie(userData?: Partial<User>) {
   const cookieStore = cookies();
   const maxAge = 60 * 60 * 24;
   const secure = process.env.NODE_ENV === "production";

@@ -29,7 +29,12 @@ export function useUser(enabled: boolean) {
     retry: 1,
     staleTime: 5 * 60 * 1000,
     initialData: () => getUserFromCookie(),
-    initialDataUpdatedAt: 0,
+    initialDataUpdatedAt: () => {
+      // If we have full data in the cookie (createdAt is a field only from the API),
+      // treat it as recent so the query doesn't immediately refetch.
+      const cached = getUserFromCookie();
+      return cached?.createdAt ? Date.now() : 0;
+    },
   });
 
   const refreshUserData = async () => {

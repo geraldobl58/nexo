@@ -10,6 +10,8 @@ import {
   usePublish,
 } from "../../../../features/owner/context/publish-context";
 import { StepDetails } from "@/features/owner/components/step-details";
+import { StepComodities } from "@/features/owner/components/step-comodities";
+import { StepFinished } from "@/features/owner/components/step-finished";
 
 // ---------------------------------------------------------------------------
 // Conteúdo interno (precisa estar dentro do Provider para usar usePublish)
@@ -30,6 +32,15 @@ function PublishWizardContent() {
         <StepLocation />
       )}
       {PUBLISH_STEPS[activeStep] === "Detalhes do imóvel" && <StepDetails />}
+      {PUBLISH_STEPS[activeStep] === "Fotos do imóvel" && (
+        <div className="flex items-center justify-center h-64 border-2 border-dashed border-gray-300 rounded-lg">
+          <p className="text-gray-500">Em construção: Upload de fotos</p>
+        </div>
+      )}
+      {PUBLISH_STEPS[activeStep] === "Comodidades do imóvel" && (
+        <StepComodities />
+      )}
+      {PUBLISH_STEPS[activeStep] === "Revisão e publicação" && <StepFinished />}
     </StepperWizard>
   );
 }

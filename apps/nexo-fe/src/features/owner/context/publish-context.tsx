@@ -4,12 +4,42 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useState,
   type ReactNode,
 } from "react";
 
 import type { PublishLocationData } from "../schemas/publish-location";
 import type { PublishDetailsData } from "../schemas/publish-details";
+import type { PublishComoditiesData } from "../schemas/publish-comodities";
+
+// ---------------------------------------------------------------------------
+// sessionStorage persistence helpers
+// ---------------------------------------------------------------------------
+
+const STORAGE_KEY = "nexo-publish-wizard";
+
+interface PersistedState {
+  activeStep: number;
+  formData: PublishFormData;
+}
+
+function loadState(): Partial<PersistedState> {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as PersistedState) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveState(state: PersistedState) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // sessionStorage quota exceeded or unavailable — fail silently
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -18,11 +48,13 @@ import type { PublishDetailsData } from "../schemas/publish-details";
 export interface PublishStepValidity {
   location: boolean;
   details: boolean;
+  comodities: boolean;
 }
 
 export interface PublishFormData {
   location: Partial<PublishLocationData>;
   details: Partial<PublishDetailsData>;
+  comodities: Partial<PublishComoditiesData>;
 }
 
 interface PublishContextValue {
@@ -40,10 +72,16 @@ interface PublishContextValue {
   setDetailsData: (data: Partial<PublishDetailsData>) => void;
   /** Informa se o step de detalhes é válido */
   setDetailsValid: (valid: boolean) => void;
+  /** Atualiza parcialmente os dados de comodidades */
+  setComoditiesData: (data: Partial<PublishComoditiesData>) => void;
+  /** Informa se o step de comodidades é válido */
+  setComoditiesValid: (valid: boolean) => void;
   /** Navega para o próximo step */
   goNext: () => void;
   /** Volta um step */
   goBack: () => void;
+  /** Navega diretamente para um step pelo índice */
+  goToStep: (step: number) => void;
   /** Verifica se o botão "Continuar" do step atual deve estar desabilitado */
   isNextDisabled: () => boolean;
 }
@@ -69,17 +107,29 @@ const STEPS = [
 export const PUBLISH_STEPS = STEPS;
 
 export function PublishProvider({ children }: { children: ReactNode }) {
-  const [activeStep, setActiveStep] = useState(0);
+  // Inicializadores lazy leem o sessionStorage diretamente na primeira renderização.
+  // Não há risco de hydration mismatch porque este provider só é montado
+  // client-side, dentro do ProtectedRoute (que bloqueia o SSR).
+  const [activeStep, setActiveStep] = useState<number>(() => {
+    const saved = loadState();
+    return saved.activeStep ?? 0;
+  });
 
-  const [formData, setFormData] = useState<PublishFormData>({
-    location: {},
-    details: {},
+  const [formData, setFormData] = useState<PublishFormData>(() => {
+    const saved = loadState();
+    return saved.formData ?? { location: {}, details: {}, comodities: {} };
   });
 
   const [stepValidity, setStepValidity] = useState<PublishStepValidity>({
     location: false,
     details: false,
+    comodities: false,
   });
+
+  // Persiste activeStep + formData sempre que mudarem.
+  useEffect(() => {
+    saveState({ activeStep, formData });
+  }, [activeStep, formData]);
 
   const setLocationData = useCallback((data: Partial<PublishLocationData>) => {
     setFormData((prev) => ({
@@ -103,10 +153,25 @@ export function PublishProvider({ children }: { children: ReactNode }) {
     setStepValidity((prev) => ({ ...prev, details: valid }));
   }, []);
 
+  const setComoditiesData = useCallback(
+    (data: Partial<PublishComoditiesData>) => {
+      setFormData((prev) => ({
+        ...prev,
+        comodities: { ...prev.comodities, ...data },
+      }));
+    },
+    [],
+  );
+
+  const setComoditiesValid = useCallback((valid: boolean) => {
+    setStepValidity((prev) => ({ ...prev, comodities: valid }));
+  }, []);
+
   const isNextDisabled = useCallback(() => {
     const step = STEPS[activeStep];
     if (step === "Localização do imóvel") return !stepValidity.location;
     if (step === "Detalhes do imóvel") return !stepValidity.details;
+    if (step === "Comodidades do imóvel") return !stepValidity.comodities;
     return false;
   }, [activeStep, stepValidity]);
 
@@ -116,6 +181,10 @@ export function PublishProvider({ children }: { children: ReactNode }) {
 
   const goBack = useCallback(() => {
     setActiveStep((s) => Math.max(s - 1, 0));
+  }, []);
+
+  const goToStep = useCallback((step: number) => {
+    setActiveStep(Math.max(0, Math.min(step, STEPS.length - 1)));
   }, []);
 
   return (
@@ -128,8 +197,11 @@ export function PublishProvider({ children }: { children: ReactNode }) {
         setLocationValid,
         setDetailsData,
         setDetailsValid,
+        setComoditiesData,
+        setComoditiesValid,
         goNext,
         goBack,
+        goToStep,
         isNextDisabled,
       }}
     >
