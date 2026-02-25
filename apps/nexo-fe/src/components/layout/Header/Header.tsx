@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { useAuth } from "@/features/auth";
 import Button from "@mui/material/Button";
@@ -11,6 +12,10 @@ import { NavBar } from "../Navbar/Navbar";
 
 export const Header = () => {
   const { login, user } = useAuth();
+  // Só renderiza botões de auth depois da hidratação para evitar mismatch
+  // (server não conhece o estado Keycloak; cliente pode já ter user definido)
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const handleLogin = async () => {
     try {
@@ -35,8 +40,10 @@ export const Header = () => {
         </div>
 
         {/* Botões de ação — ocultos em mobile (ficam no sidebar) */}
+        {/* suppressHydrationWarning não funciona para elementos filhos;
+            usamos mounted para garantir render idêntico em server e client */}
         <div className="hidden md:flex items-center gap-3">
-          {user ? (
+          {mounted && user ? (
             <Button variant="text" LinkComponent={Link} href="/panel">
               Dashboard
             </Button>

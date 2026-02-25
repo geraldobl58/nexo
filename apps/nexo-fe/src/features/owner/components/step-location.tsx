@@ -1,38 +1,192 @@
-import { TextField } from "@mui/material";
+"use client";
 
-export const StepLocation = () => {
+import { useEffect, useRef, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import {
+  createPublishLocationSchema,
+  PublishLocationData,
+} from "../schemas/publish-location";
+import { FormField } from "@/components/ui/FormField/FormField";
+import { usePublish } from "../context/publish-context";
+import { LinearProgress } from "@mui/material";
+import { StepLocationProps } from "../types/publish-location-types";
+import { DEFAULT_LAT, DEFAULT_LNG, fetchCep } from "@/lib/fect-cep";
+import { LeafletMap } from "@/lib/leaflet-map";
+
+export const StepLocation = ({ onValidChange }: StepLocationProps) => {
+  const { formData, setLocationData, setLocationValid } = usePublish();
+
+  const {
+    control,
+    setValue,
+    formState: { errors, isValid },
+  } = useForm<PublishLocationData>({
+    resolver: zodResolver(createPublishLocationSchema),
+    mode: "onChange",
+    // Restaura os dados salvos no context ao voltar para este step
+    defaultValues: {
+      zipcode: "",
+      street: "",
+      streetNumber: "",
+      district: "",
+      complement: "",
+      city: "",
+      state: "",
+      latitude: undefined,
+      longitude: undefined,
+      ...formData.location,
+    },
+  });
+
+  const [coords, setCoords] = useState<{ lat: number; lng: number }>({
+    lat: DEFAULT_LAT,
+    lng: DEFAULT_LNG,
+  });
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepError, setCepError] = useState<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sincroniza validade com o context e com o callback opcional do pai
+  useEffect(() => {
+    setLocationValid(isValid);
+    onValidChange?.(isValid);
+  }, [isValid, setLocationValid, onValidChange]);
+
+  // Observa o campo de CEP
+  const zipcode = useWatch({ control, name: "zipcode" });
+
+  // Persiste qualquer mudança nos campos no context
+  const allValues = useWatch({ control });
+  useEffect(() => {
+    setLocationData(allValues as Partial<PublishLocationData>);
+  }, [allValues, setLocationData]);
+
+  // Restaura coordenadas salvas no context ao voltar para este step
+  useEffect(() => {
+    const { latitude, longitude } = formData.location;
+    if (latitude && longitude) {
+      setCoords({ lat: latitude, lng: longitude });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const digits = zipcode?.replace(/\D/g, "") ?? "";
+
+    if (digits.length !== 8) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(async () => {
+      setCepLoading(true);
+      setCepError(null);
+
+      const data = await fetchCep(digits);
+
+      if (!data) {
+        setCepError("CEP não encontrado.");
+        setCepLoading(false);
+        return;
+      }
+
+      // Preenche os campos automaticamente
+      setValue("street", data.logradouro, { shouldValidate: true });
+      setValue("district", data.bairro, { shouldValidate: true });
+      setValue("city", data.localidade, { shouldValidate: true });
+      setValue("state", data.uf, { shouldValidate: true });
+
+      // BrasilAPI já retorna as coordenadas — sem chamada extra de geocoding
+      if (data.lat && data.lng) {
+        setValue("latitude", data.lat);
+        setValue("longitude", data.lng);
+        setCoords({ lat: data.lat, lng: data.lng });
+      }
+
+      setCepLoading(false);
+    }, 600);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [zipcode, setValue]);
+
   return (
-    <div className="flex flex-col w-full px-4 py-4 rounded-lg space-y-8 shadow-md bg-white">
+    <div className="flex flex-col w-full px-4 py-4 rounded-lg space-y-8 mt-10 shadow-md bg-white">
       <h3 className="text-2xl font-bold">Localização do imóvel</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-        <TextField fullWidth variant="outlined" placeholder="00000-000" />
-        <TextField
-          fullWidth
-          disabled
-          variant="outlined"
-          placeholder="Nome da rua"
+
+      <div className="w-full">
+        <FormField
+          control={control}
+          name="zipcode"
+          label="CEP"
+          type="text"
+          error={!!errors.zipcode?.message}
+        />
+        {cepLoading && (
+          <div className="mt-2 text-sm text-gray-500">
+            <LinearProgress />
+          </div>
+        )}
+        {cepError && <p className="text-xs text-red-500 mt-1">{cepError}</p>}
+      </div>
+      {/* Número + Complemento */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+        <FormField
+          control={control}
+          name="street"
+          label="Rua"
+          type="text"
+          disabled={true}
+          error={!!errors.street?.message}
+        />
+        <FormField
+          control={control}
+          name="streetNumber"
+          label="Número"
+          type="text"
+          error={!!errors.streetNumber?.message}
+        />
+        <FormField
+          control={control}
+          name="complement"
+          label="Complemento"
+          type="text"
         />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-        <TextField fullWidth variant="outlined" placeholder="Número" />
-        <TextField fullWidth variant="outlined" placeholder="Complemento" />
+
+      {/* Bairro + (vazio) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+        <FormField
+          control={control}
+          name="district"
+          label="Bairro"
+          type="text"
+          disabled={true}
+          error={!!errors.district?.message}
+        />
+        <FormField
+          control={control}
+          name="city"
+          label="Cidade"
+          type="text"
+          disabled={true}
+          error={!!errors.city?.message}
+        />
+        <FormField
+          control={control}
+          name="state"
+          label="Estado"
+          type="text"
+          disabled={true}
+          error={!!errors.state?.message}
+        />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-        <TextField fullWidth disabled variant="outlined" placeholder="Bairro" />
-        <TextField fullWidth disabled variant="outlined" placeholder="Cidade" />
-      </div>
-      <div className="w-full">
-        <TextField fullWidth disabled variant="outlined" placeholder="Estado" />
-      </div>
-      <div className="w-full">
-        <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d6999574.716951842!2d-105.36603012667372!3d31.060749778591102!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x864070360b823249%3A0x16eb1c8f1808de3c!2sTexas%2C%20EUA!5e0!3m2!1spt-BR!2sbr!4v1771885377807!5m2!1spt-BR!2sbr"
-          height="450"
-          style={{ border: 0 }}
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          className="w-full"
-        ></iframe>
+
+      {/* Mapa */}
+      <div className="w-full rounded-lg overflow-hidden">
+        <LeafletMap lat={coords.lat} lng={coords.lng} height="400px" />
       </div>
     </div>
   );

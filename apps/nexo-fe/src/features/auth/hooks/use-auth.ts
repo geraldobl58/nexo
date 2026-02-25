@@ -26,10 +26,10 @@ export function useAuth() {
   const { isAuthenticated, isLoading } = session;
   const { user, refreshUserData } = useUser(isAuthenticated);
 
-  const login = useCallback(async () => {
+  const login = useCallback(async (redirectPath?: string) => {
     try {
       await keycloak.login({
-        redirectUri: `${window.location.origin}/panel`,
+        redirectUri: `${window.location.origin}${redirectPath ?? "/panel"}`,
       });
     } catch (error) {
       console.error("Erro ao fazer login:", error);
