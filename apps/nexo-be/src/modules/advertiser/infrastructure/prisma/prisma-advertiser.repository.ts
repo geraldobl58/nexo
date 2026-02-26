@@ -63,6 +63,13 @@ export class PrismaAdvertiserRepository implements IAdvertiserRepository {
     return (advertiser as AdvertiserEntity | null) ?? null;
   }
 
+  async findByKeycloakId(keycloakId: string): Promise<AdvertiserEntity | null> {
+    const advertiser = await this.prisma.advertiser.findFirst({
+      where: { keycloakId },
+    });
+    return (advertiser as AdvertiserEntity | null) ?? null;
+  }
+
   async update(
     id: string,
     data: UpdateAdvertiserData,

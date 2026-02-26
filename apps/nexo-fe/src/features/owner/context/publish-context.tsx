@@ -17,9 +17,13 @@ import type { PublishComoditiesData } from "../schemas/publish-comodities";
 // sessionStorage persistence helpers
 // ---------------------------------------------------------------------------
 
+// Bump this version whenever stored shapes change (e.g. enum values refactor)
+// to automatically discard incompatible cached data.
 const STORAGE_KEY = "nexo-publish-wizard";
+const STORAGE_VERSION = 2;
 
 interface PersistedState {
+  version: number;
   activeStep: number;
   formData: PublishFormData;
 }
@@ -27,15 +31,25 @@ interface PersistedState {
 function loadState(): Partial<PersistedState> {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as PersistedState) : {};
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as PersistedState;
+    // Discard data from older storage versions
+    if (parsed.version !== STORAGE_VERSION) {
+      sessionStorage.removeItem(STORAGE_KEY);
+      return {};
+    }
+    return parsed;
   } catch {
     return {};
   }
 }
 
-function saveState(state: PersistedState) {
+function saveState(state: Omit<PersistedState, "version">) {
   try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ ...state, version: STORAGE_VERSION }),
+    );
   } catch {
     // sessionStorage quota exceeded or unavailable — fail silently
   }
@@ -84,6 +98,8 @@ interface PublishContextValue {
   goToStep: (step: number) => void;
   /** Verifica se o botão "Continuar" do step atual deve estar desabilitado */
   isNextDisabled: () => boolean;
+  /** Zera todo o estado do wizard e limpa o sessionStorage */
+  resetPublish: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -187,6 +203,13 @@ export function PublishProvider({ children }: { children: ReactNode }) {
     setActiveStep(Math.max(0, Math.min(step, STEPS.length - 1)));
   }, []);
 
+  const resetPublish = useCallback(() => {
+    sessionStorage.removeItem(STORAGE_KEY);
+    setActiveStep(0);
+    setFormData({ location: {}, details: {}, comodities: {} });
+    setStepValidity({ location: false, details: false, comodities: false });
+  }, []);
+
   return (
     <PublishContext.Provider
       value={{
@@ -203,6 +226,7 @@ export function PublishProvider({ children }: { children: ReactNode }) {
         goBack,
         goToStep,
         isNextDisabled,
+        resetPublish,
       }}
     >
       {children}

@@ -24,18 +24,21 @@ import {
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from '@/modules/auth/infrastructure/http/jwt-auth.guard';
 
 import { ApproveAdvertiserUseCase } from '../../application/use-cases/approve-advertiser.use-case';
 import { CreateAdvertiserUseCase } from '../../application/use-cases/create-advertiser.use-case';
 import { GetAdvertiserUseCase } from '../../application/use-cases/get-advertiser.use-case';
 import { GetAdvertisersUseCase } from '../../application/use-cases/get-advertisers.use-case';
+import { GetMyAdvertiserUseCase } from '../../application/use-cases/get-my-advertiser.use-case';
 import { SuspendAdvertiserUseCase } from '../../application/use-cases/suspend-advertiser.use-case';
 import { AdvertiserResponseDto } from './dtos/advertiser-response.dto';
 import { CreateAdvertiserDto } from './dtos/create-advertiser.dto';
 import { GetAdvertisersQueryDto } from './dtos/get-advertisers-query.dto';
 import { PaginatedAdvertisersResponseDto } from './dtos/paginated-advertisers-response.dto';
 import { SuspendAdvertiserDto } from './dtos/suspend-advertiser.dto';
+import { CurrentUser } from '@/modules/auth/infrastructure/http/current-user.decorator';
+import { AuthUser } from '@/modules/auth/domain/entities/auth-user';
 
 @ApiTags('Anunciantes')
 @Controller('advertisers')
@@ -45,6 +48,7 @@ export class AdvertiserController {
     private readonly approveAdvertiserUseCase: ApproveAdvertiserUseCase,
     private readonly suspendAdvertiserUseCase: SuspendAdvertiserUseCase,
     private readonly getAdvertiserUseCase: GetAdvertiserUseCase,
+    private readonly getMyAdvertiserUseCase: GetMyAdvertiserUseCase,
     private readonly getAdvertisersUseCase: GetAdvertisersUseCase,
   ) {}
 
@@ -127,6 +131,36 @@ export class AdvertiserController {
   }
 
   // ---------------------------------------------------------------------------
+  // GET /advertisers/me — Buscar meu anunciante (autenticado)
+  // ---------------------------------------------------------------------------
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Buscar meu anunciante',
+    description:
+      'Retorna o registro de anunciante vinculado ao usuário autenticado. ' +
+      'Busca por keycloakId primeiro, depois por e-mail como fallback. ' +
+      'Se não encontrar nenhum registro, cria automaticamente um anunciante ' +
+      'do tipo OWNER com os dados do token JWT.',
+  })
+  @ApiOkResponse({
+    description: 'Anunciante encontrado ou criado com sucesso.',
+    type: AdvertiserResponseDto,
+  })
+  @ApiUnauthorizedResponse({ description: 'Token JWT ausente ou inválido.' })
+  @ApiTooManyRequestsResponse({
+    description: 'Muitas requisições. Tente novamente em alguns segundos.',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Erro interno no servidor.' })
+  async findMe(@CurrentUser() auth: AuthUser): Promise<AdvertiserResponseDto> {
+    const advertiser = await this.getMyAdvertiserUseCase.execute(auth);
+    return AdvertiserResponseDto.fromEntity(advertiser);
+  }
+
+  // ---------------------------------------------------------------------------
   // GET /advertisers/:id — Buscar anunciante por ID (público)
   // ---------------------------------------------------------------------------
 
@@ -176,7 +210,7 @@ export class AdvertiserController {
   // ---------------------------------------------------------------------------
 
   @Patch(':id/approve')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({
@@ -231,7 +265,7 @@ export class AdvertiserController {
   // ---------------------------------------------------------------------------
 
   @Patch(':id/suspend')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({

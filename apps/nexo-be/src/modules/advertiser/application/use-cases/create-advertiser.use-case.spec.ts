@@ -65,6 +65,7 @@ const mockRepo: jest.Mocked<IAdvertiserRepository> = {
   create: jest.fn(),
   findById: jest.fn(),
   findByEmail: jest.fn(),
+  findByKeycloakId: jest.fn(),
   update: jest.fn(),
   findMany: jest.fn(),
   emailExists: jest.fn(),

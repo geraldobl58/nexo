@@ -66,15 +66,14 @@ export const StepDetails = () => {
           name="type"
           label="Tipo de Imóvel"
           options={[
-            { value: PropertyType.HOUSE, label: "Casa" },
             { value: PropertyType.APARTMENT, label: "Apartamento" },
-            { value: PropertyType.FLAT, label: "Flat" },
-            { value: PropertyType.KINET, label: "Kitnet" },
-            { value: PropertyType.LOFT, label: "Loft" },
-            { value: PropertyType.STORY_HOUSE, label: "Sobrado" },
-            { value: PropertyType.CONDOMINIUM, label: "Condomínio" },
-            { value: PropertyType.RURAL, label: "Rural" },
+            { value: PropertyType.HOUSE, label: "Casa" },
+            { value: PropertyType.CONDO_HOUSE, label: "Condomínio" },
+            { value: PropertyType.STUDIO, label: "Kitnet/Studio" },
+            { value: PropertyType.LAND, label: "Terreno" },
             { value: PropertyType.COMMERCIAL, label: "Comercial" },
+            { value: PropertyType.FARM, label: "Sítio/Fazenda" },
+            { value: PropertyType.OTHER, label: "Outro" },
           ]}
           error={!!errors.type?.message}
         />

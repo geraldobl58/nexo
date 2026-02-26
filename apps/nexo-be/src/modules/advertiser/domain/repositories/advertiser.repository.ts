@@ -139,6 +139,12 @@ export interface IAdvertiserRepository {
   findByEmail(email: string): Promise<AdvertiserEntity | null>;
 
   /**
+   * Busca anunciante pelo keycloakId do usuário autenticado.
+   * Retorna null se não encontrado.
+   */
+  findByKeycloakId(keycloakId: string): Promise<AdvertiserEntity | null>;
+
+  /**
    * Atualiza campos de um anunciante existente.
    * Lança NotFoundException se o ID não existir.
    */

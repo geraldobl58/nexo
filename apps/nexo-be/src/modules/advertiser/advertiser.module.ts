@@ -5,6 +5,7 @@ import { ApproveAdvertiserUseCase } from './application/use-cases/approve-advert
 import { CreateAdvertiserUseCase } from './application/use-cases/create-advertiser.use-case';
 import { GetAdvertisersUseCase } from './application/use-cases/get-advertisers.use-case';
 import { GetAdvertiserUseCase } from './application/use-cases/get-advertiser.use-case';
+import { GetMyAdvertiserUseCase } from './application/use-cases/get-my-advertiser.use-case';
 import { SuspendAdvertiserUseCase } from './application/use-cases/suspend-advertiser.use-case';
 import { ADVERTISER_REPOSITORY } from './domain/repositories/advertiser.repository';
 import { AdvertiserController } from './infrastructure/http/advertiser.controller';
@@ -36,6 +37,7 @@ import { PrismaAdvertiserRepository } from './infrastructure/prisma/prisma-adver
     ApproveAdvertiserUseCase,
     SuspendAdvertiserUseCase,
     GetAdvertiserUseCase,
+    GetMyAdvertiserUseCase,
     GetAdvertisersUseCase,
   ],
 })

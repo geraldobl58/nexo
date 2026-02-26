@@ -1,9 +1,15 @@
 "use client";
 
-import { Button, Chip, Divider } from "@mui/material";
+import { Alert, Button, Chip, Divider } from "@mui/material";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 
 import { usePublish } from "../context/publish-context";
+import {
+  PurposeLabel,
+  PropertyTypeLabel,
+  Purpose,
+  PropertyType,
+} from "../enums/publish-details-enums";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -65,10 +71,18 @@ function Field({ label, value }: FieldProps) {
 }
 
 // ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
+
+export interface StepFinishedProps {
+  publishResult?: { success: boolean; message?: string } | null;
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export const StepFinished = () => {
+export const StepFinished = ({ publishResult }: StepFinishedProps) => {
   const { formData, goToStep } = usePublish();
   const { location, details, comodities } = formData;
 
@@ -84,7 +98,13 @@ export const StepFinished = () => {
         <strong>Editar</strong> para alterar qualquer seção.
       </p>
 
-      {/* ── Localização ─────────────────────────────────────────── */}
+      {publishResult && (
+        <Alert severity={publishResult.success ? "success" : "error"}>
+          {publishResult.message}
+        </Alert>
+      )}
+
+      {/* ── Localização ──────────────────────────────────────────── */}
       <Section title="Localização do imóvel" onEdit={() => goToStep(0)}>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-6 gap-y-4">
           {locationAddress && (
@@ -98,12 +118,26 @@ export const StepFinished = () => {
         </div>
       </Section>
 
-      {/* ── Detalhes ─────────────────────────────────────────────── */}
+      {/* ── Detalhes ──────────────────────────────────────────────── */}
       <Section title="Detalhes do imóvel" onEdit={() => goToStep(1)}>
         <div className="space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-6 gap-y-4">
-            <Field label="Finalidade" value={details.purpose} />
-            <Field label="Categoria" value={details.type} />
+            <Field
+              label="Finalidade"
+              value={
+                details.purpose
+                  ? PurposeLabel[details.purpose as Purpose]
+                  : undefined
+              }
+            />
+            <Field
+              label="Categoria"
+              value={
+                details.type
+                  ? PropertyTypeLabel[details.type as PropertyType]
+                  : undefined
+              }
+            />
             <Field label="Preço" value={currency(details.price)} />
             <Field
               label="Condomínio"
@@ -133,7 +167,7 @@ export const StepFinished = () => {
         </div>
       </Section>
 
-      {/* ── Comodidades ──────────────────────────────────────────── */}
+      {/* ── Comodidades ────────────────────────────────────────────── */}
       <Section title="Comodidades do imóvel" onEdit={() => goToStep(3)}>
         <div className="space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-6 gap-y-4">

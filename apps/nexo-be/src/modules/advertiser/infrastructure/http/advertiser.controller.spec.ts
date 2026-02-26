@@ -17,6 +17,7 @@ import { CreateAdvertiserUseCase } from '../../application/use-cases/create-adve
 import { ApproveAdvertiserUseCase } from '../../application/use-cases/approve-advertiser.use-case';
 import { SuspendAdvertiserUseCase } from '../../application/use-cases/suspend-advertiser.use-case';
 import { GetAdvertiserUseCase } from '../../application/use-cases/get-advertiser.use-case';
+import { GetMyAdvertiserUseCase } from '../../application/use-cases/get-my-advertiser.use-case';
 import { GetAdvertisersUseCase } from '../../application/use-cases/get-advertisers.use-case';
 import { AdvertiserEntity } from '../../domain/entities/advertiser.entity';
 import { AdvertiserType } from '../../domain/enums/advertiser-type.enum';
@@ -72,6 +73,7 @@ const mockCreate = { execute: jest.fn() };
 const mockApprove = { execute: jest.fn() };
 const mockSuspend = { execute: jest.fn() };
 const mockGet = { execute: jest.fn() };
+const mockGetMe = { execute: jest.fn() };
 const mockGetAll = { execute: jest.fn() };
 
 // ─── Testes ───────────────────────────────────────────────────────────────────
@@ -87,6 +89,7 @@ describe('AdvertiserController', () => {
         { provide: ApproveAdvertiserUseCase, useValue: mockApprove },
         { provide: SuspendAdvertiserUseCase, useValue: mockSuspend },
         { provide: GetAdvertiserUseCase, useValue: mockGet },
+        { provide: GetMyAdvertiserUseCase, useValue: mockGetMe },
         { provide: GetAdvertisersUseCase, useValue: mockGetAll },
       ],
     }).compile();
@@ -117,6 +120,29 @@ describe('AdvertiserController', () => {
       expect(result.status).toBe(AdvertiserStatus.PENDING);
       expect(result.email).toBe('joao@imob.com');
       expect(mockCreate.execute).toHaveBeenCalledWith(dto);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // GET /advertisers/me
+  // ---------------------------------------------------------------------------
+
+  describe('findMe()', () => {
+    it('deve retornar AdvertiserResponseDto do usuário autenticado', async () => {
+      const advertiser = makeAdvertiser({ status: AdvertiserStatus.ACTIVE });
+      mockGetMe.execute.mockResolvedValue(advertiser);
+
+      const authUser = {
+        keycloakId: 'kc-uuid-1',
+        email: 'joao@imob.com',
+        roles: [],
+      };
+
+      const result = await controller.findMe(authUser);
+
+      expect(result.id).toBe('adv-uuid-1');
+      expect(result.status).toBe(AdvertiserStatus.ACTIVE);
+      expect(mockGetMe.execute).toHaveBeenCalledWith(authUser);
     });
   });
 
