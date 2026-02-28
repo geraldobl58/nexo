@@ -3,6 +3,42 @@ import {
   UserRole,
 } from '@/modules/identity/domain/entities/user.entity';
 
+// ---------------------------------------------------------------------------
+// Tipos de Property (resumo para listagem admin)
+// ---------------------------------------------------------------------------
+
+export interface PropertySummaryEntity {
+  id: string;
+  title: string;
+  slug: string;
+  status: string;
+  purpose: string;
+  type: string;
+  price: number;
+  city: string;
+  state: string;
+  district: string;
+  areaM2: number | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  isFeatured: boolean;
+  publishedAt: Date | null;
+  createdAt: Date;
+  advertiser: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+export interface MyPropertiesFilters {
+  status?: string;
+  purpose?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
 /**
  * TOKEN DE INJEÇÃO DO REPOSITÓRIO DE USUÁRIOS
  *
@@ -68,4 +104,10 @@ export interface IUserRepository {
    * Lança NotFoundException se o ID não existir.
    */
   update(id: string, data: UpdateUserData): Promise<UserEntity>;
+
+  /** Lista paginada de imóveis cadastrados pelo usuário admin. */
+  findMyProperties(
+    userId: string,
+    filters: MyPropertiesFilters,
+  ): Promise<PaginatedResult<PropertySummaryEntity>>;
 }

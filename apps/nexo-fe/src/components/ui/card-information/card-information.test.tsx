@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { CardInformation } from "./CardInformation";
+import { CardInformation } from "./card-information";
 
 describe("CardInformation", () => {
   describe("renderização básica", () => {

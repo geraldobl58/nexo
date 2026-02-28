@@ -9,8 +9,8 @@ import {
   createPublishComoditiesSchema,
   PublishComoditiesData,
 } from "../schemas/publish-comodities";
-import { FormField } from "@/components/ui/FormField/FormField";
-import { CheckboxCustom } from "@/components/ui/CheckboxCustom/CheckboxCustom";
+import { FormField } from "@/components/ui/form-field/form-field";
+import { CheckboxCustom } from "@/components/ui/checkbox-custom/checkbox-custom";
 
 export const StepComodities = () => {
   const { formData, setComoditiesData, setComoditiesValid } = usePublish();

@@ -5,7 +5,9 @@ import { PrismaService } from '@/libs/prisma/prisma.service';
 import { UserEntity } from '@/modules/identity/domain/entities/user.entity';
 import {
   IUserRepository,
+  MyPropertiesFilters,
   PaginatedResult,
+  PropertySummaryEntity,
   UpdateUserData,
   UserFilters,
 } from '../../domain/repositories/user.repository';
@@ -99,5 +101,67 @@ export class PrismaUserRepository implements IUserRepository {
       }
       throw error;
     }
+  }
+
+  async findMyProperties(
+    userId: string,
+    filters: MyPropertiesFilters,
+  ): Promise<PaginatedResult<PropertySummaryEntity>> {
+    const { status, purpose, search, page = 1, limit = 20 } = filters;
+
+    const where: Prisma.PropertyWhereInput = {
+      createdById: userId,
+      deletedAt: null,
+      ...(status && { status: status as Prisma.EnumPropertyStatusFilter }),
+      ...(purpose && { purpose: purpose as Prisma.EnumPropertyPurposeFilter }),
+      ...(search && {
+        OR: [
+          { title: { contains: search, mode: 'insensitive' } },
+          { city: { contains: search, mode: 'insensitive' } },
+          { district: { contains: search, mode: 'insensitive' } },
+        ],
+      }),
+    };
+
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.property.findMany({
+        where,
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          status: true,
+          purpose: true,
+          type: true,
+          price: true,
+          city: true,
+          state: true,
+          district: true,
+          areaM2: true,
+          bedrooms: true,
+          bathrooms: true,
+          isFeatured: true,
+          publishedAt: true,
+          createdAt: true,
+          advertiser: {
+            select: { id: true, name: true, email: true },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.property.count({ where }),
+    ]);
+
+    return {
+      data: data as PropertySummaryEntity[],
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 }

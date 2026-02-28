@@ -6,9 +6,10 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/features/auth";
 import Button from "@mui/material/Button";
 
-import { MobileSidebar } from "../MobileSidebar/MobileSidebar";
-import { Logo } from "@/components/ui/Logo/Logo";
-import { NavBar } from "../Navbar/Navbar";
+import { Logo } from "@/components/ui/logo/logo";
+
+import { MobileSidebar } from "./mobile-sidebar";
+import { NavBar } from "./navbar";
 
 export const Header = () => {
   const { login, user } = useAuth();

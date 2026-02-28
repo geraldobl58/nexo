@@ -1,4 +1,4 @@
-import { CardInformation } from "@/components/ui/CardInformation/CardInformation";
+import { CardInformation } from "@/components/ui/card-information/card-information";
 import { ShieldUser } from "lucide-react";
 
 export const SectionInformation = () => {

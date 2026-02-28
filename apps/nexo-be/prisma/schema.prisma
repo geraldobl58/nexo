@@ -181,10 +181,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  leadsAssigned     Lead[]        @relation("AssignedLeads")
-  visitsScheduled   Visit[]       @relation("ScheduledBy")
-  activitiesCreated ActivityLog[]
-  reportsReviewed   Report[]      @relation("ReviewedBy")
+  leadsAssigned      Lead[]        @relation("AssignedLeads")
+  visitsScheduled    Visit[]       @relation("ScheduledBy")
+  activitiesCreated  ActivityLog[]
+  reportsReviewed    Report[]      @relation("ReviewedBy")
+  propertiesCreated  Property[]    @relation("CreatedByUser")
 
   @@index([email])
   @@index([role])
@@ -335,6 +336,9 @@ model Property {
   advertiserId String
   advertiser   Advertiser @relation(fields: [advertiserId], references: [id], onDelete: Cascade)
 
+  createdById String?
+  createdBy   User?   @relation("CreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
+
   status  PropertyStatus  @default(DRAFT)
   purpose PropertyPurpose
   type    PropertyType
@@ -443,6 +447,7 @@ model Property {
   conversations Conversation[]
 
   @@index([advertiserId])
+  @@index([createdById])
   @@index([status])
   @@index([purpose, type])
   @@index([city, state, district])

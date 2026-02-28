@@ -1,9 +1,11 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { JwtAuthGuard } from '@/modules/auth/infrastructure/http/jwt-auth.guard';
 import { GetUserUseCase } from '../../application/use-cases/get-user.use-case';
 import { ListUsersUseCase } from '../../application/use-cases/list-users.use-case';
 import { UpdateUserRoleUseCase } from '../../application/use-cases/update-user-role.use-case';
+import { ListMyPropertiesUseCase } from '../../application/use-cases/list-my-properties.use-case';
 import { ListUsersQueryDto, UpdateUserRoleDto } from './dtos/users.dto';
 import { UsersController } from './users.controller';
 
@@ -46,6 +48,7 @@ describe('UsersController', () => {
   const mockGetUser = { execute: jest.fn() };
   const mockListUsers = { execute: jest.fn() };
   const mockUpdateRole = { execute: jest.fn() };
+  const mockListMyProperties = { execute: jest.fn() };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -54,9 +57,10 @@ describe('UsersController', () => {
         { provide: GetUserUseCase, useValue: mockGetUser },
         { provide: ListUsersUseCase, useValue: mockListUsers },
         { provide: UpdateUserRoleUseCase, useValue: mockUpdateRole },
+        { provide: ListMyPropertiesUseCase, useValue: mockListMyProperties },
       ],
     })
-      .overrideGuard(require('@nestjs/passport').AuthGuard('jwt'))
+      .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
       .compile();
 

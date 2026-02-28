@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 
-import { StepperWizard } from "@/components/ui/StepperWizard/StepperWizard";
+import { StepperWizard } from "@/components/ui/stepper-wizard/stepper-wizard";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { PUBLISH_STEPS, usePublish } from "../context/publish-context";
 import { createPublication } from "../actions/publish";

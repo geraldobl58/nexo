@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { useState } from "react";
-import { StepperWizard } from "./StepperWizard";
+import { StepperWizard } from "./stepper-wizard";
 
 const defaultSteps = [
   "Localização do imóvel",

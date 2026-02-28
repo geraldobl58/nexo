@@ -1,4 +1,4 @@
-import { SectionForm } from "../SearchForm/SearchForm";
+import { SectionForm } from "./search-form";
 
 export const SectionHero = () => {
   return (

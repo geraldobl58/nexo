@@ -1,7 +1,7 @@
-import { SectionFeature } from "@/components/sections/SectionFeature/SectionFeature";
-import { SectionHero } from "@/components/sections/SectionHero/SectionHero";
-import { SectionInformation } from "@/components/sections/SectionInformation/SectionInformation";
-import { SectionSystem } from "@/components/sections/SectionSystem/SectionSystem";
+import { SectionFeature } from "@/components/sections/section-feature";
+import { SectionHero } from "@/components/sections/section-hero";
+import { SectionInformation } from "@/components/sections/section-information";
+import { SectionSystem } from "@/components/sections/section-system";
 
 const MarketingPage = () => {
   return (

@@ -9,7 +9,7 @@ import {
   createPublishLocationSchema,
   PublishLocationData,
 } from "../schemas/publish-location";
-import { FormField } from "@/components/ui/FormField/FormField";
+import { FormField } from "@/components/ui/form-field/form-field";
 import { usePublish } from "../context/publish-context";
 import { LinearProgress, TextField } from "@mui/material";
 import { StepLocationProps } from "../types/publish-location-types";

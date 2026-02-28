@@ -21,17 +21,24 @@ import {
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
-
+import { JwtAuthGuard } from '@/modules/auth/infrastructure/http/jwt-auth.guard';
+import { UserEntity } from '@/modules/identity/domain/entities/user.entity';
+import { CurrentUser } from '@/modules/auth/infrastructure/http/current-user.decorator';
 import { GetUserUseCase } from '../../application/use-cases/get-user.use-case';
 import { ListUsersUseCase } from '../../application/use-cases/list-users.use-case';
 import { UpdateUserRoleUseCase } from '../../application/use-cases/update-user-role.use-case';
+import { ListMyPropertiesUseCase } from '../../application/use-cases/list-my-properties.use-case';
 import { UserResponseDto } from './dtos/user-response.dto';
 import {
   ListUsersQueryDto,
   PaginatedUsersResponseDto,
   UpdateUserRoleDto,
 } from './dtos/users.dto';
+import {
+  ListMyPropertiesQueryDto,
+  PaginatedMyPropertiesResponseDto,
+  PropertySummaryResponseDto,
+} from './dtos/my-properties.dto';
 
 /**
  * CONTROLLER DE USUÁRIOS INTERNOS
@@ -41,13 +48,14 @@ import {
  */
 @ApiTags('Usuários Internos')
 @ApiBearerAuth()
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UsersController {
   constructor(
     private readonly getUserUseCase: GetUserUseCase,
     private readonly listUsersUseCase: ListUsersUseCase,
     private readonly updateUserRoleUseCase: UpdateUserRoleUseCase,
+    private readonly listMyPropertiesUseCase: ListMyPropertiesUseCase,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -106,6 +114,39 @@ export class UsersController {
   ): Promise<UserResponseDto> {
     const user = await this.getUserUseCase.execute(id);
     return UserResponseDto.fromEntity(user);
+  }
+
+  // ---------------------------------------------------------------------------
+  // GET /users/me/properties — Listar imóveis cadastrados pelo usuário logado
+  // ---------------------------------------------------------------------------
+
+  @Get('me/properties')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Listar meus imóveis',
+    description:
+      'Retorna a lista paginada de imóveis cadastrados pelo usuário admin autenticado.',
+  })
+  @ApiOkResponse({ type: PaginatedMyPropertiesResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Token JWT ausente ou inválido.' })
+  @ApiBadRequestResponse({ description: 'Parâmetros inválidos.' })
+  @ApiTooManyRequestsResponse({ description: 'Muitas requisições.' })
+  @ApiInternalServerErrorResponse({ description: 'Erro interno no servidor.' })
+  async findMyProperties(
+    @CurrentUser() currentUser: UserEntity,
+    @Query() query: ListMyPropertiesQueryDto,
+  ): Promise<PaginatedMyPropertiesResponseDto> {
+    const result = await this.listMyPropertiesUseCase.execute(
+      currentUser.id,
+      query,
+    );
+    return {
+      data: result.data.map(PropertySummaryResponseDto.fromEntity),
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
+    };
   }
 
   // ---------------------------------------------------------------------------

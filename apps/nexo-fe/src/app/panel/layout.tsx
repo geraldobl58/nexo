@@ -1,6 +1,6 @@
 import { ProtectedRoute } from "@/features/auth";
-import { PanelSidebar } from "@/components/layout/Sidebar/Sidebar";
-import { PanelAppBar } from "@/components/layout/AppBarContainer/AppBarContainer";
+import { PanelSidebar } from "@/components/layout/sidebar";
+import { PanelAppBar } from "@/components/layout/app-bar-container";
 
 export default function PanelLayout({
   children,

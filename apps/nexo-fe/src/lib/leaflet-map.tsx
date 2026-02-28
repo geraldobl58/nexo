@@ -3,7 +3,7 @@ import dynamic from "next/dynamic";
 // Leaflet não funciona com SSR
 export const LeafletMap = dynamic(
   () =>
-    import("@/components/ui/LeafletMap/LeafletMap").then((m) => m.LeafletMap),
+    import("@/components/ui/leaflet-map/leaflet-map").then((m) => m.LeafletMap),
   {
     ssr: false,
     loading: () => (

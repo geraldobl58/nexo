@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { StepperWizard } from "./StepperWizard";
+import { StepperWizard } from "./stepper-wizard";
 
 const defaultSteps = ["Localização", "Detalhes", "Fotos", "Revisão"];
 
