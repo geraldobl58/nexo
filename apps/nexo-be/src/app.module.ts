@@ -9,7 +9,6 @@ import { AuthModule } from './modules/auth/modules/auth/auth.module';
 import { HealthModule } from './modules/auth/modules/health';
 import { IdentityModule } from './modules/identity/modules/identity/identity.module';
 import { MarketingModule } from './modules/marketing/modules/marketing/marketing.module';
-import { AdvertiserModule } from './modules/advertiser/advertiser.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -74,7 +73,6 @@ import { UsersModule } from './modules/users/users.module';
     HealthModule,
     IdentityModule,
     MarketingModule,
-    AdvertiserModule,
     UsersModule,
   ],
   providers: [

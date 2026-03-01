@@ -145,9 +145,6 @@ export class PrismaUserRepository implements IUserRepository {
           isFeatured: true,
           publishedAt: true,
           createdAt: true,
-          advertiser: {
-            select: { id: true, name: true, email: true },
-          },
         },
         skip,
         take: limit,

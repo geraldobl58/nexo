@@ -144,7 +144,6 @@ export class PropertySummaryResponseDto {
     dto.isFeatured = entity.isFeatured;
     dto.publishedAt = entity.publishedAt;
     dto.createdAt = entity.createdAt;
-    dto.advertiser = entity.advertiser;
     return dto;
   }
 }

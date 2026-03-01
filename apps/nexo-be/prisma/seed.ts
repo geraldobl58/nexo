@@ -82,7 +82,6 @@ async function main() {
     prisma.listingPlan.deleteMany(),
     prisma.amenity.deleteMany(),
     prisma.customer.deleteMany(),
-    prisma.advertiser.deleteMany(),
     prisma.notification.deleteMany(),
     prisma.user.deleteMany(),
   ]);
@@ -107,83 +106,38 @@ async function main() {
   // -------------------------------------------------------------------------
   // 2. ANUNCIANTES
   // -------------------------------------------------------------------------
-  console.log('\n🏢 Criando anunciantes...');
+  console.log('\n🏢 Criando anunciantes (como usuários)...');
 
-  const imobiliaria = await prisma.advertiser.create({
+  const imobiliaria = await prisma.user.create({
     data: {
-      type: 'AGENCY',
-      status: 'ACTIVE',
-      name: 'Imobiliária Horizonte',
+      keycloakId: 'kc-adv-agency-001',
       email: 'contato@horizonte.com.br',
+      name: 'Imobiliária Horizonte',
       phone: '11930000001',
-      whatsapp: '11930000001',
-      companyName: 'Horizonte Negócios Imobiliários Ltda.',
-      tradeName: 'Imobiliária Horizonte',
-      document: '12.345.678/0001-90',
-      creci: 'J12345',
-      creciState: 'SP',
-      street: 'Av. Paulista',
-      streetNumber: '1000',
-      complement: 'Cj. 1501',
-      district: 'Bela Vista',
-      city: 'São Paulo',
-      state: 'SP',
-      zipcode: '01310-100',
-      bio: 'Há 20 anos ajudando famílias a encontrar o lar dos seus sonhos em São Paulo.',
-      website: 'https://horizonte.com.br',
-      instagram: '@imobhorizonte',
-      isVerified: true,
-      verifiedAt: new Date('2024-01-15'),
-      totalListings: 3,
-      activeListings: 3,
+      isActive: true,
+      advertiserType: 'AGENCY',
     },
   });
 
-  const corretor = await prisma.advertiser.create({
+  const corretor = await prisma.user.create({
     data: {
-      type: 'BROKER',
-      status: 'ACTIVE',
-      name: 'Carlos Eduardo Mendes',
+      keycloakId: 'kc-adv-broker-001',
       email: 'carlos.mendes@corretor.com.br',
+      name: 'Carlos Eduardo Mendes',
       phone: '21987654321',
-      whatsapp: '21987654321',
-      creci: 'F98765',
-      creciState: 'RJ',
-      street: 'Rua Visconde de Pirajá',
-      streetNumber: '414',
-      complement: 'Sala 302',
-      district: 'Ipanema',
-      city: 'Rio de Janeiro',
-      state: 'RJ',
-      zipcode: '22410-002',
-      bio: 'Especialista em imóveis de alto padrão no Rio de Janeiro. Mais de 15 anos de experiência.',
-      instagram: '@carlosmendesrj',
-      linkedin: 'linkedin.com/in/carlosmendes',
-      isVerified: true,
-      verifiedAt: new Date('2024-02-01'),
-      totalListings: 2,
-      activeListings: 2,
-      averageRating: 4.8,
-      totalReviews: 12,
+      isActive: true,
+      advertiserType: 'BROKER',
     },
   });
 
-  const proprietario = await prisma.advertiser.create({
+  const proprietario = await prisma.user.create({
     data: {
-      type: 'OWNER',
-      status: 'ACTIVE',
-      name: 'Maria Aparecida Silva',
+      keycloakId: 'kc-adv-owner-001',
       email: 'maria.silva@email.com',
+      name: 'Maria Aparecida Silva',
       phone: '11912345678',
-      whatsapp: '11912345678',
-      document: '123.456.789-00',
-      district: 'Moema',
-      city: 'São Paulo',
-      state: 'SP',
-      bio: 'Vendo apartamento que foi minha residência por 10 anos, muito bem conservado.',
-      isVerified: false,
-      totalListings: 1,
-      activeListings: 1,
+      isActive: true,
+      advertiserType: 'OWNER',
     },
   });
 
@@ -351,7 +305,7 @@ async function main() {
   // --- Imóveis da Imobiliária ---
   const apto1 = await prisma.property.create({
     data: {
-      advertiserId: imobiliaria.id,
+      createdById: imobiliaria.id,
       status: 'ACTIVE',
       purpose: 'SALE',
       type: 'APARTMENT',
@@ -396,13 +350,13 @@ async function main() {
       uniqueViewsCount: 876,
       leadsCount: 18,
       contactPhone: imobiliaria.phone,
-      contactWhatsApp: imobiliaria.whatsapp,
+      contactWhatsApp: imobiliaria.phone,
     },
   });
 
   const apto2 = await prisma.property.create({
     data: {
-      advertiserId: imobiliaria.id,
+      createdById: imobiliaria.id,
       status: 'ACTIVE',
       purpose: 'RENT',
       type: 'APARTMENT',
@@ -443,7 +397,7 @@ async function main() {
 
   const casa1 = await prisma.property.create({
     data: {
-      advertiserId: imobiliaria.id,
+      createdById: imobiliaria.id,
       status: 'ACTIVE',
       purpose: 'SALE',
       type: 'HOUSE',
@@ -482,14 +436,14 @@ async function main() {
       uniqueViewsCount: 1540,
       leadsCount: 35,
       contactPhone: imobiliaria.phone,
-      contactWhatsApp: imobiliaria.whatsapp,
+      contactWhatsApp: imobiliaria.phone,
     },
   });
 
   // --- Imóveis do Corretor ---
   const apto3 = await prisma.property.create({
     data: {
-      advertiserId: corretor.id,
+      createdById: corretor.id,
       status: 'ACTIVE',
       purpose: 'SALE',
       type: 'APARTMENT',
@@ -530,13 +484,13 @@ async function main() {
       uniqueViewsCount: 3200,
       leadsCount: 22,
       contactPhone: corretor.phone,
-      contactWhatsApp: corretor.whatsapp,
+      contactWhatsApp: corretor.phone,
     },
   });
 
   const apto4 = await prisma.property.create({
     data: {
-      advertiserId: corretor.id,
+      createdById: corretor.id,
       status: 'ACTIVE',
       purpose: 'SALE',
       type: 'APARTMENT',
@@ -581,7 +535,7 @@ async function main() {
   // --- Imóvel da Proprietária ---
   const aptoProprietario = await prisma.property.create({
     data: {
-      advertiserId: proprietario.id,
+      createdById: proprietario.id,
       status: 'ACTIVE',
       purpose: 'SALE',
       type: 'APARTMENT',
@@ -617,14 +571,14 @@ async function main() {
       uniqueViewsCount: 198,
       leadsCount: 7,
       contactPhone: proprietario.phone,
-      contactWhatsApp: proprietario.whatsapp,
+      contactWhatsApp: proprietario.phone,
     },
   });
 
   // --- Imóvel DRAFT (não publicado) ---
   const aptoDraft = await prisma.property.create({
     data: {
-      advertiserId: imobiliaria.id,
+      createdById: imobiliaria.id,
       status: 'DRAFT',
       purpose: 'RENT',
       type: 'COMMERCIAL',
@@ -656,102 +610,143 @@ async function main() {
   console.log(`   ✅ ${aptoDraft.title} [DRAFT]`);
 
   // -------------------------------------------------------------------------
-  // 7. FOTOS DOS IMÓVEIS
+  // 7. MÍDIAS DOS IMÓVEIS (fotos + vídeos)
   // -------------------------------------------------------------------------
-  console.log('\n📸 Adicionando fotos...');
+  console.log('\n📸 Adicionando mídias (fotos e vídeos)...');
 
   await prisma.propertyMedia.createMany({
     data: [
-      // Apê Jardins
+      // ── Apê Jardins ──────────────────────────────────────────────────────
       {
         propertyId: apto1.id,
+        type: 'IMAGE',
         url: 'https://placehold.co/1200x800?text=Sala+Jardins',
-        order: 1,
+        publicId: 'seed/apto1-sala-jardins',
+        order: 0, // capa
       },
       {
         propertyId: apto1.id,
+        type: 'IMAGE',
         url: 'https://placehold.co/1200x800?text=Quarto+Principal',
-        order: 2,
+        publicId: 'seed/apto1-quarto-principal',
+        order: 1,
       },
       {
         propertyId: apto1.id,
+        type: 'IMAGE',
         url: 'https://placehold.co/1200x800?text=Varanda+Gourmet',
-        order: 3,
+        publicId: 'seed/apto1-varanda-gourmet',
+        order: 2,
       },
       {
         propertyId: apto1.id,
+        type: 'IMAGE',
         url: 'https://placehold.co/1200x800?text=Cozinha',
-        order: 4,
+        publicId: 'seed/apto1-cozinha',
+        order: 3,
       },
-      // Studio Itaim
+      // ── Studio Itaim ─────────────────────────────────────────────────────
       {
         propertyId: apto2.id,
+        type: 'IMAGE',
         url: 'https://placehold.co/1200x800?text=Studio+Itaim',
-        order: 1,
+        publicId: 'seed/apto2-studio-itaim',
+        order: 0, // capa
       },
       {
         propertyId: apto2.id,
+        type: 'IMAGE',
         url: 'https://placehold.co/1200x800?text=Banheiro',
-        order: 2,
+        publicId: 'seed/apto2-banheiro',
+        order: 1,
       },
-      // Casa Alphaville
+      // ── Casa Alphaville ──────────────────────────────────────────────────
       {
         propertyId: casa1.id,
+        type: 'IMAGE',
         url: 'https://placehold.co/1200x800?text=Fachada+Casa',
-        order: 1,
+        publicId: 'seed/casa1-fachada',
+        order: 0, // capa
       },
       {
         propertyId: casa1.id,
+        type: 'IMAGE',
         url: 'https://placehold.co/1200x800?text=Piscina',
-        order: 2,
+        publicId: 'seed/casa1-piscina',
+        order: 1,
       },
       {
         propertyId: casa1.id,
+        type: 'IMAGE',
         url: 'https://placehold.co/1200x800?text=Sala+Grande',
-        order: 3,
+        publicId: 'seed/casa1-sala-grande',
+        order: 2,
       },
       {
         propertyId: casa1.id,
+        type: 'IMAGE',
         url: 'https://placehold.co/1200x800?text=Suite+Master',
-        order: 4,
-      },
-      // Cobertura Leblon
-      {
-        propertyId: apto3.id,
-        url: 'https://placehold.co/1200x800?text=Vista+Mar',
-        order: 1,
-      },
-      {
-        propertyId: apto3.id,
-        url: 'https://placehold.co/1200x800?text=Piscina+Privativa',
-        order: 2,
-      },
-      {
-        propertyId: apto3.id,
-        url: 'https://placehold.co/1200x800?text=Sala+Leblon',
+        publicId: 'seed/casa1-suite-master',
         order: 3,
       },
-      // Apê Ipanema
+      // ── Cobertura Leblon ─────────────────────────────────────────────────
       {
-        propertyId: apto4.id,
-        url: 'https://placehold.co/1200x800?text=Sala+Ipanema',
+        propertyId: apto3.id,
+        type: 'IMAGE',
+        url: 'https://placehold.co/1200x800?text=Vista+Mar',
+        publicId: 'seed/apto3-vista-mar',
+        order: 0, // capa
+      },
+      {
+        propertyId: apto3.id,
+        type: 'IMAGE',
+        url: 'https://placehold.co/1200x800?text=Piscina+Privativa',
+        publicId: 'seed/apto3-piscina-privativa',
         order: 1,
       },
       {
-        propertyId: apto4.id,
-        url: 'https://placehold.co/1200x800?text=Vista+Parcial',
+        propertyId: apto3.id,
+        type: 'IMAGE',
+        url: 'https://placehold.co/1200x800?text=Sala+Leblon',
+        publicId: 'seed/apto3-sala-leblon',
         order: 2,
       },
-      // Apê Moema
+      {
+        // Vídeo de tour virtual — demonstra o suporte a MediaType VIDEO
+        propertyId: apto3.id,
+        type: 'VIDEO',
+        url: 'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
+        publicId: 'seed/apto3-tour-virtual',
+        order: 3,
+      },
+      // ── Apê Ipanema ──────────────────────────────────────────────────────
+      {
+        propertyId: apto4.id,
+        type: 'IMAGE',
+        url: 'https://placehold.co/1200x800?text=Sala+Ipanema',
+        publicId: 'seed/apto4-sala-ipanema',
+        order: 0, // capa
+      },
+      {
+        propertyId: apto4.id,
+        type: 'IMAGE',
+        url: 'https://placehold.co/1200x800?text=Vista+Parcial',
+        publicId: 'seed/apto4-vista-parcial',
+        order: 1,
+      },
+      // ── Apê Moema (proprietário) ──────────────────────────────────────────
       {
         propertyId: aptoProprietario.id,
+        type: 'IMAGE',
         url: 'https://placehold.co/1200x800?text=Sala+Moema',
-        order: 1,
+        publicId: 'seed/aptoProprietario-sala-moema',
+        order: 0, // capa
       },
+      // aptoDraft — sem mídia (draft recém-criado, ainda sem fotos)
     ],
   });
 
-  console.log('   ✅ Fotos adicionadas');
+  console.log('   ✅ 17 mídias adicionadas (16 imagens + 1 vídeo)');
 
   // -------------------------------------------------------------------------
   // 8. COMODIDADES DOS IMÓVEIS
@@ -848,7 +843,7 @@ async function main() {
     data: {
       propertyId: apto1.id,
       customerId: clienteJoao.id,
-      advertiserId: imobiliaria.id,
+      userId: imobiliaria.id,
       lastMessage: 'Olá! O apartamento ainda está disponível?',
       lastMessageAt: new Date('2025-01-20T10:30:00'),
       lastMessageBy: 'customer',
@@ -869,7 +864,7 @@ async function main() {
       {
         conversationId: conversa1.id,
         senderType: 'advertiser',
-        advertiserId: imobiliaria.id,
+        userId: imobiliaria.id,
         content:
           'Olá, João! Sim, está disponível. Gostaria de agendar uma visita?',
         status: 'DELIVERED',
@@ -890,7 +885,7 @@ async function main() {
     data: {
       propertyId: apto3.id,
       customerId: clienteAna.id,
-      advertiserId: corretor.id,
+      userId: corretor.id,
       lastMessage: 'Seria possível visitar no próximo fim de semana?',
       lastMessageAt: new Date('2025-01-22T15:00:00'),
       lastMessageBy: 'customer',
@@ -912,7 +907,7 @@ async function main() {
       {
         conversationId: conversa2.id,
         senderType: 'advertiser',
-        advertiserId: corretor.id,
+        userId: corretor.id,
         content:
           'Olá, Ana! Que ótimo! A cobertura é realmente um imóvel único. Posso te passar mais detalhes?',
         status: 'READ',
@@ -939,7 +934,7 @@ async function main() {
   await prisma.review.createMany({
     data: [
       {
-        advertiserId: corretor.id,
+        userId: corretor.id,
         customerId: clienteJoao.id,
         rating: 5,
         title: 'Excelente corretor!',
@@ -1044,7 +1039,6 @@ async function main() {
   // -------------------------------------------------------------------------
   const counts = await Promise.all([
     prisma.user.count(),
-    prisma.advertiser.count(),
     prisma.customer.count(),
     prisma.property.count(),
     prisma.propertyMedia.count(),
@@ -1062,18 +1056,17 @@ async function main() {
   console.log('✅ SEED CONCLUÍDO COM SUCESSO!');
   console.log('═══════════════════════════════════════');
   console.log(`   👤 Usuários:        ${counts[0]}`);
-  console.log(`   🏢 Anunciantes:     ${counts[1]}`);
-  console.log(`   👥 Clientes:        ${counts[2]}`);
-  console.log(`   🏠 Imóveis:         ${counts[3]}`);
-  console.log(`   📸 Fotos:           ${counts[4]}`);
-  console.log(`   🏊 Comodidades:     ${counts[5]}`);
-  console.log(`   📋 Planos:          ${counts[12]}`);
-  console.log(`   📬 Leads:           ${counts[6]}`);
-  console.log(`   💬 Conversas:       ${counts[7]}`);
-  console.log(`   ✉️  Mensagens:       ${counts[8]}`);
-  console.log(`   ⭐ Avaliações:      ${counts[9]}`);
-  console.log(`   🗓️  Visitas:         ${counts[10]}`);
-  console.log(`   📝 Propostas:       ${counts[11]}`);
+  console.log(`   👥 Clientes:        ${counts[1]}`);
+  console.log(`   🏠 Imóveis:         ${counts[2]}`);
+  console.log(`   📸 Mídias:          ${counts[3]}`); // imagens + vídeos
+  console.log(`   🏊 Comodidades:     ${counts[4]}`);
+  console.log(`   📋 Planos:          ${counts[11]}`);
+  console.log(`   📬 Leads:           ${counts[5]}`);
+  console.log(`   💬 Conversas:       ${counts[6]}`);
+  console.log(`   ✉️  Mensagens:       ${counts[7]}`);
+  console.log(`   ⭐ Avaliações:      ${counts[8]}`);
+  console.log(`   🗓️  Visitas:         ${counts[9]}`);
+  console.log(`   📝 Propostas:       ${counts[10]}`);
   console.log('═══════════════════════════════════════\n');
 }
 

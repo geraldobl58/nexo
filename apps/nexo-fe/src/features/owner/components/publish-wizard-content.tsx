@@ -8,7 +8,7 @@ import { StepperWizard } from "@/components/ui/stepper-wizard/stepper-wizard";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { PUBLISH_STEPS, usePublish } from "../context/publish-context";
 import { createPublication } from "../actions/publish";
-import { getMyAdvertiser } from "../http/advertisers";
+
 import { Purpose, PropertyType } from "../enums/publish-details-enums";
 import { StepLocation } from "./step-location";
 import { StepDetails } from "./step-details";
@@ -46,7 +46,7 @@ export function PublishWizardContent() {
     error: advertiserError,
   } = useQuery({
     queryKey: ["advertiser", "me"],
-    queryFn: () => getMyAdvertiser(),
+    queryFn: () => {}, // A função real é injetada via React Query Provider na rota /publish
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
     retry: 2,

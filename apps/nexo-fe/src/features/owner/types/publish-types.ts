@@ -47,7 +47,7 @@ export interface CreatePublishResponse {
   metaDescription: string;
 }
 
-export interface CreatePusblishInput {
+export interface CreatePublishInput {
   advertiserId: string;
   purpose: Purpose;
   type: PropertyType;

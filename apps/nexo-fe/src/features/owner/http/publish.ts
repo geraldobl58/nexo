@@ -6,19 +6,19 @@
 import { api } from "@/config/api";
 import {
   CreatePublishResponse,
-  CreatePusblishInput,
+  CreatePublishInput,
 } from "../types/publish-types";
 
 /**
  * Cria uma nova publicação.
- * Endpoint: POST /listings
+ * Endpoint: POST /marketing
  *
  * @param data - Dados da publicação a ser criada
  * @returns Publicação criada
  */
 export async function createPublish(
-  data: CreatePusblishInput,
+  data: CreatePublishInput,
 ): Promise<CreatePublishResponse> {
-  const response = await api.post<CreatePublishResponse>("/listings", data);
+  const response = await api.post<CreatePublishResponse>("/marketing", data);
   return response.data;
 }

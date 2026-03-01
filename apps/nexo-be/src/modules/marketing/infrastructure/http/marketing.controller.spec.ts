@@ -15,20 +15,24 @@
  */
 import { Test, TestingModule } from '@nestjs/testing';
 import { MarketingController } from './marketing.controller';
-import { CreateListingUseCase } from '../../application/use-cases/create-listing.use-case';
-import { PublishListingUseCase } from '../../application/use-cases/publish-listing.use-case';
-import { UnpublishListingUseCase } from '../../application/use-cases/unpublish-listing.use-case';
-import { GetListingsUseCase } from '../../application/use-cases/get-listings.use-case';
-import { ListingEntity } from '../../domain/entities/listing.entity';
-import { ListingStatus } from '../../domain/enums/listing-status.enum';
-import { CreateListingDto } from './dtos/create-listing.dto';
-import { GetListingsQueryDto } from './dtos/get-listings-query.dto';
+import { CreateListingUseCase } from '../../application/use-cases/create-marketing.use-case';
+import { GetListingUseCase } from '../../application/use-cases/get-marketing-by-id.use-case';
+import { UpdateListingUseCase } from '../../application/use-cases/update-marketing.use-case';
+import { DeleteListingUseCase } from '../../application/use-cases/delete-marketing.use-case';
+import { PublishListingUseCase } from '../../application/use-cases/publish-marketing.use-case';
+import { UnpublishListingUseCase } from '../../application/use-cases/unpublish-marketing.use-case';
+import { GetListingsUseCase } from '../../application/use-cases/get-marketing.use-case';
+import { ListingEntity } from '../../domain/entities/marketing.entity';
+import { ListingStatus } from '../../domain/enums/marketing-status.enum';
+import { ListingPlan } from '../../domain/enums/marketing-plan.enum';
+import { CreateListingDto } from './dtos/create-marketing.dto';
+import { GetListingsQueryDto } from './dtos/get-marketing-query.dto';
 
 // ─── Fixture helper ───────────────────────────────────────────────────────────
 
 const makeListing = (override: Partial<ListingEntity> = {}): ListingEntity => ({
   id: 'listing-uuid-1',
-  advertiserId: 'adv-uuid',
+  createdById: 'user-uuid',
   status: ListingStatus.DRAFT,
   purpose: 'SALE',
   type: 'APARTMENT',
@@ -65,6 +69,40 @@ const makeListing = (override: Partial<ListingEntity> = {}): ListingEntity => ({
   isReadyToMove: true,
   metaTitle: null,
   metaDescription: null,
+  // Contato
+  contactName: null,
+  contactEmail: null,
+  contactPhone: null,
+  contactWhatsApp: null,
+  // Mídia
+  videoUrl: null,
+  virtualTourUrl: null,
+  // Analytics
+  viewsCount: 0,
+  uniqueViewsCount: 0,
+  leadsCount: 0,
+  favoritesCount: 0,
+  sharesCount: 0,
+  phoneClicksCount: 0,
+  whatsappClicksCount: 0,
+  emailClicksCount: 0,
+  leadSourcePortal: 0,
+  leadSourceSearch: 0,
+  leadSourceMap: 0,
+  leadSourceFeatured: 0,
+  // Plano
+  listingPlan: ListingPlan.FREE,
+  isFeatured: false,
+  highlightUntil: null,
+  // Avaliação
+  averageRating: null,
+  totalReviews: 0,
+  // Integração
+  publishToVivaReal: false,
+  publishToOLX: false,
+  publishToZapImoveis: false,
+  // Identificação
+  externalId: null,
   publishedAt: null,
   expiresAt: null,
   deletedAt: null,
@@ -76,6 +114,9 @@ const makeListing = (override: Partial<ListingEntity> = {}): ListingEntity => ({
 // ─── Mocks dos use-cases ──────────────────────────────────────────────────────
 
 const mockCreateListing = { execute: jest.fn() };
+const mockGetListing = { execute: jest.fn() };
+const mockUpdateListing = { execute: jest.fn() };
+const mockDeleteListing = { execute: jest.fn() };
 const mockPublishListing = { execute: jest.fn() };
 const mockUnpublishListing = { execute: jest.fn() };
 const mockGetListings = { execute: jest.fn() };
@@ -91,6 +132,9 @@ describe('MarketingController', () => {
       providers: [
         // Fornece implementações falsas no lugar das reais
         { provide: CreateListingUseCase, useValue: mockCreateListing },
+        { provide: GetListingUseCase, useValue: mockGetListing },
+        { provide: UpdateListingUseCase, useValue: mockUpdateListing },
+        { provide: DeleteListingUseCase, useValue: mockDeleteListing },
         { provide: PublishListingUseCase, useValue: mockPublishListing },
         { provide: UnpublishListingUseCase, useValue: mockUnpublishListing },
         { provide: GetListingsUseCase, useValue: mockGetListings },
@@ -117,7 +161,6 @@ describe('MarketingController', () => {
       mockCreateListing.execute.mockResolvedValue(listing);
 
       const dto = {
-        advertiserId: listing.advertiserId,
         purpose: listing.purpose,
         type: listing.type,
         title: listing.title,
@@ -127,11 +170,16 @@ describe('MarketingController', () => {
         district: listing.district,
       } as CreateListingDto;
 
+      const currentUser = { id: 'user-uuid' } as any;
+
       // Act
-      const result = await controller.create(dto);
+      const result = await controller.create(currentUser, dto);
 
       // Assert
-      expect(mockCreateListing.execute).toHaveBeenCalledWith(dto);
+      expect(mockCreateListing.execute).toHaveBeenCalledWith({
+        ...dto,
+        createdById: currentUser.id,
+      });
       expect(mockCreateListing.execute).toHaveBeenCalledTimes(1);
       // O resultado deve ser um DTO (com o id) — não a entidade bruta
       expect(result.id).toBe(listing.id);

@@ -1,7 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -14,6 +17,7 @@ import {
   ApiBearerAuth,
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -22,53 +26,38 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/modules/auth/infrastructure/http/jwt-auth.guard';
-import { CreateListingUseCase } from '../../application/use-cases/create-listing.use-case';
-import { PublishListingUseCase } from '../../application/use-cases/publish-listing.use-case';
-import { UnpublishListingUseCase } from '../../application/use-cases/unpublish-listing.use-case';
-import { GetListingsUseCase } from '../../application/use-cases/get-listings.use-case';
-import { CreateListingDto } from './dtos/create-listing.dto';
-import { GetListingsQueryDto } from './dtos/get-listings-query.dto';
+import { CurrentUser } from '@/modules/auth/infrastructure/http/current-user.decorator';
+import { UserEntity } from '@/modules/identity/domain/entities/user.entity';
+import { CreateListingUseCase } from '../../application/use-cases/create-marketing.use-case';
+import { GetListingUseCase } from '../../application/use-cases/get-marketing-by-id.use-case';
+import { UpdateListingUseCase } from '../../application/use-cases/update-marketing.use-case';
+import { DeleteListingUseCase } from '../../application/use-cases/delete-marketing.use-case';
+import { PublishListingUseCase } from '../../application/use-cases/publish-marketing.use-case';
+import { UnpublishListingUseCase } from '../../application/use-cases/unpublish-marketing.use-case';
+import { GetListingsUseCase } from '../../application/use-cases/get-marketing.use-case';
+import { CreateListingDto } from './dtos/create-marketing.dto';
+import { UpdateListingDto } from './dtos/update-marketing.dto';
+import { GetListingsQueryDto } from './dtos/get-marketing-query.dto';
 import {
   ListingResponseDto,
   PaginatedListingResponseDto,
-} from './dtos/listing-response.dto';
+} from './dtos/marketing-response.dto';
 
-/**
- * CONTROLLER DE MARKETING (ANÚnCIOS)
- *
- * O controller é a "porta de entrada" HTTP do módulo.
- * Suas únicas responsabilidades são:
- *  1. Receber a requisição HTTP
- *  2. Chamar o use-case correto
- *  3. Formatar e retornar a resposta
- *
- * REGRA IMPORTANTÍSSIMA para juniors:
- * O controller NÃO contém lógica de negócio.
- * Se você precisar escrever um `if` relacionado a regras de negócio aqui,
- * provavelmente ele deveria estar no use-case.
- *
- * Rotas expostas:
- *  POST   /listings          → cria anúncio (requer auth)
- *  PATCH  /listings/:id/publish   → publica (requer auth)
- *  PATCH  /listings/:id/unpublish → pausa (requer auth)
- *  GET    /listings          → busca pública (sem auth)
- */
-@ApiTags('Listings (Marketing)')
-@Controller('listings')
+@ApiTags('Marketing')
+@Controller('marketing')
 export class MarketingController {
-  /**
-   * Injeção de dependência via construtor.
-   * O NestJS resolve automaticamente as dependências registradas no módulo.
-   */
   constructor(
     private readonly createListing: CreateListingUseCase,
+    private readonly getListing: GetListingUseCase,
+    private readonly updateListing: UpdateListingUseCase,
+    private readonly deleteListing: DeleteListingUseCase,
     private readonly publishListing: PublishListingUseCase,
     private readonly unpublishListing: UnpublishListingUseCase,
     private readonly getListings: GetListingsUseCase,
   ) {}
 
   // ---------------------------------------------------------------------------
-  // POST /listings — Criar anúncio
+  // POST /marketing — Criar anúncio
   // ---------------------------------------------------------------------------
 
   @Post()
@@ -105,7 +94,7 @@ export class MarketingController {
     },
   })
   @ApiNotFoundResponse({
-    description: 'Anunciante (advertiserId) não encontrado',
+    description: 'Usuário não encontrado',
     schema: {
       example: {
         statusCode: 404,
@@ -132,13 +121,226 @@ export class MarketingController {
       },
     },
   })
-  async create(@Body() dto: CreateListingDto): Promise<ListingResponseDto> {
-    const listing = await this.createListing.execute(dto);
+  async create(
+    @CurrentUser() currentUser: UserEntity,
+    @Body() dto: CreateListingDto,
+  ): Promise<ListingResponseDto> {
+    const listing = await this.createListing.execute({
+      ...dto,
+      createdById: currentUser.id,
+    });
     return ListingResponseDto.fromEntity(listing);
   }
 
   // ---------------------------------------------------------------------------
-  // PATCH /listings/:id/publish — Publicar anúncio
+  // GET /marketing — Listar anúncios (público)
+  // ---------------------------------------------------------------------------
+
+  @Get()
+  @ApiOperation({
+    summary: 'Listar anúncios',
+    description:
+      'Rota pública (sem necessidade de login). ' +
+      'Aceita filtros opcionais via query string. ' +
+      'Retorna apenas anúncios com status ACTIVE.',
+  })
+  @ApiOkResponse({
+    description: 'Lista paginada de anúncios',
+    type: PaginatedListingResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Parâmetros de query inválidos',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: ['type must be one of the following values: APARTMENT, ...'],
+        error: 'Bad Request',
+      },
+    },
+  })
+  @ApiTooManyRequestsResponse({
+    description: 'Limite de requisições excedido (100 req/min)',
+    schema: {
+      example: {
+        statusCode: 429,
+        message: 'ThrottlerException: Too Many Requests',
+      },
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Erro interno do servidor',
+    schema: { example: { statusCode: 500, message: 'Internal server error' } },
+  })
+  async list(
+    @Query() query: GetListingsQueryDto,
+  ): Promise<PaginatedListingResponseDto> {
+    const result = await this.getListings.execute(query);
+    return {
+      items: result.items.map(ListingResponseDto.fromEntity),
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // GET /marketing/:id — Detalhe do anúncio (público)
+  // ---------------------------------------------------------------------------
+
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Buscar anúncio por ID',
+    description: 'Retorna os dados completos de um único anúncio.',
+  })
+  @ApiOkResponse({
+    description: 'Dados do anúncio',
+    type: ListingResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'Anúncio não encontrado',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Anúncio com id "uuid" não encontrado.',
+        error: 'Not Found',
+      },
+    },
+  })
+  @ApiTooManyRequestsResponse({
+    description: 'Limite de requisições excedido (100 req/min)',
+    schema: {
+      example: {
+        statusCode: 429,
+        message: 'ThrottlerException: Too Many Requests',
+      },
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Erro interno do servidor',
+    schema: { example: { statusCode: 500, message: 'Internal server error' } },
+  })
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ListingResponseDto> {
+    const listing = await this.getListing.execute(id);
+    return ListingResponseDto.fromEntity(listing);
+  }
+
+  // ---------------------------------------------------------------------------
+  // PATCH /marketing/:id — Atualizar anúncio
+  // ---------------------------------------------------------------------------
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Atualizar anúncio',
+    description:
+      'Atualiza campos editáveis de um anúncio existente (PATCH semântico — ' +
+      'apenas os campos enviados no body são alterados). ' +
+      'Status é gerenciado pelos endpoints /publish e /unpublish.',
+  })
+  @ApiOkResponse({
+    description: 'Anúncio atualizado com sucesso',
+    type: ListingResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Dados inválidos (preço zero, título fora do range, etc.)',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'O preço deve ser maior que zero.',
+        error: 'Bad Request',
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token JWT ausente, expirado ou inválido',
+    schema: { example: { statusCode: 401, message: 'Unauthorized' } },
+  })
+  @ApiNotFoundResponse({
+    description: 'Anúncio não encontrado',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Anúncio com id "uuid" não encontrado.',
+        error: 'Not Found',
+      },
+    },
+  })
+  @ApiTooManyRequestsResponse({
+    description: 'Limite de requisições excedido (100 req/min)',
+    schema: {
+      example: {
+        statusCode: 429,
+        message: 'ThrottlerException: Too Many Requests',
+      },
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Erro interno do servidor',
+    schema: { example: { statusCode: 500, message: 'Internal server error' } },
+  })
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateListingDto,
+  ): Promise<ListingResponseDto> {
+    const listing = await this.updateListing.execute(id, dto);
+    return ListingResponseDto.fromEntity(listing);
+  }
+
+  // ---------------------------------------------------------------------------
+  // DELETE /marketing/:id — Excluir anúncio (soft delete)
+  // ---------------------------------------------------------------------------
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Excluir anúncio',
+    description:
+      'Realiza soft delete do anúncio (preenche deletedAt). ' +
+      'O registro permanece no banco para auditoria mas desaparece de todas as buscas. ' +
+      'Retorna 204 No Content em caso de sucesso.',
+  })
+  @ApiNoContentResponse({
+    description: 'Anúncio excluído com sucesso (sem corpo na resposta)',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token JWT ausente, expirado ou inválido',
+    schema: { example: { statusCode: 401, message: 'Unauthorized' } },
+  })
+  @ApiNotFoundResponse({
+    description: 'Anúncio não encontrado',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Anúncio com id "uuid" não encontrado.',
+        error: 'Not Found',
+      },
+    },
+  })
+  @ApiTooManyRequestsResponse({
+    description: 'Limite de requisições excedido (100 req/min)',
+    schema: {
+      example: {
+        statusCode: 429,
+        message: 'ThrottlerException: Too Many Requests',
+      },
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Erro interno do servidor',
+    schema: { example: { statusCode: 500, message: 'Internal server error' } },
+  })
+  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    await this.deleteListing.execute(id);
+  }
+
+  // ---------------------------------------------------------------------------
+  // PATCH /marketing/:id/publish — Publicar anúncio
   // ---------------------------------------------------------------------------
 
   @Patch(':id/publish')
@@ -180,7 +382,7 @@ export class MarketingController {
     schema: {
       example: {
         statusCode: 404,
-        message: 'Anúncio com id "uuid" não encontrado.',
+        message: 'Usuário com id "uuid" não encontrado.',
         error: 'Not Found',
       },
     },
@@ -213,7 +415,7 @@ export class MarketingController {
   }
 
   // ---------------------------------------------------------------------------
-  // PATCH /listings/:id/unpublish — Despublicar anúncio
+  // PATCH /marketing/:id/unpublish — Despublicar anúncio
   // ---------------------------------------------------------------------------
 
   @Patch(':id/unpublish')
@@ -283,67 +485,5 @@ export class MarketingController {
   ): Promise<ListingResponseDto> {
     const listing = await this.unpublishListing.execute(id);
     return ListingResponseDto.fromEntity(listing);
-  }
-
-  // ---------------------------------------------------------------------------
-  // GET /listings — Busca pública de anúncios
-  // ---------------------------------------------------------------------------
-
-  @Get()
-  @ApiOperation({
-    summary: 'Buscar anúncios imóveis',
-    description:
-      'Rota pública (sem necessidade de login). ' +
-      'Aceita filtros opcionais via query string. ' +
-      'Retorna apenas anúncios com status ACTIVE.',
-  })
-  @ApiOkResponse({
-    description: 'Lista paginada de anúncios',
-    type: PaginatedListingResponseDto,
-  })
-  @ApiBadRequestResponse({
-    description:
-      'Parâmetros de query inválidos (tipo errado, valor fora do range, etc)',
-    schema: {
-      example: {
-        statusCode: 400,
-        message: [
-          'type must be one of the following values: APARTMENT, HOUSE, ...',
-        ],
-        error: 'Bad Request',
-      },
-    },
-  })
-  @ApiTooManyRequestsResponse({
-    description: 'Limite de requisições excedido (100 req/min)',
-    schema: {
-      example: {
-        statusCode: 429,
-        message: 'ThrottlerException: Too Many Requests',
-      },
-    },
-  })
-  @ApiInternalServerErrorResponse({
-    description: 'Erro interno do servidor (falha no banco, etc)',
-    schema: {
-      example: {
-        statusCode: 500,
-        message: 'Internal server error',
-      },
-    },
-  })
-  async list(
-    // @Query(): extrai todos os query params e popula o DTO.
-    // Com transform: true no ValidationPipe, strings numéricas são convertidas.
-    @Query() query: GetListingsQueryDto,
-  ): Promise<PaginatedListingResponseDto> {
-    const result = await this.getListings.execute(query);
-    return {
-      items: result.items.map(ListingResponseDto.fromEntity),
-      total: result.total,
-      page: result.page,
-      limit: result.limit,
-      totalPages: result.totalPages,
-    };
   }
 }

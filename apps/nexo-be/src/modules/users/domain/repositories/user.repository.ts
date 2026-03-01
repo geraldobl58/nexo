@@ -24,11 +24,6 @@ export interface PropertySummaryEntity {
   isFeatured: boolean;
   publishedAt: Date | null;
   createdAt: Date;
-  advertiser: {
-    id: string;
-    name: string;
-    email: string;
-  };
 }
 
 export interface MyPropertiesFilters {

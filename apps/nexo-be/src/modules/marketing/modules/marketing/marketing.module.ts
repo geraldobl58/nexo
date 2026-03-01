@@ -2,19 +2,36 @@ import { Module } from '@nestjs/common';
 import { PrismaService } from '@/libs/prisma/prisma.service';
 
 // Domain
-import { LISTING_REPOSITORY } from '../../domain/repositories/listing.repository';
+import { LISTING_REPOSITORY } from '../../domain/repositories/marketing.repository';
+import { MEDIA_REPOSITORY } from '../../domain/repositories/marketing-media.repository';
 
-// Application — Use Cases
-import { CreateListingUseCase } from '../../application/use-cases/create-listing.use-case';
-import { PublishListingUseCase } from '../../application/use-cases/publish-listing.use-case';
-import { UnpublishListingUseCase } from '../../application/use-cases/unpublish-listing.use-case';
-import { GetListingsUseCase } from '../../application/use-cases/get-listings.use-case';
+// Application — Use Cases (listings)
+import { CreateListingUseCase } from '../../application/use-cases/create-marketing.use-case';
+import { GetListingUseCase } from '../../application/use-cases/get-marketing-by-id.use-case';
+import { UpdateListingUseCase } from '../../application/use-cases/update-marketing.use-case';
+import { DeleteListingUseCase } from '../../application/use-cases/delete-marketing.use-case';
+import { PublishListingUseCase } from '../../application/use-cases/publish-marketing.use-case';
+import { UnpublishListingUseCase } from '../../application/use-cases/unpublish-marketing.use-case';
+import { GetListingsUseCase } from '../../application/use-cases/get-marketing.use-case';
 
-// Infrastructure — Repositório
-import { PrismaListingRepository } from '../../infrastructure/prisma/prisma-listing.repository';
+// Application — Use Cases (media)
+import { UploadMediaUseCase } from '../../application/use-cases/upload-marketing-media.use-case';
+import {
+  GetMediaUseCase,
+  DeleteMediaUseCase,
+} from '../../application/use-cases/get-delete-marketing-media.use-case';
+import { ReorderMediaUseCase } from '../../application/use-cases/reorder-marketing-media.use-case';
+
+// Infrastructure — Repositórios
+import { PrismaListingRepository } from '../../infrastructure/prisma/prisma-marketing.repository';
+import { PrismaMediaRepository } from '../../infrastructure/prisma/prisma-media.repository';
+
+// Infrastructure — Cloudinary
+import { CloudinaryService } from '../../infrastructure/cloudinary/cloudinary.service';
 
 // Infrastructure — HTTP
 import { MarketingController } from '../../infrastructure/http/marketing.controller';
+import { MediaController } from '../../infrastructure/http/media.controller';
 
 /**
  * MÓDULO DE MARKETING
@@ -37,17 +54,10 @@ import { MarketingController } from '../../infrastructure/http/marketing.control
  *                 → PrismaService (conexão com o banco)
  */
 @Module({
-  controllers: [
-    /*
-     * NestJS vai instanciar o controller e injetar automaticamente
-     * os use-cases declarados nos providers abaixo.
-     */
-    MarketingController,
-  ],
+  controllers: [MarketingController, MediaController],
   providers: [
     // -------------------------------------------------------------------------
-    // REPOSITÓRIO
-    // Bind: quando alguém pedir LISTING_REPOSITORY, entregue PrismaListingRepository
+    // REPOSITÓRIOS
     // -------------------------------------------------------------------------
     {
       provide: LISTING_REPOSITORY,
@@ -55,16 +65,35 @@ import { MarketingController } from '../../infrastructure/http/marketing.control
         new PrismaListingRepository(prisma),
       inject: [PrismaService],
     },
+    {
+      provide: MEDIA_REPOSITORY,
+      useFactory: (prisma: PrismaService) => new PrismaMediaRepository(prisma),
+      inject: [PrismaService],
+    },
 
     // -------------------------------------------------------------------------
-    // USE CASES
-    // Declarados como @Injectable(), o NestJS resolve as dependências (@Inject)
-    // automaticamente com base nos providers acima.
+    // SERVIÇOS DE INFRAESTRUTURA
+    // -------------------------------------------------------------------------
+    CloudinaryService,
+
+    // -------------------------------------------------------------------------
+    // USE CASES — ANÚNCIOS
     // -------------------------------------------------------------------------
     CreateListingUseCase,
+    GetListingUseCase,
+    UpdateListingUseCase,
+    DeleteListingUseCase,
     PublishListingUseCase,
     UnpublishListingUseCase,
     GetListingsUseCase,
+
+    // -------------------------------------------------------------------------
+    // USE CASES — MÍDIA
+    // -------------------------------------------------------------------------
+    UploadMediaUseCase,
+    GetMediaUseCase,
+    DeleteMediaUseCase,
+    ReorderMediaUseCase,
   ],
 })
 export class MarketingModule {}
