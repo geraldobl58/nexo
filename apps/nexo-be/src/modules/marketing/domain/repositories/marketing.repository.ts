@@ -184,6 +184,12 @@ export type ListingFilters = {
 
   // --- Outros ---
 
+  /**
+   * Filtrar por status do anúncio.
+   * Quando omitido, o repositório retorna apenas anúncios ACTIVE por padrão.
+   */
+  status?: ListingEntity['status'];
+
   /** Filtrar apenas por usuário que criou */
   createdById?: string;
 

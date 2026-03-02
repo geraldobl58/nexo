@@ -195,19 +195,24 @@ describe('MarketingController', () => {
       expect(controller.publish).toBeDefined();
     });
 
-    it('deve chamar PublishListingUseCase.execute() com o id correto', async () => {
+    it('deve chamar PublishListingUseCase.execute() com id e currentUser', async () => {
       // Arrange
       const published = makeListing({
         status: ListingStatus.ACTIVE,
         publishedAt: new Date(),
       });
       mockPublishListing.execute.mockResolvedValue(published);
+      const currentUser = { id: 'owner-uuid', role: 'SUPPORT' } as any;
 
       // Act
-      const result = await controller.publish('listing-uuid-1');
+      const result = await controller.publish('listing-uuid-1', currentUser);
 
       // Assert
-      expect(mockPublishListing.execute).toHaveBeenCalledWith('listing-uuid-1');
+      expect(mockPublishListing.execute).toHaveBeenCalledWith(
+        'listing-uuid-1',
+        'owner-uuid',
+        'SUPPORT',
+      );
       expect(result.status).toBe(ListingStatus.ACTIVE);
     });
   });
@@ -219,17 +224,20 @@ describe('MarketingController', () => {
       expect(controller.unpublish).toBeDefined();
     });
 
-    it('deve chamar UnpublishListingUseCase.execute() com o id correto', async () => {
+    it('deve chamar UnpublishListingUseCase.execute() com id e currentUser', async () => {
       // Arrange
       const inactive = makeListing({ status: ListingStatus.INACTIVE });
       mockUnpublishListing.execute.mockResolvedValue(inactive);
+      const currentUser = { id: 'owner-uuid', role: 'SUPPORT' } as any;
 
       // Act
-      const result = await controller.unpublish('listing-uuid-1');
+      const result = await controller.unpublish('listing-uuid-1', currentUser);
 
       // Assert
       expect(mockUnpublishListing.execute).toHaveBeenCalledWith(
         'listing-uuid-1',
+        'owner-uuid',
+        'SUPPORT',
       );
       expect(result.status).toBe(ListingStatus.INACTIVE);
     });
@@ -254,12 +262,15 @@ describe('MarketingController', () => {
       });
 
       const query = { page: 1, limit: 20 } as GetListingsQueryDto;
+      const currentUser = null; // rota pública, sem usuário logado
 
       // Act
-      const result = await controller.list(query);
+      const result = await controller.list(query, currentUser);
 
-      // Assert
-      expect(mockGetListings.execute).toHaveBeenCalledWith(query);
+      // Assert: o execute é chamado com advertiserId mapeado para createdById
+      expect(mockGetListings.execute).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 1, limit: 20 }),
+      );
       expect(result.items).toHaveLength(1);
       expect(result.total).toBe(1);
       expect(result.page).toBe(1);
@@ -280,7 +291,7 @@ describe('MarketingController', () => {
       });
 
       // Act
-      const result = await controller.list({} as GetListingsQueryDto);
+      const result = await controller.list({} as GetListingsQueryDto, null);
 
       // Assert
       expect(result.items).toHaveLength(0);

@@ -223,6 +223,27 @@ export class GetListingsQueryDto {
   @IsBoolean()
   isFeatured?: boolean;
 
+  // ─── Status ───────────────────────────────────────────────────────────────
+
+  @ApiPropertyOptional({
+    description:
+      'Status do anúncio. Por padrão retorna apenas ACTIVE. ' +
+      'Use DRAFT para ver rascunhos (requer ser o dono do anúncio).',
+    enum: [
+      'DRAFT',
+      'ACTIVE',
+      'PAUSED',
+      'SOLD',
+      'RENTED',
+      'EXPIRED',
+      'REJECTED',
+    ],
+    example: 'DRAFT',
+  })
+  @IsOptional()
+  @IsString()
+  status?: string;
+
   // ─── Anunciante ───────────────────────────────────────────────────────────
 
   @ApiPropertyOptional({

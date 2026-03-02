@@ -1,8 +1,14 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   LISTING_REPOSITORY,
   ListingRepository,
 } from '../../domain/repositories/marketing.repository';
+import { UserRole } from '@/modules/identity/domain/entities/user.entity';
 
 /**
  * USE CASE: EXCLUIR ANÚNCIO (Soft Delete)
@@ -26,12 +32,26 @@ export class DeleteListingUseCase {
    * @param listingId - UUID do anúncio a excluir
    * @throws NotFoundException quando o anúncio não existe ou já foi deletado
    */
-  async execute(listingId: string): Promise<void> {
-    // Verifica existência antes de deleter para retornar 404 claro
+  async execute(
+    listingId: string,
+    requesterId: string,
+    requesterRole: UserRole,
+  ): Promise<void> {
+    // Verifica existência antes de deletar para retornar 404 claro
     const listing = await this.listings.findById(listingId);
     if (!listing || listing.deletedAt !== null) {
       throw new NotFoundException(
         `Anúncio com id "${listingId}" não encontrado.`,
+      );
+    }
+
+    // Verifica ownership: apenas o dono ou Admin/Moderador podem excluir.
+    const isOwner = listing.createdById === requesterId;
+    const isPrivileged =
+      requesterRole === 'ADMIN' || requesterRole === 'MODERATOR';
+    if (!isOwner && !isPrivileged) {
+      throw new ForbiddenException(
+        'Você não tem permissão para excluir este anúncio.',
       );
     }
 

@@ -324,6 +324,91 @@ O endpoint faz **upsert** automaticamente: na primeira chamada cria o usuario no
 | GET    | `/metrics` | -    | Metricas                    |
 | GET    | `/docs`    | -    | Swagger UI                  |
 
+## Controle de Acesso e Ownership de Anuncios
+
+### Conceito de Dono (Owner)
+
+Quando um usuario autenticado cria um anuncio via `POST /marketing`, o campo `createdById` e preenchido com o `id` do usuario no banco local. Esse usuario se torna o **dono** do anuncio.
+
+### Regras por endpoint
+
+| Endpoint                                 | Publico | Dono             | Admin / Moderador |
+| ---------------------------------------- | ------- | ---------------- | ----------------- |
+| `POST /marketing`                        | ✗       | ✓ cria           | ✓ cria            |
+| `GET /marketing` (status=ACTIVE)         | ✓       | ✓                | ✓                 |
+| `GET /marketing` (status=DRAFT/INACTIVE) | ✗ 403   | ✓ so os proprios | ✓ todos           |
+| `GET /marketing/:id` (ACTIVE)            | ✓       | ✓                | ✓                 |
+| `GET /marketing/:id` (DRAFT/INACTIVE)    | 404     | ✓                | ✓                 |
+| `PATCH /marketing/:id`                   | ✗       | ✓ so o proprio   | ✓ qualquer        |
+| `DELETE /marketing/:id`                  | ✗       | ✓ so o proprio   | ✓ qualquer        |
+| `PATCH /marketing/:id/publish`           | ✗       | ✓ so o proprio   | ✓ qualquer        |
+| `PATCH /marketing/:id/unpublish`         | ✗       | ✓ so o proprio   | ✓ qualquer        |
+
+> **Nota sobre o 404 em rascunhos**: Ao tentar acessar `GET /marketing/:id` de um anuncio DRAFT sem ser o dono, a API retorna **404** (nao encontrado) em vez de 403 (proibido). Isso e intencional — nao vazar informacao sobre a existencia de rascunhos de outros usuarios.
+
+### Ciclo de vida de um anuncio
+
+```
+POST /marketing
+  └─► status: DRAFT (invisivel no portal — so o dono ve)
+        │
+        ▼ PATCH /:id/publish (dono ou Admin/Moderador)
+      status: ACTIVE (visivel nas buscas publicas)
+        │
+        ├─► PATCH /:id/unpublish → status: INACTIVE (fora do ar, dono ainda ve)
+        │     └─► PATCH /:id/publish → ACTIVE novamente
+        │
+        ├─► status: SOLD   (negocio de venda concluido)
+        └─► status: RENTED (negocio de aluguel concluido)
+```
+
+### Como o role do usuario e determinado
+
+O Keycloak e responsavel apenas pela **autenticacao** (emitir o JWT). O **role** de cada usuario (`ADMIN`, `MODERATOR`, `SUPPORT`) e armazenado no banco local e sincronizado no login via `SyncUserUseCase`:
+
+```
+Login via Keycloak
+  → JWT com roles do realm (ex: ["admin"])
+    → SyncUserUseCase.mapRole()
+      → Salva/atualiza role no banco local
+        → currentUser.role disponivel nos use-cases e controllers
+```
+
+Mapeamento de roles do Keycloak para roles internas:
+
+| Role no Keycloak | Role no banco | Permissao                                      |
+| ---------------- | ------------- | ---------------------------------------------- |
+| `admin`          | `ADMIN`       | Tudo — ve e edita anuncios de qualquer usuario |
+| `moderator`      | `MODERATOR`   | Ve e edita anuncios de qualquer usuario        |
+| qualquer outra   | `SUPPORT`     | So ve e edita os proprios anuncios             |
+
+> Anunciantes externos (usuarios do portal) recebem `SUPPORT` por padrao. A logica de **ownership** (`listing.createdById === currentUser.id`) e o que protege os dados deles, nao o role.
+
+### Dashboard do anunciante — visualizando apenas os proprios anuncios
+
+Para listar os anuncios de um anunciante especifico (incluindo rascunhos), o caller precisa estar autenticado e usar o filtro `advertiserId` com seu proprio `id`:
+
+```bash
+# Listar todos os meus anuncios (DRAFT + ACTIVE + INACTIVE)
+curl 'http://localhost:3333/marketing?advertiserId=<meu-id>&status=DRAFT' \
+  -H 'Authorization: Bearer <token>'
+
+# Sem o status, retorna apenas ACTIVE (comportamento padrao)
+curl 'http://localhost:3333/marketing?advertiserId=<meu-id>' \
+  -H 'Authorization: Bearer <token>'
+```
+
+**O que acontece se tentar ver anuncios de outro usuario?**
+
+```bash
+# Tentativa de ver DRAFTs de outro usuario → 403 Forbidden
+curl 'http://localhost:3333/marketing?advertiserId=<outro-id>&status=DRAFT' \
+  -H 'Authorization: Bearer <token-do-usuario-A>'
+# {"statusCode":403,"message":"Voce so pode ver seus proprios anuncios com status diferente de ACTIVE."}
+```
+
+Admins e Moderadores podem usar `advertiserId` de qualquer usuario sem restricao.
+
 ## Scripts
 
 ```bash

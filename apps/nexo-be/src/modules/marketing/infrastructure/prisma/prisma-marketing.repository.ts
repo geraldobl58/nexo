@@ -375,8 +375,10 @@ export class PrismaListingRepository implements ListingRepository {
      * Usamos `??` e checagem explícita para não enviar `undefined` ao Prisma.
      */
     const where: Prisma.PropertyWhereInput = {
-      // Por padrão só retorna anúncios ativos
-      status: PropertyStatus.ACTIVE,
+      // Por padrão só retorna anúncios ativos; permite sobrescrever via filtro
+      status: filters.status
+        ? this.toPrismaStatus(filters.status)
+        : PropertyStatus.ACTIVE,
 
       // Soft delete: ignora anúncios excluídos
       deletedAt: null,

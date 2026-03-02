@@ -4,10 +4,15 @@
  * Regras validadas neste arquivo:
  *  1. Retorna o anúncio publicado quando tudo está certo
  *  2. Lança NotFoundException se o anúncio não existe
- *  3. Lança BadRequestException se o anúncio não está em DRAFT
- *  4. Lança BadRequestException se faltam campos obrigatórios (preço, cidade, etc.)
+ *  3. Lança ForbiddenException se o requester não é o dono nem Admin/Moderador
+ *  4. Lança BadRequestException se o anúncio não está em DRAFT
+ *  5. Lança BadRequestException se faltam campos obrigatórios (preço, cidade, etc.)
  */
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PublishListingUseCase } from './publish-marketing.use-case';
 import { ListingRepository } from '../../domain/repositories/marketing.repository';
 import { ListingEntity } from '../../domain/entities/marketing.entity';
@@ -20,7 +25,7 @@ const makeDraftListing = (
   override: Partial<ListingEntity> = {},
 ): ListingEntity => ({
   id: 'listing-uuid-1',
-  createdById: 'user-uuid',
+  createdById: 'owner-uuid',
   status: ListingStatus.DRAFT,
   purpose: 'SALE',
   type: 'APARTMENT',
@@ -136,12 +141,47 @@ describe('PublishListingUseCase', () => {
       mockRepo.findById.mockResolvedValue(draft);
       mockRepo.update.mockResolvedValue(published);
 
-      // Act
-      const result = await useCase.execute(draft.id);
+      // Act — dono publicando o próprio anúncio
+      const result = await useCase.execute(draft.id, 'owner-uuid', 'SUPPORT');
 
       // Assert
       expect(result.status).toBe(ListingStatus.ACTIVE);
       expect(result.publishedAt).toBeDefined();
+    });
+
+    it('deve permitir Admin publicar anúncio de outro usuário', async () => {
+      const draft = makeDraftListing();
+      const published = makeDraftListing({
+        status: ListingStatus.ACTIVE,
+        publishedAt: new Date(),
+      });
+
+      mockRepo.findById.mockResolvedValue(draft);
+      mockRepo.update.mockResolvedValue(published);
+
+      // Admin com id diferente do dono
+      const result = await useCase.execute(draft.id, 'admin-uuid', 'ADMIN');
+
+      expect(result.status).toBe(ListingStatus.ACTIVE);
+    });
+
+    it('deve permitir Moderador publicar anúncio de outro usuário', async () => {
+      const draft = makeDraftListing();
+      const published = makeDraftListing({
+        status: ListingStatus.ACTIVE,
+        publishedAt: new Date(),
+      });
+
+      mockRepo.findById.mockResolvedValue(draft);
+      mockRepo.update.mockResolvedValue(published);
+
+      const result = await useCase.execute(
+        draft.id,
+        'moderator-uuid',
+        'MODERATOR',
+      );
+
+      expect(result.status).toBe(ListingStatus.ACTIVE);
     });
 
     it('deve chamar update com status ACTIVE e publishedAt', async () => {
@@ -156,7 +196,7 @@ describe('PublishListingUseCase', () => {
       );
 
       // Act
-      await useCase.execute(draft.id);
+      await useCase.execute(draft.id, 'owner-uuid', 'SUPPORT');
 
       // Assert: verifica que o repositório foi chamado corretamente
       expect(mockRepo.update).toHaveBeenCalledWith(
@@ -177,9 +217,20 @@ describe('PublishListingUseCase', () => {
       mockRepo.findById.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(useCase.execute('id-inexistente')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        useCase.execute('id-inexistente', 'owner-uuid', 'SUPPORT'),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockRepo.update).not.toHaveBeenCalled();
+    });
+
+    it('deve lançar ForbiddenException quando usuário não é o dono', async () => {
+      const draft = makeDraftListing(); // createdById = 'owner-uuid'
+      mockRepo.findById.mockResolvedValue(draft);
+
+      // Outro usuário comum tentando publicar
+      await expect(
+        useCase.execute(draft.id, 'outro-usuario-uuid', 'SUPPORT'),
+      ).rejects.toThrow(ForbiddenException);
       expect(mockRepo.update).not.toHaveBeenCalled();
     });
 
@@ -188,9 +239,9 @@ describe('PublishListingUseCase', () => {
         makeDraftListing({ status: ListingStatus.ACTIVE }),
       );
 
-      await expect(useCase.execute('listing-uuid-1')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        useCase.execute('listing-uuid-1', 'owner-uuid', 'SUPPORT'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('deve lançar BadRequestException ao publicar anúncio INACTIVE', async () => {
@@ -198,9 +249,9 @@ describe('PublishListingUseCase', () => {
         makeDraftListing({ status: ListingStatus.INACTIVE }),
       );
 
-      await expect(useCase.execute('listing-uuid-1')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        useCase.execute('listing-uuid-1', 'owner-uuid', 'SUPPORT'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('deve lançar BadRequestException ao publicar anúncio SOLD', async () => {
@@ -208,43 +259,43 @@ describe('PublishListingUseCase', () => {
         makeDraftListing({ status: ListingStatus.SOLD }),
       );
 
-      await expect(useCase.execute('listing-uuid-1')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        useCase.execute('listing-uuid-1', 'owner-uuid', 'SUPPORT'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('deve lançar BadRequestException quando preço está zerado', async () => {
       // Anúncio está em DRAFT mas sem preço — não pode ser publicado
       mockRepo.findById.mockResolvedValue(makeDraftListing({ price: 0 }));
 
-      await expect(useCase.execute('listing-uuid-1')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        useCase.execute('listing-uuid-1', 'owner-uuid', 'SUPPORT'),
+      ).rejects.toThrow(BadRequestException);
       expect(mockRepo.update).not.toHaveBeenCalled();
     });
 
     it('deve lançar BadRequestException quando cidade está vazia', async () => {
       mockRepo.findById.mockResolvedValue(makeDraftListing({ city: '' }));
 
-      await expect(useCase.execute('listing-uuid-1')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        useCase.execute('listing-uuid-1', 'owner-uuid', 'SUPPORT'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('deve lançar BadRequestException quando estado está vazio', async () => {
       mockRepo.findById.mockResolvedValue(makeDraftListing({ state: '' }));
 
-      await expect(useCase.execute('listing-uuid-1')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        useCase.execute('listing-uuid-1', 'owner-uuid', 'SUPPORT'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('deve lançar BadRequestException quando bairro está vazio', async () => {
       mockRepo.findById.mockResolvedValue(makeDraftListing({ district: '' }));
 
-      await expect(useCase.execute('listing-uuid-1')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        useCase.execute('listing-uuid-1', 'owner-uuid', 'SUPPORT'),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

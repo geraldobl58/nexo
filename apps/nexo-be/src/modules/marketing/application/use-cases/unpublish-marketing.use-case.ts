@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -10,6 +11,7 @@ import {
 } from '../../domain/repositories/marketing.repository';
 import { ListingEntity } from '../../domain/entities/marketing.entity';
 import { ListingStatus } from '../../domain/enums/marketing-status.enum';
+import { UserRole } from '@/modules/identity/domain/entities/user.entity';
 
 /**
  * USE CASE: DESPUBLICAR ANÚNCIO
@@ -33,8 +35,12 @@ export class UnpublishListingUseCase {
    * @param listingId - ID do anúncio a despublicar
    * @returns Anúncio com status INACTIVE
    */
-  async execute(listingId: string): Promise<ListingEntity> {
-    // 1. Valida existeência
+  async execute(
+    listingId: string,
+    requesterId: string,
+    requesterRole: UserRole,
+  ): Promise<ListingEntity> {
+    // 1. Valida existência
     const listing = await this.listings.findById(listingId);
     if (!listing) {
       throw new NotFoundException(
@@ -42,7 +48,17 @@ export class UnpublishListingUseCase {
       );
     }
 
-    // 2. Só anúncios ATIVOS podem ser despublicados.
+    // 2. Verifica ownership: apenas o dono ou Admin/Moderador podem despublicar.
+    const isOwner = listing.createdById === requesterId;
+    const isPrivileged =
+      requesterRole === 'ADMIN' || requesterRole === 'MODERATOR';
+    if (!isOwner && !isPrivileged) {
+      throw new ForbiddenException(
+        'Você não tem permissão para despublicar este anúncio.',
+      );
+    }
+
+    // 3. Só anúncios ATIVOS podem ser despublicados.
     //    Despublicar um DRAFT ou SOLD não faz sentido de negócio.
     if (listing.status !== ListingStatus.ACTIVE) {
       throw new BadRequestException(
@@ -50,7 +66,7 @@ export class UnpublishListingUseCase {
       );
     }
 
-    // 3. Marca como inativo
+    // 5. Marca como inativo
     return this.listings.update(listingId, {
       status: ListingStatus.INACTIVE,
     });

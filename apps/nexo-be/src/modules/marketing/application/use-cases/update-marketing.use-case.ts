@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -12,6 +13,7 @@ import {
 import { ListingEntity } from '../../domain/entities/marketing.entity';
 import { ListingTitle } from '../../domain/value-objects/marketing-title.vo';
 import { ListingPlan } from '../../domain/enums/marketing-plan.enum';
+import { UserRole } from '@/modules/identity/domain/entities/user.entity';
 import { generateListingSlug } from '../utils/slug.util';
 
 /**
@@ -104,12 +106,24 @@ export class UpdateListingUseCase {
   async execute(
     listingId: string,
     input: UpdateListingInput,
+    requesterId: string,
+    requesterRole: UserRole,
   ): Promise<ListingEntity> {
     // 1. Busca e verifica existência
     const listing = await this.listings.findById(listingId);
     if (!listing || listing.deletedAt !== null) {
       throw new NotFoundException(
         `Anúncio com id "${listingId}" não encontrado.`,
+      );
+    }
+
+    // 2. Verifica ownership: apenas o dono ou Admin/Moderador podem editar.
+    const isOwner = listing.createdById === requesterId;
+    const isPrivileged =
+      requesterRole === 'ADMIN' || requesterRole === 'MODERATOR';
+    if (!isOwner && !isPrivileged) {
+      throw new ForbiddenException(
+        'Você não tem permissão para editar este anúncio.',
       );
     }
 

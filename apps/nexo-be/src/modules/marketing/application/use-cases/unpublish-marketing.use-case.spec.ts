@@ -4,9 +4,14 @@
  * Regras validadas:
  *  1. Move um anúncio ACTIVE para INACTIVE
  *  2. Lança NotFoundException quando o anúncio não existe
- *  3. Lança BadRequestException quando o anúncio não está ACTIVE
+ *  3. Lança ForbiddenException quando o requester não é o dono nem Admin/Moderador
+ *  4. Lança BadRequestException quando o anúncio não está ACTIVE
  */
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { UnpublishListingUseCase } from './unpublish-marketing.use-case';
 import { ListingRepository } from '../../domain/repositories/marketing.repository';
 import { ListingEntity } from '../../domain/entities/marketing.entity';
@@ -19,7 +24,7 @@ const makeActiveListing = (
   override: Partial<ListingEntity> = {},
 ): ListingEntity => ({
   id: 'listing-uuid-1',
-  createdById: 'user-uuid',
+  createdById: 'owner-uuid',
   status: ListingStatus.ACTIVE,
   purpose: 'RENT',
   type: 'APARTMENT',
@@ -132,10 +137,38 @@ describe('UnpublishListingUseCase', () => {
       mockRepo.findById.mockResolvedValue(active);
       mockRepo.update.mockResolvedValue(inactive);
 
-      // Act
-      const result = await useCase.execute(active.id);
+      // Act — dono despublicando o próprio anúncio
+      const result = await useCase.execute(active.id, 'owner-uuid', 'SUPPORT');
 
       // Assert
+      expect(result.status).toBe(ListingStatus.INACTIVE);
+    });
+
+    it('deve permitir Admin despublicar anúncio de outro usuário', async () => {
+      const active = makeActiveListing();
+      mockRepo.findById.mockResolvedValue(active);
+      mockRepo.update.mockResolvedValue(
+        makeActiveListing({ status: ListingStatus.INACTIVE }),
+      );
+
+      const result = await useCase.execute(active.id, 'admin-uuid', 'ADMIN');
+
+      expect(result.status).toBe(ListingStatus.INACTIVE);
+    });
+
+    it('deve permitir Moderador despublicar anúncio de outro usuário', async () => {
+      const active = makeActiveListing();
+      mockRepo.findById.mockResolvedValue(active);
+      mockRepo.update.mockResolvedValue(
+        makeActiveListing({ status: ListingStatus.INACTIVE }),
+      );
+
+      const result = await useCase.execute(
+        active.id,
+        'moderator-uuid',
+        'MODERATOR',
+      );
+
       expect(result.status).toBe(ListingStatus.INACTIVE);
     });
 
@@ -148,7 +181,7 @@ describe('UnpublishListingUseCase', () => {
       );
 
       // Act
-      await useCase.execute(active.id);
+      await useCase.execute(active.id, 'owner-uuid', 'SUPPORT');
 
       // Assert
       expect(mockRepo.update).toHaveBeenCalledWith(active.id, {
@@ -163,9 +196,19 @@ describe('UnpublishListingUseCase', () => {
     it('deve lançar NotFoundException quando anúncio não existe', async () => {
       mockRepo.findById.mockResolvedValue(null);
 
-      await expect(useCase.execute('id-nao-existe')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        useCase.execute('id-nao-existe', 'owner-uuid', 'SUPPORT'),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockRepo.update).not.toHaveBeenCalled();
+    });
+
+    it('deve lançar ForbiddenException quando usuário não é o dono', async () => {
+      const active = makeActiveListing(); // createdById = 'owner-uuid'
+      mockRepo.findById.mockResolvedValue(active);
+
+      await expect(
+        useCase.execute(active.id, 'outro-usuario-uuid', 'SUPPORT'),
+      ).rejects.toThrow(ForbiddenException);
       expect(mockRepo.update).not.toHaveBeenCalled();
     });
 
@@ -174,9 +217,9 @@ describe('UnpublishListingUseCase', () => {
         makeActiveListing({ status: ListingStatus.DRAFT }),
       );
 
-      await expect(useCase.execute('listing-uuid-1')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        useCase.execute('listing-uuid-1', 'owner-uuid', 'SUPPORT'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('deve lançar BadRequestException ao despublicar anúncio INACTIVE', async () => {
@@ -184,9 +227,9 @@ describe('UnpublishListingUseCase', () => {
         makeActiveListing({ status: ListingStatus.INACTIVE }),
       );
 
-      await expect(useCase.execute('listing-uuid-1')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        useCase.execute('listing-uuid-1', 'owner-uuid', 'SUPPORT'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('deve lançar BadRequestException ao despublicar anúncio SOLD', async () => {
@@ -194,9 +237,9 @@ describe('UnpublishListingUseCase', () => {
         makeActiveListing({ status: ListingStatus.SOLD }),
       );
 
-      await expect(useCase.execute('listing-uuid-1')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        useCase.execute('listing-uuid-1', 'owner-uuid', 'SUPPORT'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('deve lançar BadRequestException ao despublicar anúncio RENTED', async () => {
@@ -204,9 +247,9 @@ describe('UnpublishListingUseCase', () => {
         makeActiveListing({ status: ListingStatus.RENTED }),
       );
 
-      await expect(useCase.execute('listing-uuid-1')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        useCase.execute('listing-uuid-1', 'owner-uuid', 'SUPPORT'),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

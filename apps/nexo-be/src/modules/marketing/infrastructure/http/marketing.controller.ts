@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -16,6 +17,7 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
@@ -26,6 +28,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/modules/auth/infrastructure/http/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '@/modules/auth/infrastructure/http/optional-jwt-auth.guard';
 import { CurrentUser } from '@/modules/auth/infrastructure/http/current-user.decorator';
 import { UserEntity } from '@/modules/identity/domain/entities/user.entity';
 import { CreateListingUseCase } from '../../application/use-cases/create-marketing.use-case';
@@ -35,6 +38,7 @@ import { DeleteListingUseCase } from '../../application/use-cases/delete-marketi
 import { PublishListingUseCase } from '../../application/use-cases/publish-marketing.use-case';
 import { UnpublishListingUseCase } from '../../application/use-cases/unpublish-marketing.use-case';
 import { GetListingsUseCase } from '../../application/use-cases/get-marketing.use-case';
+import { ListingStatus } from '../../domain/enums/marketing-status.enum';
 import { CreateListingDto } from './dtos/create-marketing.dto';
 import { UpdateListingDto } from './dtos/update-marketing.dto';
 import { GetListingsQueryDto } from './dtos/get-marketing-query.dto';
@@ -137,12 +141,14 @@ export class MarketingController {
   // ---------------------------------------------------------------------------
 
   @Get()
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({
     summary: 'Listar anúncios',
     description:
       'Rota pública (sem necessidade de login). ' +
       'Aceita filtros opcionais via query string. ' +
-      'Retorna apenas anúncios com status ACTIVE.',
+      'Por padrão retorna apenas anúncios com status ACTIVE. ' +
+      'Use o filtro `status` para buscar DRAFT, PAUSED etc.',
   })
   @ApiOkResponse({
     description: 'Lista paginada de anúncios',
@@ -173,8 +179,33 @@ export class MarketingController {
   })
   async list(
     @Query() query: GetListingsQueryDto,
+    @CurrentUser() currentUser: UserEntity | null,
   ): Promise<PaginatedListingResponseDto> {
-    const result = await this.getListings.execute(query);
+    // Restrição de status: apenas ACTIVE é público.
+    // Para qualquer outro status o caller precisa estar autenticado
+    // e só pode ver seus próprios anúncios (exceto Admin/Moderador).
+    if (query.status && query.status !== 'ACTIVE') {
+      if (!currentUser) {
+        throw new ForbiddenException(
+          'Autentique-se para filtrar por status diferente de ACTIVE.',
+        );
+      }
+      const isPrivileged =
+        currentUser.role === 'ADMIN' || currentUser.role === 'MODERATOR';
+      if (!isPrivileged && query.advertiserId !== currentUser.id) {
+        throw new ForbiddenException(
+          'Você só pode ver seus próprios anúncios com status diferente de ACTIVE.',
+        );
+      }
+    }
+
+    const result = await this.getListings.execute({
+      ...query,
+      // O DTO usa `advertiserId` como nome público; o domínio usa `createdById`.
+      createdById: query.advertiserId,
+      // Cast seguro: o valor já foi validado como string de enum válido pelo DTO.
+      status: query.status as ListingStatus | undefined,
+    });
     return {
       items: result.items.map(ListingResponseDto.fromEntity),
       total: result.total,
@@ -189,9 +220,13 @@ export class MarketingController {
   // ---------------------------------------------------------------------------
 
   @Get(':id')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({
     summary: 'Buscar anúncio por ID',
-    description: 'Retorna os dados completos de um único anúncio.',
+    description:
+      'Retorna os dados completos de um único anúncio. ' +
+      'Anúncios não-ACTIVE (DRAFT, INACTIVE, etc.) só são retornados ' +
+      'para o próprio dono ou Admin/Moderador.',
   })
   @ApiOkResponse({
     description: 'Dados do anúncio',
@@ -222,8 +257,13 @@ export class MarketingController {
   })
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() currentUser: UserEntity | null,
   ): Promise<ListingResponseDto> {
-    const listing = await this.getListing.execute(id);
+    const listing = await this.getListing.execute(
+      id,
+      currentUser?.id,
+      currentUser?.role,
+    );
     return ListingResponseDto.fromEntity(listing);
   }
 
@@ -284,9 +324,15 @@ export class MarketingController {
   })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() currentUser: UserEntity,
     @Body() dto: UpdateListingDto,
   ): Promise<ListingResponseDto> {
-    const listing = await this.updateListing.execute(id, dto);
+    const listing = await this.updateListing.execute(
+      id,
+      dto,
+      currentUser.id,
+      currentUser.role,
+    );
     return ListingResponseDto.fromEntity(listing);
   }
 
@@ -312,6 +358,16 @@ export class MarketingController {
     description: 'Token JWT ausente, expirado ou inválido',
     schema: { example: { statusCode: 401, message: 'Unauthorized' } },
   })
+  @ApiForbiddenResponse({
+    description: 'Você não tem permissão para excluir este anúncio',
+    schema: {
+      example: {
+        statusCode: 403,
+        message: 'Você não tem permissão para excluir este anúncio.',
+        error: 'Forbidden',
+      },
+    },
+  })
   @ApiNotFoundResponse({
     description: 'Anúncio não encontrado',
     schema: {
@@ -335,8 +391,11 @@ export class MarketingController {
     description: 'Erro interno do servidor',
     schema: { example: { statusCode: 500, message: 'Internal server error' } },
   })
-  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
-    await this.deleteListing.execute(id);
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() currentUser: UserEntity,
+  ): Promise<void> {
+    await this.deleteListing.execute(id, currentUser.id, currentUser.role);
   }
 
   // ---------------------------------------------------------------------------
@@ -377,6 +436,16 @@ export class MarketingController {
       },
     },
   })
+  @ApiForbiddenResponse({
+    description: 'Você não tem permissão para publicar este anúncio',
+    schema: {
+      example: {
+        statusCode: 403,
+        message: 'Você não tem permissão para publicar este anúncio.',
+        error: 'Forbidden',
+      },
+    },
+  })
   @ApiNotFoundResponse({
     description: 'Anúncio não encontrado',
     schema: {
@@ -406,11 +475,14 @@ export class MarketingController {
     },
   })
   async publish(
-    // @Param(): extrai o :id da URL.
-    // ParseUUIDPipe: valida que o id tem formato UUID antes de chegar no use-case.
     @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() currentUser: UserEntity,
   ): Promise<ListingResponseDto> {
-    const listing = await this.publishListing.execute(id);
+    const listing = await this.publishListing.execute(
+      id,
+      currentUser.id,
+      currentUser.role,
+    );
     return ListingResponseDto.fromEntity(listing);
   }
 
@@ -452,6 +524,16 @@ export class MarketingController {
       },
     },
   })
+  @ApiForbiddenResponse({
+    description: 'Você não tem permissão para despublicar este anúncio',
+    schema: {
+      example: {
+        statusCode: 403,
+        message: 'Você não tem permissão para despublicar este anúncio.',
+        error: 'Forbidden',
+      },
+    },
+  })
   @ApiNotFoundResponse({
     description: 'Anúncio não encontrado',
     schema: {
@@ -482,8 +564,13 @@ export class MarketingController {
   })
   async unpublish(
     @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() currentUser: UserEntity,
   ): Promise<ListingResponseDto> {
-    const listing = await this.unpublishListing.execute(id);
+    const listing = await this.unpublishListing.execute(
+      id,
+      currentUser.id,
+      currentUser.role,
+    );
     return ListingResponseDto.fromEntity(listing);
   }
 }

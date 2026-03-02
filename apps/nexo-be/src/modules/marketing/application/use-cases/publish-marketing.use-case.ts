@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -10,6 +11,7 @@ import {
 } from '../../domain/repositories/marketing.repository';
 import { ListingEntity } from '../../domain/entities/marketing.entity';
 import { ListingStatus } from '../../domain/enums/marketing-status.enum';
+import { UserRole } from '@/modules/identity/domain/entities/user.entity';
 
 /**
  * USE CASE: PUBLICAR ANÚNCIO
@@ -33,7 +35,11 @@ export class PublishListingUseCase {
    * @param listingId - ID do anúncio a publicar
    * @returns Anúncio com status ACTIVE e publishedAt preenchido
    */
-  async execute(listingId: string): Promise<ListingEntity> {
+  async execute(
+    listingId: string,
+    requesterId: string,
+    requesterRole: UserRole,
+  ): Promise<ListingEntity> {
     // 1. Busca o anúncio. Se não existir, retorna 404.
     const listing = await this.listings.findById(listingId);
     if (!listing) {
@@ -42,7 +48,17 @@ export class PublishListingUseCase {
       );
     }
 
-    // 2. Valida que está em DRAFT.
+    // 2. Verifica ownership: apenas o dono ou Admin/Moderador podem publicar.
+    const isOwner = listing.createdById === requesterId;
+    const isPrivileged =
+      requesterRole === 'ADMIN' || requesterRole === 'MODERATOR';
+    if (!isOwner && !isPrivileged) {
+      throw new ForbiddenException(
+        'Você não tem permissão para publicar este anúncio.',
+      );
+    }
+
+    // 3. Valida que está em DRAFT.
     //    Não faz sentido publicar um anúncio já publicado ou vendido.
     if (listing.status !== ListingStatus.DRAFT) {
       throw new BadRequestException(
@@ -50,7 +66,7 @@ export class PublishListingUseCase {
       );
     }
 
-    // 3. Valida dados obrigatórios para estar ativo.
+    // 5. Valida dados obrigatórios para estar ativo.
     //    Um anúncio sem preço ou localização não pode aparecer no portal.
     const missingFields: string[] = [];
     if (!listing.price || listing.price <= 0) missingFields.push('preço');
@@ -64,7 +80,7 @@ export class PublishListingUseCase {
       );
     }
 
-    // 4. Publica: atualiza status e publishedAt
+    // 6. Publica: atualiza status e publishedAt
     return this.listings.update(listingId, {
       status: ListingStatus.ACTIVE,
       publishedAt: new Date(),

@@ -30,7 +30,7 @@ export const ChartLastDays = () => {
         </div>
         <div>
           <ul className="space-y-4">
-            <li className="flex items-center border rounded-lg p-2 gap-4">
+            <li className="flex items-center border rounded-lg p-4 gap-4">
               <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                 <Image
                   src="/images/avatar.jpg"
@@ -52,7 +52,7 @@ export const ChartLastDays = () => {
                 </p>
               </div>
             </li>
-            <li className="flex items-center border rounded-lg p-2 gap-4">
+            <li className="flex items-center border rounded-lg p-4 gap-4">
               <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                 <Image
                   src="/images/avatar.jpg"
@@ -74,51 +74,7 @@ export const ChartLastDays = () => {
                 </p>
               </div>
             </li>
-            <li className="flex items-center border rounded-lg p-2 gap-4">
-              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                <Image
-                  src="/images/avatar.jpg"
-                  alt="Avatar"
-                  width={24}
-                  height={24}
-                  className="rounded-full"
-                />
-              </div>
-              <div>
-                <p className="text-xs font-medium">João Silva</p>
-                <p className="text-xs text-muted-foreground">
-                  joao.silva@example.com
-                </p>
-                <p>
-                  <span className="text-xs text-muted-foreground text-green-600">
-                    Gostaria de fazer um visista ao imóvel na próxima.
-                  </span>
-                </p>
-              </div>
-            </li>
-            <li className="flex items-center border rounded-lg p-2 gap-4">
-              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                <Image
-                  src="/images/avatar.jpg"
-                  alt="Avatar"
-                  width={24}
-                  height={24}
-                  className="rounded-full"
-                />
-              </div>
-              <div>
-                <p className="text-xs font-medium">João Silva</p>
-                <p className="text-xs text-muted-foreground">
-                  joao.silva@example.com
-                </p>
-                <p>
-                  <span className="text-xs text-muted-foreground text-green-600">
-                    Gostaria de fazer um visista ao imóvel na próxima.
-                  </span>
-                </p>
-              </div>
-            </li>
-            <li className="flex items-center border rounded-lg p-2 gap-4">
+            <li className="flex items-center border rounded-lg p-4 gap-4">
               <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                 <Image
                   src="/images/avatar.jpg"
