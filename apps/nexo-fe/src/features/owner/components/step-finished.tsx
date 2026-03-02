@@ -84,7 +84,7 @@ export interface StepFinishedProps {
 
 export const StepFinished = ({ publishResult }: StepFinishedProps) => {
   const { formData, goToStep } = usePublish();
-  const { location, details, comodities } = formData;
+  const { location, details, comodities, contact } = formData;
 
   const locationAddress = [location.street, location.streetNumber]
     .filter(Boolean)
@@ -209,6 +209,15 @@ export const StepFinished = ({ publishResult }: StepFinishedProps) => {
               </>
             );
           })()}
+        </div>
+      </Section>
+      {/* ── Dados para contato ──────────────────────────────────────────── */}
+      <Section title="Dados de contato" onEdit={() => goToStep(4)}>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-6 gap-y-4">
+          <Field label="Nome completo" value={contact.contactName} />
+          <Field label="Email" value={contact.contactEmail} />
+          <Field label="Telefone" value={contact.contactPhone} />
+          <Field label="WhatsApp" value={contact.contactWhatsApp} />
         </div>
       </Section>
     </div>

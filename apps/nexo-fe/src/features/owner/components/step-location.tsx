@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller } from "react-hook-form";
+
 import { PatternFormat } from "react-number-format";
 
 import {
@@ -15,7 +17,6 @@ import { LinearProgress, TextField } from "@mui/material";
 import { StepLocationProps } from "../types/publish-location-types";
 import { DEFAULT_LAT, DEFAULT_LNG, fetchCep } from "@/lib/fect-cep";
 import { LeafletMap } from "@/lib/leaflet-map";
-import { Controller } from "react-hook-form";
 
 export const StepLocation = ({ onValidChange }: StepLocationProps) => {
   const { formData, setLocationData, setLocationValid } = usePublish();
@@ -170,7 +171,7 @@ export const StepLocation = ({ onValidChange }: StepLocationProps) => {
         />
       </div>
 
-      {/* Bairro + (vazio) */}
+      {/* Bairro + (preenchido automaticamente) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
         <FormField
           control={control}

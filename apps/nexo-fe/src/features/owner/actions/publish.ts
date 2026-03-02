@@ -3,10 +3,10 @@
  * Usa o Axios com interceptor do Keycloak — não pode ser Server Action.
  */
 
-import { createPublish } from "../http/publish";
+import { createPublish, uploadMedia } from "../http/publish";
 import {
   CreatePublishActionState,
-  CreatePusblishInput,
+  CreatePublishInput,
 } from "../types/publish-types";
 
 /**
@@ -26,11 +26,11 @@ function toCents(value?: number): number | undefined {
  * @returns Estado da operação
  */
 export async function createPublication(
-  input: CreatePusblishInput,
+  input: CreatePublishInput,
 ): Promise<CreatePublishActionState> {
   try {
     // Converte preços de reais para centavos antes de enviar
-    const payload: CreatePusblishInput = {
+    const payload: CreatePublishInput = {
       ...input,
       price: toCents(input.price)!,
       condominiumFee: toCents(input.condominiumFee),
@@ -57,4 +57,38 @@ export async function createPublication(
       message: "Erro inesperado ao criar publicação",
     };
   }
+}
+
+/**
+ * Faz upload de todos os arquivos de mídia para um imóvel já criado.
+ *
+ * O upload é feito em série para preservar a ordem da galeria.
+ * Falhas parciais não interrompem o fluxo — o imóvel já foi criado.
+ *
+ * @param propertyId - UUID do imóvel recém criado
+ * @param files      - Arquivos selecionados pelo usuário no step de fotos
+ * @param onProgress - Callback chamado após cada arquivo enviado com sucesso
+ * @returns Número de arquivos enviados com sucesso
+ */
+export async function uploadMediaFiles(
+  propertyId: string,
+  files: File[],
+  onProgress?: (uploaded: number, total: number) => void,
+): Promise<number> {
+  let uploaded = 0;
+
+  for (const file of files) {
+    try {
+      await uploadMedia(propertyId, file);
+      uploaded++;
+      onProgress?.(uploaded, files.length);
+    } catch {
+      // Log sem bloquear: o imóvel já está criado, falha no upload é recuperável.
+      console.warn(
+        `Falha ao enviar "${file.name}" — upload pode ser retentado no painel.`,
+      );
+    }
+  }
+
+  return uploaded;
 }

@@ -12,6 +12,7 @@ import {
 import type { PublishLocationData } from "../schemas/publish-location";
 import type { PublishDetailsData } from "../schemas/publish-details";
 import type { PublishComoditiesData } from "../schemas/publish-comodities";
+import { PublishContactData } from "../schemas/publish-contact";
 
 // ---------------------------------------------------------------------------
 // sessionStorage persistence helpers
@@ -63,12 +64,14 @@ export interface PublishStepValidity {
   location: boolean;
   details: boolean;
   comodities: boolean;
+  contact: boolean;
 }
 
 export interface PublishFormData {
   location: Partial<PublishLocationData>;
   details: Partial<PublishDetailsData>;
   comodities: Partial<PublishComoditiesData>;
+  contact: Partial<PublishContactData>;
 }
 
 interface PublishContextValue {
@@ -78,6 +81,15 @@ interface PublishContextValue {
   stepValidity: PublishStepValidity;
   /** Step ativo */
   activeStep: number;
+  /**
+   * Arquivos de mídia selecionados no step de fotos.
+   * Não são persistidos no sessionStorage (File não é serializável).
+   */
+  mediaFiles: File[];
+  /** Atualiza a lista de arquivos de mídia */
+  setMediaFiles: (files: File[]) => void;
+  /** Reordena os arquivos de mídia movendo `from` para a posição `to` */
+  reorderMediaFiles: (from: number, to: number) => void;
   /** Atualiza parcialmente os dados de localização */
   setLocationData: (data: Partial<PublishLocationData>) => void;
   /** Informa se o step de localização é válido */
@@ -90,6 +102,10 @@ interface PublishContextValue {
   setComoditiesData: (data: Partial<PublishComoditiesData>) => void;
   /** Informa se o step de comodidades é válido */
   setComoditiesValid: (valid: boolean) => void;
+  /** Atualiza parcialmente os dados de contato */
+  setContactData: (data: Partial<PublishContactData>) => void;
+  /** Informa se o step de contato é válido */
+  setContactValid: (valid: boolean) => void;
   /** Navega para o próximo step */
   goNext: () => void;
   /** Volta um step */
@@ -117,6 +133,7 @@ const STEPS = [
   "Detalhes do imóvel",
   "Fotos do imóvel",
   "Comodidades do imóvel",
+  "Dados de contato",
   "Revisão e publicação",
 ] as const;
 
@@ -133,14 +150,34 @@ export function PublishProvider({ children }: { children: ReactNode }) {
 
   const [formData, setFormData] = useState<PublishFormData>(() => {
     const saved = loadState();
-    return saved.formData ?? { location: {}, details: {}, comodities: {} };
+    return (
+      saved.formData ?? {
+        location: {},
+        details: {},
+        comodities: {},
+        contact: {},
+      }
+    );
   });
 
   const [stepValidity, setStepValidity] = useState<PublishStepValidity>({
     location: false,
     details: false,
     comodities: false,
+    contact: false,
   });
+
+  // File objects não são serializáveis — não vão para o sessionStorage.
+  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+
+  const reorderMediaFiles = useCallback((from: number, to: number) => {
+    setMediaFiles((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  }, []);
 
   // Persiste activeStep + formData sempre que mudarem.
   useEffect(() => {
@@ -183,13 +220,26 @@ export function PublishProvider({ children }: { children: ReactNode }) {
     setStepValidity((prev) => ({ ...prev, comodities: valid }));
   }, []);
 
+  const setContactData = useCallback((data: Partial<PublishContactData>) => {
+    setFormData((prev) => ({
+      ...prev,
+      contact: { ...prev.contact, ...data },
+    }));
+  }, []);
+
+  const setContactValid = useCallback((valid: boolean) => {
+    setStepValidity((prev) => ({ ...prev, contact: valid }));
+  }, []);
+
   const isNextDisabled = useCallback(() => {
     const step = STEPS[activeStep];
     if (step === "Localização do imóvel") return !stepValidity.location;
     if (step === "Detalhes do imóvel") return !stepValidity.details;
     if (step === "Comodidades do imóvel") return !stepValidity.comodities;
+    if (step === "Fotos do imóvel") return mediaFiles.length === 0;
+    if (step === "Dados de contato") return !stepValidity.contact;
     return false;
-  }, [activeStep, stepValidity]);
+  }, [activeStep, stepValidity, mediaFiles]);
 
   const goNext = useCallback(() => {
     setActiveStep((s) => Math.min(s + 1, STEPS.length - 1));
@@ -206,8 +256,14 @@ export function PublishProvider({ children }: { children: ReactNode }) {
   const resetPublish = useCallback(() => {
     sessionStorage.removeItem(STORAGE_KEY);
     setActiveStep(0);
-    setFormData({ location: {}, details: {}, comodities: {} });
-    setStepValidity({ location: false, details: false, comodities: false });
+    setFormData({ location: {}, details: {}, comodities: {}, contact: {} });
+    setStepValidity({
+      location: false,
+      details: false,
+      comodities: false,
+      contact: false,
+    });
+    setMediaFiles([]);
   }, []);
 
   return (
@@ -216,12 +272,17 @@ export function PublishProvider({ children }: { children: ReactNode }) {
         formData,
         stepValidity,
         activeStep,
+        mediaFiles,
+        setMediaFiles,
+        reorderMediaFiles,
         setLocationData,
         setLocationValid,
         setDetailsData,
         setDetailsValid,
         setComoditiesData,
         setComoditiesValid,
+        setContactData,
+        setContactValid,
         goNext,
         goBack,
         goToStep,

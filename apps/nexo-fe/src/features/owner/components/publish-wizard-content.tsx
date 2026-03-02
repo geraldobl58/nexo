@@ -2,27 +2,36 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
 
 import { StepperWizard } from "@/components/ui/stepper-wizard/stepper-wizard";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { PUBLISH_STEPS, usePublish } from "../context/publish-context";
-import { createPublication } from "../actions/publish";
+import { createPublication, uploadMediaFiles } from "../actions/publish";
 
 import { Purpose, PropertyType } from "../enums/publish-details-enums";
 import { StepLocation } from "./step-location";
 import { StepDetails } from "./step-details";
+import { StepPhotos } from "./step-photos";
 import { StepComodities } from "./step-comodities";
 import { StepFinished } from "./step-finished";
+import { StepContact } from "./step-contact";
 
 export function PublishWizardContent() {
-  const { activeStep, goNext, goBack, isNextDisabled, formData, resetPublish } =
-    usePublish();
+  const {
+    activeStep,
+    goNext,
+    goBack,
+    isNextDisabled,
+    formData,
+    resetPublish,
+    mediaFiles,
+  } = usePublish();
   const { user } = useAuth();
   const isLastStep = activeStep === PUBLISH_STEPS.length - 1;
 
   const router = useRouter();
   const [isPublishing, setIsPublishing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [publishResult, setPublishResult] = useState<{
     success: boolean;
     message?: string;
@@ -38,28 +47,11 @@ export function PublishWizardContent() {
     }
   }, [publishResult, router, resetPublish]);
 
-  // Busca (ou cria) o registro de Advertiser do usuário autenticado via /advertisers/me.
-  // O endpoint faz lookup por keycloakId (JWT) com fallback por e-mail e auto-cria se necessário.
-  const {
-    data: advertiser,
-    isLoading: isLoadingAdvertiser,
-    error: advertiserError,
-  } = useQuery({
-    queryKey: ["advertiser", "me"],
-    queryFn: () => {}, // A função real é injetada via React Query Provider na rota /publish
-    enabled: !!user,
-    staleTime: 5 * 60 * 1000,
-    retry: 2,
-  });
-
   async function handlePublish() {
-    if (!advertiser?.id) {
+    if (!user) {
       setPublishResult({
         success: false,
-        message:
-          advertiserError instanceof Error
-            ? advertiserError.message
-            : "Erro ao carregar dados do anunciante. Tente novamente.",
+        message: "Você precisa estar autenticado para publicar um imóvel.",
       });
       return;
     }
@@ -68,9 +60,9 @@ export function PublishWizardContent() {
 
     setIsPublishing(true);
     setPublishResult(null);
+    setUploadProgress(null);
 
     const state = await createPublication({
-      advertiserId: advertiser.id,
       // Location
       zipcode: location.zipcode ?? "",
       street: location.street ?? "",
@@ -108,6 +100,15 @@ export function PublishWizardContent() {
       isReadyToMove: comodities.isReadyToMove,
     });
 
+    // Se o imóvel foi criado e há arquivos selecionados, faz o upload
+    if (state.success && mediaFiles.length > 0) {
+      setUploadProgress(`Enviando mídias... 0/${mediaFiles.length}`);
+      await uploadMediaFiles(state.data.id, mediaFiles, (uploaded, total) => {
+        setUploadProgress(`Enviando mídias... ${uploaded}/${total}`);
+      });
+      setUploadProgress(null);
+    }
+
     setPublishResult({ success: state.success, message: state.message });
     setIsPublishing(false);
   }
@@ -119,25 +120,21 @@ export function PublishWizardContent() {
       onNext={isLastStep ? handlePublish : goNext}
       onBack={goBack}
       nextDisabled={
-        isNextDisabled() ||
-        isPublishing ||
-        publishResult?.success === true ||
-        (isLastStep && isLoadingAdvertiser)
+        isNextDisabled() || isPublishing || publishResult?.success === true
       }
-      finishLabel={isPublishing ? "Publicando..." : "Finalizar"}
+      finishLabel={
+        uploadProgress ?? (isPublishing ? "Criando imóvel..." : "Finalizar")
+      }
     >
       {PUBLISH_STEPS[activeStep] === "Localização do imóvel" && (
         <StepLocation />
       )}
       {PUBLISH_STEPS[activeStep] === "Detalhes do imóvel" && <StepDetails />}
-      {PUBLISH_STEPS[activeStep] === "Fotos do imóvel" && (
-        <div className="flex items-center justify-center h-64 border-2 border-dashed border-gray-300 rounded-lg">
-          <p className="text-gray-500">Em construção: Upload de fotos</p>
-        </div>
-      )}
+      {PUBLISH_STEPS[activeStep] === "Fotos do imóvel" && <StepPhotos />}
       {PUBLISH_STEPS[activeStep] === "Comodidades do imóvel" && (
         <StepComodities />
       )}
+      {PUBLISH_STEPS[activeStep] === "Dados de contato" && <StepContact />}
       {PUBLISH_STEPS[activeStep] === "Revisão e publicação" && (
         <StepFinished publishResult={publishResult} />
       )}

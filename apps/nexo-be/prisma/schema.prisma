@@ -201,11 +201,6 @@ model User {
 }
 
 //
-// ADVERTISER foi mesclado no model User
-// O campo advertiserType em User substitui o model Advertiser
-//
-
-//
 // CUSTOMER (USUÁRIO FINAL DO PORTAL / MARKETPLACE)
 // Pode autenticar via Keycloak ou ser anônimo
 //
