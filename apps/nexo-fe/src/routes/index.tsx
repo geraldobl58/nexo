@@ -30,7 +30,7 @@ export const sections: SidebarSection[] = [
       },
       {
         name: "Meus Imóveis",
-        path: "/panel/imoveis",
+        path: "/panel/my-properties",
         icon: <HouseHeart size={18} />,
       },
       {

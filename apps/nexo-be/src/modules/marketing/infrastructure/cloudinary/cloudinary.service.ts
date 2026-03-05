@@ -34,31 +34,45 @@ export interface CloudinaryUploadResult {
  * Toda lógica de comunicação com o Cloudinary fica aqui —
  * os use-cases chamam este serviço e não dependem diretamente do SDK.
  *
- * Configuração: lê CLOUDINARY_URL do ambiente.
- * Formato esperado: cloudinary://<api_key>:<api_secret>@<cloud_name>
+ * Configuração via variáveis de ambiente:
+ *   CLOUDINARY_CLOUD_NAME  — nome do cloud
+ *   CLOUDINARY_API_KEY     — chave da API
+ *   CLOUDINARY_API_SECRET  — segredo da API
+ *   CLOUDINARY_FOLDER      — pasta raiz (padrão: "nexo")
  */
 @Injectable()
 export class CloudinaryService implements OnModuleInit {
   private readonly logger = new Logger(CloudinaryService.name);
 
+  /** Pasta raiz onde todos os assets são armazenados. Ex: "nexo" */
+  rootFolder: string;
+
   constructor(private readonly config: ConfigService) {}
 
   onModuleInit() {
-    const cloudinaryUrl = this.config.get<string>('CLOUDINARY_URL');
+    const cloudName = this.config.get<string>('CLOUDINARY_CLOUD_NAME');
+    const apiKey = this.config.get<string>('CLOUDINARY_API_KEY');
+    const apiSecret = this.config.get<string>('CLOUDINARY_API_SECRET');
+    this.rootFolder = this.config.get<string>('CLOUDINARY_FOLDER') ?? 'nexo';
 
-    if (!cloudinaryUrl) {
+    if (!cloudName || !apiKey || !apiSecret) {
       throw new Error(
-        'CLOUDINARY_URL não encontrada nas variáveis de ambiente. ' +
-          'Formato: cloudinary://<api_key>:<api_secret>@<cloud_name>',
+        'Cloudinary não configurado. Verifique as variáveis de ambiente: ' +
+          'CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET',
       );
     }
 
-    // O SDK do Cloudinary lê a CLOUDINARY_URL automaticamente
-    // quando a env var está definida. Confirmar a configuração:
-    cloudinary.config(cloudinaryUrl);
+    cloudinary.config({
+      cloud_name: cloudName,
+      api_key: apiKey,
+      api_secret: apiSecret,
+      secure: true,
+    });
 
     const cfg = cloudinary.config();
-    this.logger.log(`Cloudinary configurado: cloud_name="${cfg.cloud_name}"`);
+    this.logger.log(
+      `Cloudinary configurado: cloud_name="${cfg.cloud_name}" | root_folder="${this.rootFolder}"`,
+    );
   }
 
   /**

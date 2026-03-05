@@ -3,10 +3,13 @@ export enum Purpose {
   RENT = "RENT",
 }
 
-export const PurposeLabel: Record<Purpose, string> = {
-  [Purpose.SALE]: "Venda",
-  [Purpose.RENT]: "Aluguel",
-};
+export enum Listing {
+  DRAFT = "DRAFT",
+  ACTIVE = "ACTIVE",
+  INACTIVE = "INACTIVE",
+  SOLD = "SOLD",
+  RENTED = "RENTED",
+}
 
 export enum PropertyType {
   APARTMENT = "APARTMENT",
@@ -19,6 +22,11 @@ export enum PropertyType {
   OTHER = "OTHER",
 }
 
+export const PurposeLabel: Record<Purpose, string> = {
+  [Purpose.SALE]: "Venda",
+  [Purpose.RENT]: "Aluguel",
+};
+
 export const PropertyTypeLabel: Record<PropertyType, string> = {
   [PropertyType.APARTMENT]: "Apartamento",
   [PropertyType.HOUSE]: "Casa",
@@ -28,4 +36,12 @@ export const PropertyTypeLabel: Record<PropertyType, string> = {
   [PropertyType.COMMERCIAL]: "Comercial",
   [PropertyType.FARM]: "Sítio/Fazenda",
   [PropertyType.OTHER]: "Outro",
+};
+
+export const StatusLabel: Record<Listing, string> = {
+  [Listing.DRAFT]: "Rascunho",
+  [Listing.ACTIVE]: "Ativo",
+  [Listing.INACTIVE]: "Inativo",
+  [Listing.SOLD]: "Vendido",
+  [Listing.RENTED]: "Alugado",
 };

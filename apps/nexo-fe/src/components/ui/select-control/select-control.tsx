@@ -18,6 +18,7 @@ type SelectControlProps<T extends FieldValues> = {
   name: Path<T>;
   label?: string;
   error?: boolean;
+  size?: "small" | "medium";
 };
 
 export function SelectControl<T extends FieldValues>({
@@ -26,13 +27,14 @@ export function SelectControl<T extends FieldValues>({
   name,
   label,
   error,
+  size = "medium",
 }: SelectControlProps<T>) {
   return (
     <Controller
       control={control}
       name={name}
       render={({ field }) => (
-        <FormControl fullWidth error={error}>
+        <FormControl fullWidth error={error} size={size}>
           {label && <InputLabel>{label}</InputLabel>}
           <Select
             {...field}

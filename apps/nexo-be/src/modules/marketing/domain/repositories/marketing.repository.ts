@@ -185,10 +185,17 @@ export type ListingFilters = {
   // --- Outros ---
 
   /**
-   * Filtrar por status do anúncio.
-   * Quando omitido, o repositório retorna apenas anúncios ACTIVE por padrão.
+   * Filtrar por um único status do anúncio.
+   * Quando omitido (e `statuses` também for omitido), o repositório retorna apenas anúncios ACTIVE por padrão.
    */
   status?: ListingEntity['status'];
+
+  /**
+   * Filtrar por múltiplos status simultaneamente (IN).
+   * Quando fornecido, tem precedência sobre `status`.
+   * Use para endpoints autenticados que precisam retornar todos os status do dono.
+   */
+  statuses?: ListingEntity['status'][];
 
   /** Filtrar apenas por usuário que criou */
   createdById?: string;

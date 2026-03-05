@@ -375,10 +375,12 @@ export class PrismaListingRepository implements ListingRepository {
      * Usamos `??` e checagem explícita para não enviar `undefined` ao Prisma.
      */
     const where: Prisma.PropertyWhereInput = {
-      // Por padrão só retorna anúncios ativos; permite sobrescrever via filtro
-      status: filters.status
-        ? this.toPrismaStatus(filters.status)
-        : PropertyStatus.ACTIVE,
+      // statuses[] (IN) tem precedência; status singular vem depois; padrão: ACTIVE
+      status: filters.statuses?.length
+        ? { in: filters.statuses.map((s) => this.toPrismaStatus(s)) }
+        : filters.status
+          ? this.toPrismaStatus(filters.status)
+          : PropertyStatus.ACTIVE,
 
       // Soft delete: ignora anúncios excluídos
       deletedAt: null,
@@ -468,6 +470,9 @@ export class PrismaListingRepository implements ListingRepository {
         take: limit,
         // Mais recentes primeiro
         orderBy: { publishedAt: 'desc' },
+        include: {
+          media: { orderBy: { order: 'asc' } },
+        },
       }),
       this.prisma.property.count({ where }),
     ]);

@@ -6,7 +6,6 @@ import {
   IsInt,
   IsOptional,
   IsString,
-  IsUUID,
   Max,
   Min,
 } from 'class-validator';
@@ -243,16 +242,6 @@ export class GetListingsQueryDto {
   @IsOptional()
   @IsString()
   status?: string;
-
-  // ─── Anunciante ───────────────────────────────────────────────────────────
-
-  @ApiPropertyOptional({
-    description: 'Filtrar anúncios de um anunciante específico',
-    example: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-  })
-  @IsOptional()
-  @IsUUID()
-  advertiserId?: string;
 
   // ─── Paginação ────────────────────────────────────────────────────────────
 

@@ -2,7 +2,7 @@
  * Módulo HTTP da feature de publicação de imóvel.
  *
  * Funções disponíveis:
- *  createPublish       — POST /marketing        — cria o imóvel (DRAFT)
+ *  createPublish       — POST /marketing/me      — cria o imóvel (DRAFT)
  *  uploadMedia         — POST /marketing/:id/media   — faz upload de foto/vídeo
  *  listMedia           — GET  /marketing/:id/media   — lista mídias do imóvel
  *  reorderMedia        — PATCH /marketing/:id/media/reorder — reordena galeria
@@ -24,7 +24,7 @@ import {
 /**
  * Cria um novo imóvel com status DRAFT.
  *
- * Endpoint: POST /marketing
+ * Endpoint: POST /marketing/me
  *
  * O token JWT (header Authorization) identifica o dono — não enviar userId.
  * Preços devem estar em centavos (a conversão ocorre em actions/publish.ts).
@@ -35,7 +35,7 @@ import {
 export async function createPublish(
   data: CreatePublishInput,
 ): Promise<CreatePublishResponse> {
-  const response = await api.post<CreatePublishResponse>("/marketing", data);
+  const response = await api.post<CreatePublishResponse>("/marketing/me", data);
   return response.data;
 }
 

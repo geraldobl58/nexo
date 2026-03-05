@@ -13,6 +13,8 @@ import { DeleteListingUseCase } from '../../application/use-cases/delete-marketi
 import { PublishListingUseCase } from '../../application/use-cases/publish-marketing.use-case';
 import { UnpublishListingUseCase } from '../../application/use-cases/unpublish-marketing.use-case';
 import { GetListingsUseCase } from '../../application/use-cases/get-marketing.use-case';
+import { GetMyListingsUseCase } from '../../application/use-cases/get-my-marketing.use-case';
+import { GetMyListingByIdUseCase } from '../../application/use-cases/get-my-marketing-by-id.use-case';
 
 // Application — Use Cases (media)
 import { UploadMediaUseCase } from '../../application/use-cases/upload-marketing-media.use-case';
@@ -31,6 +33,7 @@ import { CloudinaryService } from '../../infrastructure/cloudinary/cloudinary.se
 
 // Infrastructure — HTTP
 import { MarketingController } from '../../infrastructure/http/marketing.controller';
+import { MyListingsController } from '../../infrastructure/http/my-listings.controller';
 import { MediaController } from '../../infrastructure/http/media.controller';
 
 /**
@@ -54,7 +57,7 @@ import { MediaController } from '../../infrastructure/http/media.controller';
  *                 → PrismaService (conexão com o banco)
  */
 @Module({
-  controllers: [MarketingController, MediaController],
+  controllers: [MyListingsController, MediaController, MarketingController],
   providers: [
     // -------------------------------------------------------------------------
     // REPOSITÓRIOS
@@ -86,6 +89,8 @@ import { MediaController } from '../../infrastructure/http/media.controller';
     PublishListingUseCase,
     UnpublishListingUseCase,
     GetListingsUseCase,
+    GetMyListingsUseCase,
+    GetMyListingByIdUseCase,
 
     // -------------------------------------------------------------------------
     // USE CASES — MÍDIA

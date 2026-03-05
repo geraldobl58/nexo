@@ -128,7 +128,7 @@ export class UploadMediaUseCase {
 
     // 5. Upload no Cloudinary
     const uploaded = await this.cloudinary.upload(file.buffer, {
-      folder: `nexo/properties/${input.propertyId}`,
+      folder: `${this.cloudinary.rootFolder}/properties/${input.propertyId}`,
       resourceType: isImage ? 'image' : 'video',
     });
 

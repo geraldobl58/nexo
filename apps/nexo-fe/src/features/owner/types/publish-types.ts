@@ -152,15 +152,28 @@ export interface CreatePublishInput {
  * No POST (criação) ainda não há mídias — o upload é feito em seguida.
  */
 export interface CreatePublishResponse {
+  // --- Identificação ---
   id: string;
+  externalId: string | null;
+  /** UUID do proprietário — lido do JWT pelo backend. */
+  createdById: string;
+  slug: string;
+
+  // --- Classificação ---
   status: ListingStatus;
   purpose: Purpose;
   type: PropertyType;
+
+  // --- Conteúdo ---
   title: string;
   description: string | null;
+
+  // --- Valores (em centavos) ---
   price: number;
   condominiumFee: number | null;
   iptuYearly: number | null;
+
+  // --- Localização ---
   city: string;
   state: string;
   district: string;
@@ -170,6 +183,8 @@ export interface CreatePublishResponse {
   zipcode: string | null;
   latitude: number | null;
   longitude: number | null;
+
+  // --- Características físicas ---
   areaM2: number | null;
   builtArea: number | null;
   bedrooms: number | null;
@@ -181,30 +196,66 @@ export interface CreatePublishResponse {
   furnished: boolean | null;
   petFriendly: boolean | null;
   yearBuilt: number | null;
+
+  // --- Contato ---
   contactName: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
   contactWhatsApp: string | null;
+
+  // --- Negociação ---
   acceptsExchange: boolean;
   acceptsFinancing: boolean;
   acceptsCarTrade: boolean;
   isLaunch: boolean;
   isReadyToMove: boolean;
+
+  // --- SEO ---
   metaTitle: string | null;
   metaDescription: string | null;
+
+  // --- Mídia via URL ---
   videoUrl: string | null;
   virtualTourUrl: string | null;
-  externalId: string | null;
-  slug: string;
+
+  // --- Analytics de visualização ---
+  viewsCount: number;
+  uniqueViewsCount: number;
+
+  // --- Analytics de leads / interações ---
+  leadsCount: number;
+  favoritesCount: number;
+  sharesCount: number;
+  phoneClicksCount: number;
+  whatsappClicksCount: number;
+  emailClicksCount: number;
+
+  // --- Origem dos leads ---
+  leadSourcePortal: number;
+  leadSourceSearch: number;
+  leadSourceMap: number;
+  leadSourceFeatured: number;
+
+  // --- Plano e destaque ---
   listingPlan: ListingPlan;
   isFeatured: boolean;
+  highlightUntil: string | null;
+
+  // --- Avaliações ---
+  averageRating: number;
+  totalReviews: number;
+
+  // --- Integrações ---
   publishToVivaReal: boolean;
   publishToOLX: boolean;
   publishToZapImoveis: boolean;
+
+  // --- Datas ---
   publishedAt: string | null;
   expiresAt: string | null;
   createdAt: string;
   updatedAt: string;
+
   /**
    * Fotos e vídeos do imóvel, ordenados por posição na galeria.
    * Presente apenas no GET /marketing/:id.
@@ -213,9 +264,63 @@ export interface CreatePublishResponse {
 }
 
 // ---------------------------------------------------------------------------
+// Atualizar imóvel — Body do PATCH /marketing/:id
+// ---------------------------------------------------------------------------
+
+/**
+ * Todos os campos são opcionais (PATCH semântico).
+ * Apenas os campos enviados serão alterados.
+ * Status é gerenciado pelos endpoints /publish e /unpublish.
+ */
+export type UpdateListingInput = Partial<CreatePublishInput>;
+
+// ---------------------------------------------------------------------------
 // Estado de retorno das actions
 // ---------------------------------------------------------------------------
 
 export type CreatePublishActionState =
   | { success: true; message: string; data: CreatePublishResponse }
   | { success: false; message: string };
+
+export type UpdateListingActionState =
+  | { success: true; message: string; data: CreatePublishResponse }
+  | { success: false; message: string };
+
+export type DeleteListingActionState =
+  | { success: true; message: string }
+  | { success: false; message: string };
+
+export type PublishListingActionState =
+  | { success: true; message: string; data: CreatePublishResponse }
+  | { success: false; message: string };
+
+export type UnpublishListingActionState =
+  | { success: true; message: string; data: CreatePublishResponse }
+  | { success: false; message: string };
+
+// ---------------------------------------------------------------------------
+// Meus imóveis — GET /marketing/me
+// ---------------------------------------------------------------------------
+
+/** Parâmetros de query aceitos por GET /marketing/me */
+export interface MyListingsQueryParams {
+  /** Busca textual por título, cidade ou bairro */
+  search?: string;
+  /** Filtrar por status específico. Sem filtro = todos os status. */
+  status?: ListingStatus;
+  /** Filtrar por finalidade: RENT ou SALE */
+  purpose?: string;
+  /** Página (começa em 1, padrão: 1) */
+  page?: number;
+  /** Itens por página (padrão: 20, máx: 100) */
+  limit?: number;
+}
+
+/** Resposta paginada de GET /marketing/me */
+export interface PaginatedMyListingsResponse {
+  items: CreatePublishResponse[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}

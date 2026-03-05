@@ -58,11 +58,15 @@ export class PublishListingUseCase {
       );
     }
 
-    // 3. Valida que está em DRAFT.
-    //    Não faz sentido publicar um anúncio já publicado ou vendido.
-    if (listing.status !== ListingStatus.DRAFT) {
+    // 3. Valida que está em DRAFT ou INACTIVE.
+    //    DRAFT  → primeira publicação.
+    //    INACTIVE → reativação de anúncio pausado.
+    const canPublish =
+      listing.status === ListingStatus.DRAFT ||
+      listing.status === ListingStatus.INACTIVE;
+    if (!canPublish) {
       throw new BadRequestException(
-        `Apenas anúncios em DRAFT podem ser publicados. Status atual: ${listing.status}`,
+        `Apenas anúncios em DRAFT ou INACTIVE podem ser publicados. Status atual: ${listing.status}`,
       );
     }
 

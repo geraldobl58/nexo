@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { StepperWizard } from "@/components/ui/stepper-wizard/stepper-wizard";
 import { useAuth } from "@/features/auth/hooks/use-auth";
@@ -27,6 +28,7 @@ export function PublishWizardContent() {
     mediaFiles,
   } = usePublish();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const isLastStep = activeStep === PUBLISH_STEPS.length - 1;
 
   const router = useRouter();
@@ -107,6 +109,13 @@ export function PublishWizardContent() {
         setUploadProgress(`Enviando mídias... ${uploaded}/${total}`);
       });
       setUploadProgress(null);
+    }
+
+    // Invalida o cache para que a listagem reflita o novo imóvel e suas mídias
+    if (state.success) {
+      await queryClient.invalidateQueries({
+        queryKey: ["owner", "my-listings", user?.id ?? ""],
+      });
     }
 
     setPublishResult({ success: state.success, message: state.message });

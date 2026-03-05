@@ -41,7 +41,7 @@ export function useMyListingsCount() {
 
   const query = useQuery({
     queryKey: MY_LISTINGS_COUNT_KEY(user?.id ?? ""),
-    queryFn: () => getMyListingsCount(user!.id),
+    queryFn: () => getMyListingsCount(),
     enabled: isAuthenticated && keycloakAuthenticated && !!user?.id,
     staleTime: 2 * 60 * 1000, // 2 min
   });

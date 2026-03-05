@@ -17,8 +17,6 @@ export const PanelSidebar = () => {
 
   const { user, logout } = useAuth();
 
-  console.log(user);
-
   return (
     <aside className="fixed w-60 inset-y-0 left-0 flex flex-col bg-white border-r border-gray-100 z-40">
       {/* Logo */}
