@@ -12,7 +12,8 @@ import {
 
 import { listingColumns } from "./columns";
 import { FormField } from "@/components/ui/form-field/form-field";
-import { Button } from "@mui/material";
+import { Button, Tooltip } from "@mui/material";
+import Link from "next/link";
 import { SelectControl } from "@/components/ui/select-control/select-control";
 import { Listing, Purpose } from "../enums/publish-details-enums";
 
@@ -34,7 +35,7 @@ export const MyProperties = () => {
     pageSize: 10,
   });
 
-  const { listings, total, isLoading } = useMyListings({
+  const { listings, total, isLoading, isAtFreeLimit } = useMyListings({
     ...filters,
     page: paginationModel.page + 1, // DataGrid uses 0-based, API uses 1-based
     limit: paginationModel.pageSize,
@@ -64,6 +65,30 @@ export const MyProperties = () => {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Header: título + botão novo imóvel */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">Meus imóveis</h2>
+        <Tooltip
+          title={
+            isAtFreeLimit
+              ? "Plano FREE: limite de 1 imóvel atingido. Faça upgrade para anunciar mais."
+              : ""
+          }
+          arrow
+        >
+          {/* span necessário para o Tooltip funcionar em botão desabilitado */}
+          <span>
+            <Button
+              variant="contained"
+              component={Link}
+              href="/publish/owner"
+              disabled={isAtFreeLimit}
+            >
+              + Novo imóvel
+            </Button>
+          </span>
+        </Tooltip>
+      </div>
       <form
         onSubmit={handleSubmit(onSearch)}
         className="flex flex-row items-center gap-4 bg-primary/5 p-4 rounded"

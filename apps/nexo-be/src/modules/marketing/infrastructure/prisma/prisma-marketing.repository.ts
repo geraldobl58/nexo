@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PropertyStatus, Prisma } from '@prisma/client';
+import { PropertyStatus, ListingPlanType, Prisma } from '@prisma/client';
 import { PrismaService } from '@/libs/prisma/prisma.service';
 import {
   CreateListingData,
@@ -506,5 +506,22 @@ export class PrismaListingRepository implements ListingRepository {
       }
       throw err;
     }
+  }
+
+  /**
+   * Conta os anúncios FREE não-deletados e não-finalizados (SOLD/RENTED)
+   * do proprietário. Usado para impor o limite do plano FREE (máx. 1).
+   */
+  async countActiveFreeByOwner(userId: string): Promise<number> {
+    return this.prisma.property.count({
+      where: {
+        createdById: userId,
+        deletedAt: null,
+        listingPlan: ListingPlanType.FREE,
+        status: {
+          notIn: [PropertyStatus.SOLD, PropertyStatus.RENTED],
+        },
+      },
+    });
   }
 }

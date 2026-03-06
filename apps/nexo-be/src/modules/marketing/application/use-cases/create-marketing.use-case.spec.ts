@@ -11,7 +11,7 @@
  *  - Não depende de banco configurado
  *  - Testa APENAS a lógica do use-case
  */
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { CreateListingUseCase } from './create-marketing.use-case';
 import { ListingRepository } from '../../domain/repositories/marketing.repository';
 import { ListingEntity } from '../../domain/entities/marketing.entity';
@@ -137,6 +137,7 @@ describe('CreateListingUseCase', () => {
       findMany: jest.fn(),
       slugExists: jest.fn(),
       softDelete: jest.fn(),
+      countActiveFreeByOwner: jest.fn().mockResolvedValue(0),
     };
 
     // Instancia o use-case diretamente (sem NestJS TestingModule)
@@ -261,6 +262,61 @@ describe('CreateListingUseCase', () => {
       // Tentou MAX_ATTEMPTS (5) vezes
       expect(mockRepo.slugExists).toHaveBeenCalledTimes(5);
       expect(mockRepo.create).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── Limite do plano FREE ─────────────────────────────────────────────────
+
+  describe('execute() — limite do plano FREE', () => {
+    it('deve permitir criar anúncio FREE quando o usuário ainda não possui nenhum', async () => {
+      // Arrange: nenhum anúncio ativo FREE
+      mockRepo.countActiveFreeByOwner.mockResolvedValue(0);
+      mockRepo.slugExists.mockResolvedValue(false);
+      mockRepo.create.mockResolvedValue(makeListing());
+
+      // Act & Assert: não lança ForbiddenException
+      await expect(useCase.execute(makeInput())).resolves.toBeDefined();
+      expect(mockRepo.countActiveFreeByOwner).toHaveBeenCalledWith('user-uuid');
+    });
+
+    it('deve lançar ForbiddenException quando usuário FREE já possui 1 anúncio ativo', async () => {
+      // Arrange: já existe 1 anúncio FREE ativo
+      mockRepo.countActiveFreeByOwner.mockResolvedValue(1);
+
+      // Act & Assert
+      await expect(useCase.execute(makeInput())).rejects.toThrow(
+        ForbiddenException,
+      );
+      // Não deve tentar criar nem verificar slug
+      expect(mockRepo.create).not.toHaveBeenCalled();
+      expect(mockRepo.slugExists).not.toHaveBeenCalled();
+    });
+
+    it('deve lançar ForbiddenException com mensagem indicando o limite do plano FREE', async () => {
+      // Arrange
+      mockRepo.countActiveFreeByOwner.mockResolvedValue(1);
+
+      // Act & Assert
+      await expect(useCase.execute(makeInput())).rejects.toThrow(
+        new ForbiddenException(
+          'O plano FREE permite apenas 1 imóvel ativo. Faça upgrade para continuar anunciando.',
+        ),
+      );
+    });
+
+    it('não deve verificar limite FREE quando o plano informado não é FREE', async () => {
+      // Arrange: listingPlan explicitamente diferente de FREE
+      const input = makeInput({ listingPlan: ListingPlan.STANDARD });
+      mockRepo.slugExists.mockResolvedValue(false);
+      mockRepo.create.mockResolvedValue(
+        makeListing({ listingPlan: ListingPlan.STANDARD }),
+      );
+
+      // Act
+      await useCase.execute(input);
+
+      // Assert: countActiveFreeByOwner NÃO deve ser chamado para planos pagos
+      expect(mockRepo.countActiveFreeByOwner).not.toHaveBeenCalled();
     });
   });
 });

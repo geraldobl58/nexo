@@ -66,9 +66,22 @@ export function useMyListings(params: MyListingsQueryParams = {}) {
     staleTime: 2 * 60 * 1000, // 2 min
   });
 
+  const items = query.data?.items ?? [];
+  const total = query.data?.total ?? 0;
+
+  /**
+   * TRUE quando o usuário está no limite do plano FREE (1 imóvel).
+   * Heurística: total >= 1 e todos os imóveis carregados são FREE.
+   * O backend aplica a regra definitiva — isso é apenas para orientar a UI.
+   */
+  const isAtFreeLimit =
+    total >= 1 &&
+    items.length > 0 &&
+    items.every((l) => l.listingPlan === "FREE");
+
   return {
-    listings: query.data?.items ?? [],
-    total: query.data?.total ?? 0,
+    listings: items,
+    total,
     page: query.data?.page ?? 1,
     limit: query.data?.limit ?? 20,
     totalPages: query.data?.totalPages ?? 0,
@@ -76,6 +89,7 @@ export function useMyListings(params: MyListingsQueryParams = {}) {
     isFetching: query.isFetching,
     error: query.error,
     refetch: query.refetch,
+    isAtFreeLimit,
   };
 }
 

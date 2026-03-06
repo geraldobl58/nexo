@@ -277,6 +277,12 @@ export interface ListingRepository {
   findMany(filters: ListingFilters): Promise<PaginatedResult<ListingEntity>>;
 
   /**
+   * Conta quantos anúncios FREE (não deletados, não SOLD/RENTED) o dono possui.
+   * Usado para aplicar o limite do plano FREE (máximo 1 anúncio ativo).
+   */
+  countActiveFreeByOwner(userId: string): Promise<number>;
+
+  /**
    * Verifica se um slug já existe (para garantir unicidade de URL).
    */
   slugExists(slug: string): Promise<boolean>;

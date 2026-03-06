@@ -409,6 +409,85 @@ curl 'http://localhost:3333/marketing?advertiserId=<outro-id>&status=DRAFT' \
 
 Admins e Moderadores podem usar `advertiserId` de qualquer usuario sem restricao.
 
+## Regras de Negocio — Planos de Anuncio
+
+Cada anuncio possui um campo `listingPlan` (enum `ListingPlanType`) que determina limites e beneficios. O valor padrao e `FREE`.
+
+> **MOCK:** enquanto o modulo de pagamento nao estiver pronto, todos os imoveis sao criados com `listingPlan = FREE`. A estrutura ja esta preparada para os planos pagos.
+
+### Tabela de limites
+
+| Plano      | Max. fotos | Max. imoveis ativos | Destaque |
+| ---------- | ---------- | ------------------- | -------- |
+| `FREE`     | 5          | **1**               | Nao      |
+| `STANDARD` | 10         | Ilimitado           | Nao      |
+| `FEATURED` | 10         | Ilimitado           | Sim      |
+| `PREMIUM`  | 10         | Ilimitado           | Sim      |
+| `SUPER`    | 10         | Ilimitado           | Sim      |
+
+---
+
+### Regra 1 — Limite de 1 imovel no plano FREE
+
+**Use case:** `CreateListingUseCase.execute()`
+
+Antes de criar o anuncio, o sistema verifica:
+
+```
+1. effectivePlan = input.listingPlan ?? FREE
+2. Se FREE:
+      count = countActiveFreeByOwner(userId)    ← query no banco
+      Se count >= 1 → ForbiddenException (403)
+3. Caso contrario: segue normalmente
+```
+
+O repositorio expoe `countActiveFreeByOwner(userId)` que conta registros com:
+
+- `createdById = userId`
+- `deletedAt = null`
+- `listingPlan = FREE`
+- `status NOT IN (SOLD, RENTED)`
+
+**Arquivos:**
+
+- `domain/repositories/marketing.repository.ts` — interface `countActiveFreeByOwner`
+- `infrastructure/prisma/prisma-marketing.repository.ts` — implementacao Prisma
+- `application/use-cases/create-marketing.use-case.ts` — validacao de negocio
+
+---
+
+### Regra 2 — Limite de fotos por plano
+
+**Use case:** `UploadMediaUseCase.execute()`
+
+O limite e calculado dinamicamente com base no plano do anuncio:
+
+```typescript
+function maxImagesByPlan(plan: ListingPlan): number {
+  return plan === ListingPlan.FREE ? 5 : 10;
+}
+
+// Dentro do execute():
+const listing = await this.listingRepo.findById(propertyId);
+const maxImages = maxImagesByPlan(listing.listingPlan);
+if (currentCount >= maxImages) → BadRequestException (400)
+```
+
+A mensagem de erro informa o plano e o limite: `"Limite de imagens atingido para o plano FREE (maximo: 5 fotos por imovel)."`.
+
+**Arquivo:**
+
+- `application/use-cases/upload-marketing-media.use-case.ts`
+
+---
+
+### Proximos passos para os planos pagos
+
+1. Integrar gateway de pagamento (Stripe / Pagar.me)
+2. Criar endpoint de confirmacao de pagamento que atribui o plano ao usuario
+3. Associar o plano ao usuario (hoje e por imovel; no futuro sera por usuario/assinatura)
+4. Injetar o plano como atributo no token JWT do Keycloak pos-pagamento
+
 ## Scripts
 
 ```bash

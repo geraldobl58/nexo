@@ -8,10 +8,16 @@ import { usePublish } from "../context/publish-context";
 import {
   ACCEPTED_EXTENSIONS,
   ACCEPTED_TYPES,
-  MAX_IMAGES,
+  MAX_IMAGES_FREE,
+  MAX_IMAGES_PAID,
   MAX_VIDEOS,
   validateFile,
 } from "@/lib/media-upload";
+
+// MOCK: enquanto o pagamento não estiver implementado, novos imóveis são
+// sempre criados com plano FREE (limite de 5 fotos). Quando os planos pagos
+// forem ativados, esse valor virá do contexto/estado do usuário.
+const CURRENT_PLAN_MAX_IMAGES = MAX_IMAGES_FREE;
 
 import { PreviewCard } from "./preview-card";
 
@@ -41,7 +47,7 @@ export const StepPhotos = () => {
       let vids = videoCount;
 
       Array.from(incoming).forEach((file) => {
-        const error = validateFile(file, imgs, vids);
+        const error = validateFile(file, imgs, vids, CURRENT_PLAN_MAX_IMAGES);
         if (error) {
           newErrors.push(error);
           return;
@@ -137,6 +143,17 @@ export const StepPhotos = () => {
     <div className="flex flex-col w-full px-4 py-4 rounded-lg space-y-6 mt-10 shadow-md bg-white">
       <div>
         <h3 className="text-2xl font-bold">Fotos e vídeos do imóvel</h3>
+
+        {/* Badge de limite por plano */}
+        <div className="flex items-center gap-3 mt-2 mb-1">
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-0.5 text-xs font-semibold text-amber-800">
+            Plano FREE — até {MAX_IMAGES_FREE} fotos
+          </span>
+          <span className="text-xs text-gray-400">
+            Planos pagos permitem até {MAX_IMAGES_PAID} fotos
+          </span>
+        </div>
+
         <p className="text-sm text-gray-500 mt-1">
           As fotos são opcionais agora — você pode adicioná-las depois. A
           primeira imagem será usada como capa do anúncio. Arraste os cards para
@@ -189,7 +206,8 @@ export const StepPhotos = () => {
             Clique para selecionar ou arraste os arquivos aqui
           </p>
           <p className="text-xs text-gray-400 mt-1">
-            Fotos: JPEG, PNG, WebP — máx. 10 MB cada &nbsp;|&nbsp; Vídeos: MP4,
+            Fotos: JPEG, PNG, WebP — máx. 10 MB cada — até{" "}
+            {CURRENT_PLAN_MAX_IMAGES} no plano atual &nbsp;|&nbsp; Vídeos: MP4,
             MOV — máx. 100 MB cada
           </p>
         </div>

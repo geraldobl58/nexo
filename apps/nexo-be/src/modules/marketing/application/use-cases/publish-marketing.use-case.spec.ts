@@ -5,8 +5,9 @@
  *  1. Retorna o anúncio publicado quando tudo está certo
  *  2. Lança NotFoundException se o anúncio não existe
  *  3. Lança ForbiddenException se o requester não é o dono nem Admin/Moderador
- *  4. Lança BadRequestException se o anúncio não está em DRAFT
+ *  4. Lança BadRequestException se o anúncio não está em DRAFT ou INACTIVE
  *  5. Lança BadRequestException se faltam campos obrigatórios (preço, cidade, etc.)
+ *  6. Permite reativação de anúncios INACTIVE (INACTIVE → ACTIVE)
  */
 import {
   BadRequestException,
@@ -118,6 +119,7 @@ describe('PublishListingUseCase', () => {
       findMany: jest.fn(),
       slugExists: jest.fn(),
       softDelete: jest.fn(),
+      countActiveFreeByOwner: jest.fn().mockResolvedValue(0),
     };
 
     useCase = new PublishListingUseCase(mockRepo);
@@ -244,14 +246,24 @@ describe('PublishListingUseCase', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('deve lançar BadRequestException ao publicar anúncio INACTIVE', async () => {
-      mockRepo.findById.mockResolvedValue(
-        makeDraftListing({ status: ListingStatus.INACTIVE }),
-      );
+    it('deve permitir republicar (reativar) anúncio INACTIVE', async () => {
+      // INACTIVE → ACTIVE é uma re-publicação válida (anúncio pausado pelo dono)
+      const inactiveListing = makeDraftListing({ status: ListingStatus.INACTIVE });
+      const reactivated = makeDraftListing({
+        status: ListingStatus.ACTIVE,
+        publishedAt: new Date(),
+      });
 
-      await expect(
-        useCase.execute('listing-uuid-1', 'owner-uuid', 'SUPPORT'),
-      ).rejects.toThrow(BadRequestException);
+      mockRepo.findById.mockResolvedValue(inactiveListing);
+      mockRepo.update.mockResolvedValue(reactivated);
+
+      const result = await useCase.execute('listing-uuid-1', 'owner-uuid', 'SUPPORT');
+
+      expect(result.status).toBe(ListingStatus.ACTIVE);
+      expect(mockRepo.update).toHaveBeenCalledWith(
+        'listing-uuid-1',
+        expect.objectContaining({ status: ListingStatus.ACTIVE }),
+      );
     });
 
     it('deve lançar BadRequestException ao publicar anúncio SOLD', async () => {

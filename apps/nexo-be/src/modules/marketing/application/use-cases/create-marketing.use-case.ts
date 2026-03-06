@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import {
   CreateListingData,
   LISTING_REPOSITORY,
@@ -117,6 +122,19 @@ export class CreateListingUseCase {
     // 2. Preço deve ser positivo.
     if (input.price <= 0) {
       throw new BadRequestException('O preço deve ser maior que zero.');
+    }
+
+    // 3. Limite do plano FREE: máximo 1 anúncio (não-deletado, não SOLD/RENTED).
+    const effectivePlan = input.listingPlan ?? ListingPlan.FREE;
+    if (effectivePlan === ListingPlan.FREE) {
+      const freeCount = await this.listings.countActiveFreeByOwner(
+        input.createdById,
+      );
+      if (freeCount >= 1) {
+        throw new ForbiddenException(
+          'O plano FREE permite apenas 1 imóvel ativo. Faça upgrade para continuar anunciando.',
+        );
+      }
     }
 
     // --- Geração do slug único ---
