@@ -8,6 +8,14 @@ const nextConfig = {
   output: "standalone",
   // Required for pnpm monorepo - trace dependencies from workspace root
   outputFileTracingRoot: join(__dirname, "../../"),
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

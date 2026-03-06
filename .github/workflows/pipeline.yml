@@ -455,6 +455,10 @@ jobs:
         run: pnpm --filter nexo-fe lint
         continue-on-error: true
 
+      - name: Test
+        run: pnpm --filter nexo-fe test
+        continue-on-error: true
+
       - name: Build
         run: pnpm --filter nexo-fe build
 
@@ -759,10 +763,9 @@ jobs:
           BUILD_NUM="${{ needs.preflight.outputs.build_number }}"
           SHORT_SHA="${{ github.sha }}"
           SHORT_SHA="${SHORT_SHA:0:7}"
-          COMMIT_MSG="${{ github.event.head_commit.message }}"
 
-          # Extrair título do commit (primeira linha)
-          COMMIT_TITLE=$(echo "$COMMIT_MSG" | head -1 | cut -c1-80)
+          # Extrair título do commit via git para evitar quebra de shell com mensagens multi-linha
+          COMMIT_TITLE=$(git log -1 --format='%s' | cut -c1-80)
 
           # Verificar se há mudanças
           if git diff --cached --quiet; then
@@ -836,7 +839,8 @@ jobs:
           BRANCH="${{ needs.preflight.outputs.branch }}"
           SHORT_SHA="${{ github.sha }}"
           SHORT_SHA="${SHORT_SHA:0:7}"
-          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          # Capturar mensagem do commit via git para evitar quebra de shell com mensagens multi-linha
+          COMMIT_MSG=$(git log -1 --format='%s')
           ACTOR="${{ github.actor }}"
           REPO="${{ github.repository }}"
           RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
@@ -901,7 +905,7 @@ jobs:
           fi
 
           # Limpar mensagem de commit (remover caracteres que podem quebrar JSON)
-          COMMIT_MSG=$(echo "${{ github.event.head_commit.message }}" | head -1 | sed 's/\[skip ci\]//g' | tr -d '\n\r' | sed 's/"/\\"/g' | cut -c1-100)
+          COMMIT_MSG=$(echo "$COMMIT_MSG" | sed 's/\[skip ci\]//g' | tr -d '\n\r' | sed 's/"/\\"/g' | cut -c1-100)
 
           # Verificar se o webhook está configurado
           if [ -z "$DISCORD_WEBHOOK" ]; then

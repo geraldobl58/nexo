@@ -5,8 +5,11 @@ import { APP_GUARD } from '@nestjs/core';
 
 import { LoggerModule } from 'nestjs-pino';
 import { PrismaModule } from './libs/prisma/prisma.module';
-import { AuthModule } from './modules/auth/auth.module';
-import { HealthModule } from './modules/health';
+import { AuthModule } from './modules/auth/modules/auth/auth.module';
+import { HealthModule } from './modules/auth/modules/health';
+import { IdentityModule } from './modules/identity/modules/identity/identity.module';
+import { MarketingModule } from './modules/marketing/modules/marketing/marketing.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -68,6 +71,9 @@ import { HealthModule } from './modules/health';
     PrismaModule,
     AuthModule,
     HealthModule,
+    IdentityModule,
+    MarketingModule,
+    UsersModule,
   ],
   providers: [
     {
