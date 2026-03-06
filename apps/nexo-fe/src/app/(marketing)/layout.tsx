@@ -1,4 +1,5 @@
-import { Header } from "@/components/header";
+import { Footer } from "@/components/layout/footer";
+import { Header } from "@/components/layout/header";
 
 type MarketingLayoutProps = {
   children: React.ReactNode;
@@ -6,11 +7,14 @@ type MarketingLayoutProps = {
 
 export default function MarketingLayout({ children }: MarketingLayoutProps) {
   return (
-    <div>
+    <div className="flex flex-col">
       <header>
         <Header />
       </header>
-      <main>{children}</main>
+      <main className="flex-1">{children}</main>
+      <footer>
+        <Footer />
+      </footer>
     </div>
   );
 }

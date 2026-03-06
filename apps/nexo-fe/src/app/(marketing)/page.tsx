@@ -1,9 +1,15 @@
+import { SectionFeature } from "@/components/sections/section-feature";
+import { SectionHero } from "@/components/sections/section-hero";
+import { SectionInformation } from "@/components/sections/section-information";
+import { SectionSystem } from "@/components/sections/section-system";
+
 const MarketingPage = () => {
   return (
-    <div>
-      <div>
-        <p>Vamos iniciar o desenvolvimento do Nexo Platform!</p>
-      </div>
+    <div className="w-full">
+      <SectionHero />
+      <SectionInformation />
+      <SectionFeature />
+      <SectionSystem />
     </div>
   );
 };
