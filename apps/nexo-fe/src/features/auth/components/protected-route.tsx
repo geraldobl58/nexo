@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../hooks/use-auth";
 
@@ -13,14 +13,23 @@ export function ProtectedRoute({
   children,
   fallback = <div className="p-10">Verificando autenticação...</div>,
 }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+
+  const handleLogin = useCallback(async () => {
+    try {
+      await login("/publish/owner");
+    } catch (error) {
+      console.error("Erro ao iniciar login:", error);
+      router.replace("/");
+    }
+  }, [login, router]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.replace("/");
+      handleLogin();
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, handleLogin]);
 
   if (isLoading) {
     return <>{fallback}</>;

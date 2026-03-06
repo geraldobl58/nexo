@@ -239,6 +239,113 @@ const {
 } = useAuth();
 ```
 
+## Regras de Negócio — Planos de Anúncio
+
+O sistema possui planos para anúncios imobiliários. Cada anúncio (`Property`) tem um campo `listingPlan` que define os limites e benefícios aplicados.
+
+### Planos disponíveis
+
+| Plano      | Fotos | Imóveis ativos | Destaque | Status        |
+| ---------- | ----- | -------------- | -------- | ------------- |
+| `FREE`     | 5     | 1              | Não      | ✅ Disponível |
+| `STANDARD` | 10    | Ilimitado      | Não      | 🔒 Em breve   |
+| `FEATURED` | 10    | Ilimitado      | Sim      | 🔒 Em breve   |
+| `PREMIUM`  | 10    | Ilimitado      | Sim      | 🔒 Em breve   |
+| `SUPER`    | 10    | Ilimitado      | Sim      | 🔒 Em breve   |
+
+> **MOCK:** o módulo de pagamento ainda não está implementado. Por enquanto,
+> todos os imóveis criados recebem o plano `FREE` automaticamente
+> (`listingPlan @default(FREE)` no Prisma Schema). Os planos pagos serão
+> desbloqueados quando a integração com o gateway de pagamento for concluída.
+
+---
+
+### Regra 1 — Imóvel único no plano FREE (backend + frontend)
+
+**Onde:** `CreateListingUseCase.execute()` (backend)
+
+Um usuário no plano FREE só pode ter **1 imóvel ativo** (não-deletado, não SOLD/RENTED).
+
+**Fluxo:**
+
+```
+POST /marketing/me
+  → CreateListingUseCase.execute()
+  → listingPlan === FREE?
+      → SIM → countActiveFreeByOwner(userId) >= 1?
+                  → SIM → ForbiddenException (403) com mensagem
+                  → NÃO → prossegue
+      → NÃO → prossegue (planos pagos = ilimitado)
+```
+
+**Frontend:** o hook `useMyListings()` expõe `isAtFreeLimit` (boolean).
+Quando `true`, o botão **+ Novo imóvel** em `my-properties.tsx` fica
+desabilitado com tooltip explicativo.
+
+Arquivos envolvidos:
+
+| Arquivo                          | Responsabilidade                     |
+| -------------------------------- | ------------------------------------ |
+| `create-marketing.use-case.ts`   | Validação de negócio (lança 403)     |
+| `marketing.repository.ts`        | Interface `countActiveFreeByOwner()` |
+| `prisma-marketing.repository.ts` | Implementação Prisma do count        |
+| `hooks/use-my-listings.ts`       | Calcula `isAtFreeLimit` no cliente   |
+| `components/my-properties.tsx`   | Botão desabilitado + tooltip         |
+
+---
+
+### Regra 2 — Limite de fotos por plano (backend + frontend)
+
+**Onde:** `UploadMediaUseCase.execute()` (backend) + `step-photos.tsx` (frontend)
+
+| Plano | Máx. fotos | Máx. vídeos |
+| ----- | ---------- | ----------- |
+| FREE  | **5**      | 2           |
+| Pagos | **10**     | 2           |
+
+**Backend:** lê `listing.listingPlan` e calcula o limite dinamicamente.
+
+```typescript
+// upload-marketing-media.use-case.ts
+const maxImages = listing.listingPlan === ListingPlan.FREE ? 5 : 10;
+// Se currentCount >= maxImages → BadRequestException (400)
+```
+
+**Frontend:** como novos imóveis são sempre FREE (mock), o wizard de criação
+usa `MAX_IMAGES_FREE = 5`. Os limites são exportados de `src/lib/media-upload.tsx`:
+
+```typescript
+export const MAX_IMAGES_FREE = 5;   // plano FREE
+export const MAX_IMAGES_PAID = 10;  // planos pagos
+export function getMaxImages(plan?: ListingPlanType): number { ... }
+```
+
+O componente `step-photos.tsx` mostra um badge informativo:
+
+```
+┌─────────────────────────────────────────────────────┐
+│  📷 Plano FREE — até 5 fotos   Planos pagos: até 10  │
+└─────────────────────────────────────────────────────┘
+```
+
+Arquivos envolvidos:
+
+| Arquivo                              | Responsabilidade                    |
+| ------------------------------------ | ----------------------------------- |
+| `upload-marketing-media.use-case.ts` | Limite dinâmico por plano (backend) |
+| `src/lib/media-upload.tsx`           | Constantes e helpers de validação   |
+| `components/step-photos.tsx`         | Validação + UI do wizard            |
+
+---
+
+### Como os planos serão implementados no futuro
+
+1. **Gateway de pagamento** — integração com Stripe / Pagar.me para cobrar mensalidade
+2. **Campo no usuário** — associar o plano ao usuário (hoje é por imóvel)
+3. **Keycloak attribute** — após pagamento confirmado, injetar `plan=STANDARD` como atributo no token JWT
+4. **Backend** — ler o plano do token em vez do campo do imóvel
+5. **Frontend** — ler o plano do `useAuth()` para controlar limites dinamicamente
+
 ## Setup
 
 ### Pré-requisitos
@@ -350,7 +457,12 @@ pnpm lint        # Lint com ESLint
 
 ## Próximos Passos
 
-- [ ] Adicionar gerenciamento de anúncios no painel
+- [x] Wizard de publicação de imóvel (localização → detalhes → fotos → comodidades → contato → revisão)
+- [x] Painel do proprietário (listar, editar, publicar, despublicar, excluir)
+- [x] Regra: plano FREE permite apenas 1 imóvel ativo
+- [x] Regra: plano FREE permite até 5 fotos (planos pagos: 10)
+- [ ] Integração com gateway de pagamento (Stripe / Pagar.me)
+- [ ] Planos pagos desbloqueáveis (STANDARD, FEATURED, PREMIUM, SUPER)
 - [ ] Implementar controle de permissões por role
 - [ ] Adicionar testes (Vitest + React Testing Library)
 - [ ] Implementar dark mode

@@ -1,1 +1,0 @@
--- Baseline migration (database already in sync)

@@ -166,6 +166,9 @@ model User {
 
   role UserRole @default(SUPPORT)
 
+  // Tipo de anunciante (quando o usuário também anuncia imóveis)
+  advertiserType AdvertiserType?
+
   // Preferências
   timezone String? @default("America/Sao_Paulo")
   language String? @default("pt-BR")
@@ -181,97 +184,19 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  leadsAssigned     Lead[]        @relation("AssignedLeads")
-  visitsScheduled   Visit[]       @relation("ScheduledBy")
-  activitiesCreated ActivityLog[]
-  reportsReviewed   Report[]      @relation("ReviewedBy")
+  leadsAssigned      Lead[]        @relation("AssignedLeads")
+  visitsScheduled    Visit[]       @relation("ScheduledBy")
+  activitiesCreated  ActivityLog[]
+  reportsReviewed    Report[]      @relation("ReviewedBy")
+  propertiesCreated  Property[]    @relation("CreatedByUser")
+  propertyBoosts     PropertyBoost[] @relation("BoostUser")
+  conversations      Conversation[]  @relation("ConversationUser")
+  sentMessages       Message[]       @relation("SentByUser")
+  reviewsReceived    Review[]        @relation("ReviewsReceived")
+  reportsReceived    Report[]        @relation("ReportedUser")
 
   @@index([email])
   @@index([role])
-  @@index([deletedAt])
-}
-
-//
-// ADVERTISER (ANUNCIANTES - IMOBILIÁRIAS, CORRETORES, PROPRIETÁRIOS)
-// Quem anuncia imóveis no portal
-//
-
-model Advertiser {
-  id         String  @id @default(uuid())
-  keycloakId String? @unique // Se autenticado
-
-  type   AdvertiserType
-  status AdvertiserStatus @default(PENDING)
-
-  // Dados pessoais/empresa
-  name       String
-  email      String  @unique
-  phone      String
-  whatsapp   String?
-  avatar     String?
-  coverImage String?
-
-  // Para imobiliárias/corretores
-  companyName String? // Razão social
-  tradeName   String? // Nome fantasia
-  document    String? @unique // CNPJ ou CPF
-  creci       String? // Registro profissional
-  creciState  String?
-
-  // Endereço
-  street       String?
-  streetNumber String?
-  complement   String?
-  district     String?
-  city         String?
-  state        String?
-  zipcode      String?
-
-  // Bio e redes sociais
-  bio       String? @db.Text
-  website   String?
-  facebook  String?
-  instagram String?
-  linkedin  String?
-
-  // Verificação
-  isVerified Boolean   @default(false)
-  verifiedAt DateTime?
-
-  // Estatísticas
-  totalListings   Int    @default(0)
-  activeListings  Int    @default(0)
-  totalSales      Int    @default(0)
-  totalViews      Int    @default(0)
-  totalLeads      Int    @default(0)
-  responseRate    Float? // Taxa de resposta (0-100)
-  avgResponseTime Int? // Tempo médio de resposta em minutos
-
-  // Rating
-  averageRating Float? @default(0)
-  totalReviews  Int    @default(0)
-
-  // Controle
-  suspendedAt   DateTime?
-  suspendReason String?
-  deletedAt     DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  properties    Property[]
-  conversations Conversation[]
-  sentMessages  Message[]       @relation("SentByAdvertiser")
-  reviews       Review[]        @relation("ReviewsReceived")
-  reports       Report[]        @relation("ReportedAdvertiser")
-  boosts        PropertyBoost[]
-
-  @@index([email])
-  @@index([type])
-  @@index([status])
-  @@index([isVerified])
-  @@index([city, state])
-  @@index([averageRating])
   @@index([deletedAt])
 }
 
@@ -332,8 +257,8 @@ model Property {
   id         String  @id @default(uuid())
   externalId String? @unique // ID de integração externa (VivaReal, OLX, etc)
 
-  advertiserId String
-  advertiser   Advertiser @relation(fields: [advertiserId], references: [id], onDelete: Cascade)
+  createdById String?
+  createdBy   User?   @relation("CreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
 
   status  PropertyStatus  @default(DRAFT)
   purpose PropertyPurpose
@@ -442,7 +367,7 @@ model Property {
   reports       Report[]           @relation("ReportedProperty")
   conversations Conversation[]
 
-  @@index([advertiserId])
+  @@index([createdById])
   @@index([status])
   @@index([purpose, type])
   @@index([city, state, district])
@@ -466,9 +391,10 @@ model PropertyMedia {
 
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  type  MediaType @default(IMAGE)
-  url   String
-  order Int       @default(0)
+  type      MediaType @default(IMAGE)
+  url       String
+  publicId  String // Cloudinary public_id para deleção
+  order     Int       @default(0)
 
   createdAt DateTime @default(now())
 
@@ -726,8 +652,8 @@ model PropertyBoost {
   propertyId String
   property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  advertiserId String
-  advertiser   Advertiser @relation(fields: [advertiserId], references: [id], onDelete: Cascade)
+  userId String
+  user   User @relation("BoostUser", fields: [userId], references: [id], onDelete: Cascade)
 
   planId String
   plan   ListingPlan @relation(fields: [planId], references: [id])
@@ -750,7 +676,7 @@ model PropertyBoost {
   updatedAt DateTime @updatedAt
 
   @@index([propertyId])
-  @@index([advertiserId])
+  @@index([userId])
   @@index([status])
   @@index([startDate, endDate])
 }
@@ -768,8 +694,8 @@ model Conversation {
   customerId String
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
-  advertiserId String
-  advertiser   Advertiser @relation(fields: [advertiserId], references: [id], onDelete: Cascade)
+  userId String
+  user   User @relation("ConversationUser", fields: [userId], references: [id], onDelete: Cascade)
 
   // Última mensagem (para listar conversas)
   lastMessage   String?
@@ -787,7 +713,7 @@ model Conversation {
 
   @@unique([propertyId, customerId])
   @@index([customerId])
-  @@index([advertiserId])
+  @@index([userId])
   @@index([lastMessageAt])
 }
 
@@ -809,8 +735,8 @@ model Message {
   customerId String?
   customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
-  advertiserId String?
-  advertiser   Advertiser? @relation("SentByAdvertiser", fields: [advertiserId], references: [id], onDelete: SetNull)
+  userId String?
+  user   User? @relation("SentByUser", fields: [userId], references: [id], onDelete: SetNull)
 
   // Conteúdo
   content     String @db.Text
@@ -837,8 +763,8 @@ model Review {
   propertyId String?
   property   Property? @relation("PropertyReviews", fields: [propertyId], references: [id], onDelete: Cascade)
 
-  advertiserId String?
-  advertiser   Advertiser? @relation("ReviewsReceived", fields: [advertiserId], references: [id], onDelete: Cascade)
+  userId String?
+  user   User? @relation("ReviewsReceived", fields: [userId], references: [id], onDelete: Cascade)
 
   // Quem avaliou
   customerId String
@@ -861,7 +787,7 @@ model Review {
   updatedAt DateTime @updatedAt
 
   @@index([propertyId])
-  @@index([advertiserId])
+  @@index([userId])
   @@index([customerId])
   @@index([rating])
   @@index([createdAt])
@@ -878,8 +804,8 @@ model Report {
   propertyId String?
   property   Property? @relation("ReportedProperty", fields: [propertyId], references: [id], onDelete: Cascade)
 
-  advertiserId String?
-  advertiser   Advertiser? @relation("ReportedAdvertiser", fields: [advertiserId], references: [id], onDelete: Cascade)
+  userId String?
+  user   User? @relation("ReportedUser", fields: [userId], references: [id], onDelete: Cascade)
 
   // Quem denunciou
   customerId String?
@@ -910,7 +836,7 @@ model Report {
   updatedAt DateTime @updatedAt
 
   @@index([propertyId])
-  @@index([advertiserId])
+  @@index([userId])
   @@index([customerId])
   @@index([status])
   @@index([reason])

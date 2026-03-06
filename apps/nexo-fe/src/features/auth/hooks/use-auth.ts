@@ -20,16 +20,18 @@ export function useAuth() {
     queryKey: AUTH_SESSION_KEY,
     queryFn: () => ({ isAuthenticated: false, isLoading: true }),
     enabled: false,
+    // Must be static to match SSR — avoids hydration mismatch.
+    // AuthProvider updates this client-side after mount.
     initialData: { isAuthenticated: false, isLoading: true },
   });
 
   const { isAuthenticated, isLoading } = session;
   const { user, refreshUserData } = useUser(isAuthenticated);
 
-  const login = useCallback(async () => {
+  const login = useCallback(async (redirectPath?: string) => {
     try {
       await keycloak.login({
-        redirectUri: `${window.location.origin}/panel`,
+        redirectUri: `${window.location.origin}${redirectPath ?? "/panel"}`,
       });
     } catch (error) {
       console.error("Erro ao fazer login:", error);
@@ -37,6 +39,10 @@ export function useAuth() {
   }, []);
 
   const logout = useCallback(async () => {
+    // Clear persisted tokens so the next page load starts unauthenticated
+    sessionStorage.removeItem("kc_token");
+    sessionStorage.removeItem("kc_refresh_token");
+    sessionStorage.removeItem("kc_id_token");
     queryClient.setQueryData(AUTH_SESSION_KEY, {
       isAuthenticated: false,
       isLoading: false,
