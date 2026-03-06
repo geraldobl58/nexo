@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { Heading } from "./heading";
+import { Heading } from "./Heading";
 
 describe("Heading", () => {
   describe("renderização básica", () => {
