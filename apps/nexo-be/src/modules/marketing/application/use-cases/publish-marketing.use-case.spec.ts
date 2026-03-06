@@ -248,7 +248,9 @@ describe('PublishListingUseCase', () => {
 
     it('deve permitir republicar (reativar) anúncio INACTIVE', async () => {
       // INACTIVE → ACTIVE é uma re-publicação válida (anúncio pausado pelo dono)
-      const inactiveListing = makeDraftListing({ status: ListingStatus.INACTIVE });
+      const inactiveListing = makeDraftListing({
+        status: ListingStatus.INACTIVE,
+      });
       const reactivated = makeDraftListing({
         status: ListingStatus.ACTIVE,
         publishedAt: new Date(),
@@ -257,7 +259,11 @@ describe('PublishListingUseCase', () => {
       mockRepo.findById.mockResolvedValue(inactiveListing);
       mockRepo.update.mockResolvedValue(reactivated);
 
-      const result = await useCase.execute('listing-uuid-1', 'owner-uuid', 'SUPPORT');
+      const result = await useCase.execute(
+        'listing-uuid-1',
+        'owner-uuid',
+        'SUPPORT',
+      );
 
       expect(result.status).toBe(ListingStatus.ACTIVE);
       expect(mockRepo.update).toHaveBeenCalledWith(
