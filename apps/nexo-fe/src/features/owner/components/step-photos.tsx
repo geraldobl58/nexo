@@ -164,7 +164,7 @@ export const StepPhotos = () => {
       {/* Contador */}
       <div className="flex gap-4 text-sm text-gray-600">
         <span>
-          📷 <strong>{imageCount}</strong>/{MAX_IMAGES} fotos
+          📷 <strong>{imageCount}</strong>/{CURRENT_PLAN_MAX_IMAGES} fotos
         </span>
         <span>
           🎥 <strong>{videoCount}</strong>/{MAX_VIDEOS} vídeos
