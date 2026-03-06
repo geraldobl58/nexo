@@ -44,6 +44,14 @@ spec:
         {{- end }}
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
+        {{- if .Values.envFrom }}
+        envFrom:
+        {{- range .Values.envFrom }}
+          - secretRef:
+              name: {{ .secretRef }}
+              optional: true
+        {{- end }}
+        {{- end }}
         {{- if .Values.env }}
         env:
         {{- range $key, $value := .Values.env }}

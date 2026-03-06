@@ -51,3 +51,13 @@ metrics:
   path: /metrics
   serviceMonitor:
     enabled: false
+
+# Kubernetes Secret com as credenciais do Cloudinary.
+# Criar o secret antes de implantar:
+#   kubectl create secret generic nexo-be-cloudinary -n nexo-develop \
+#     --from-literal=CLOUDINARY_CLOUD_NAME=xxx \
+#     --from-literal=CLOUDINARY_API_KEY=xxx \
+#     --from-literal=CLOUDINARY_API_SECRET=xxx \
+#     --from-literal=CLOUDINARY_FOLDER=nexo
+envFrom:
+  - secretRef: nexo-be-cloudinary
