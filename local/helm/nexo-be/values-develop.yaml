@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/geraldobl58/nexo-be
-  tag: "develop-ab5d2d0d8d5826c286da2b60023408b2782e4833"
+  tag: "develop-434d89ebf0d56fba02b34c3c550c0ab2ce311c34"
   pullPolicy: Always
 
 imagePullSecrets:
@@ -44,14 +44,20 @@ podDisruptionBudget:
   enabled: false
 
 podAnnotations:
-<<<<<<< HEAD
-  app.kubernetes.io/commit: "3a56dd8"
-=======
-  app.kubernetes.io/commit: "ab5d2d0"
->>>>>>> develop
+  app.kubernetes.io/commit: "434d89e"
 
 metrics:
   enabled: false
   path: /metrics
   serviceMonitor:
     enabled: false
+
+# Kubernetes Secret com as credenciais do Cloudinary.
+# Criar o secret antes de implantar:
+#   kubectl create secret generic nexo-be-cloudinary -n nexo-develop \
+#     --from-literal=CLOUDINARY_CLOUD_NAME=xxx \
+#     --from-literal=CLOUDINARY_API_KEY=xxx \
+#     --from-literal=CLOUDINARY_API_SECRET=xxx \
+#     --from-literal=CLOUDINARY_FOLDER=nexo
+envFrom:
+  - secretRef: nexo-be-cloudinary
