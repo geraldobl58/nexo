@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/geraldobl58/nexo-fe
-  tag: "develop-ab0d1bfecdb60edb4e867ec3459edbee9bda97fd"
+  tag: "develop-434d89ebf0d56fba02b34c3c550c0ab2ce311c34"
   pullPolicy: Always
 
 imagePullSecrets:
@@ -42,7 +42,7 @@ podDisruptionBudget:
   enabled: false
 
 podAnnotations:
-  app.kubernetes.io/commit: "ab0d1bf"
+  app.kubernetes.io/commit: "434d89e"
 
 metrics:
   enabled: false
