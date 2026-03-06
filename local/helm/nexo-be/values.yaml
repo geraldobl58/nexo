@@ -49,6 +49,19 @@ autoscaling:
 
 env: []
 
+# Lista de Kubernetes Secrets para injetar como variáveis de ambiente via envFrom.
+# Cada item deve ter um campo `secretRef` com o nome do Secret.
+# Exemplo:
+#   envFrom:
+#     - secretRef: nexo-be-cloudinary
+# Para criar o secret no cluster:
+#   kubectl create secret generic nexo-be-cloudinary -n <namespace> \
+#     --from-literal=CLOUDINARY_CLOUD_NAME=xxx \
+#     --from-literal=CLOUDINARY_API_KEY=xxx \
+#     --from-literal=CLOUDINARY_API_SECRET=xxx \
+#     --from-literal=CLOUDINARY_FOLDER=nexo
+envFrom: []
+
 podDisruptionBudget:
   enabled: false
   minAvailable: 1

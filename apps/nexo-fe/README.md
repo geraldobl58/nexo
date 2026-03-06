@@ -260,6 +260,8 @@ O sistema possui planos para anúncios imobiliários. Cada anúncio (`Property`)
 
 ---
 
+#
+
 ### Regra 1 — Imóvel único no plano FREE (backend + frontend)
 
 **Onde:** `CreateListingUseCase.execute()` (backend)
