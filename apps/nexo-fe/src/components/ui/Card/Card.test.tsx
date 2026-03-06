@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { Card } from "./card";
+import { Card } from "./Card";
 
 // Mock do next/image para ambiente jsdom
 vi.mock("next/image", () => ({

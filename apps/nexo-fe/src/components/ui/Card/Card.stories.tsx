@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
-import { Card } from "./card";
+import { Card } from "./Card";
 
 const meta = {
   title: "Components/Card",
