@@ -124,6 +124,8 @@ O client **nexo-api** e confidential e requer `client_secret`, sendo usado apena
 
 ### 1. Subir os servicos (PostgreSQL + Keycloak)
 
+#
+
 ```bash
 # Na raiz do monorepo
 docker compose up -d

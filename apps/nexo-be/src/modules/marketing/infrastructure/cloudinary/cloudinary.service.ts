@@ -47,6 +47,9 @@ export class CloudinaryService implements OnModuleInit {
   /** Pasta raiz onde todos os assets são armazenados. Ex: "nexo" */
   rootFolder: string;
 
+  /** Indica se o Cloudinary foi configurado com sucesso */
+  private isConfigured = false;
+
   constructor(private readonly config: ConfigService) {}
 
   onModuleInit() {
@@ -56,10 +59,12 @@ export class CloudinaryService implements OnModuleInit {
     this.rootFolder = this.config.get<string>('CLOUDINARY_FOLDER') ?? 'nexo';
 
     if (!cloudName || !apiKey || !apiSecret) {
-      throw new Error(
-        'Cloudinary não configurado. Verifique as variáveis de ambiente: ' +
+      this.logger.warn(
+        'Cloudinary não configurado — uploads/deleções de mídia estarão desabilitados. ' +
+          'Defina as variáveis de ambiente: ' +
           'CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET',
       );
+      return;
     }
 
     cloudinary.config({
@@ -68,6 +73,8 @@ export class CloudinaryService implements OnModuleInit {
       api_secret: apiSecret,
       secure: true,
     });
+
+    this.isConfigured = true;
 
     const cfg = cloudinary.config();
     this.logger.log(
@@ -88,6 +95,12 @@ export class CloudinaryService implements OnModuleInit {
     file: Buffer,
     options: CloudinaryUploadOptions,
   ): Promise<CloudinaryUploadResult> {
+    if (!this.isConfigured) {
+      throw new Error(
+        'Cloudinary não está configurado. Defina CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY e CLOUDINARY_API_SECRET.',
+      );
+    }
+
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
@@ -137,6 +150,12 @@ export class CloudinaryService implements OnModuleInit {
     publicId: string,
     resourceType: CloudinaryResourceType = 'image',
   ): Promise<void> {
+    if (!this.isConfigured) {
+      throw new Error(
+        'Cloudinary não está configurado. Defina CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY e CLOUDINARY_API_SECRET.',
+      );
+    }
+
     const result = await cloudinary.uploader.destroy(publicId, {
       resource_type: resourceType,
     });
