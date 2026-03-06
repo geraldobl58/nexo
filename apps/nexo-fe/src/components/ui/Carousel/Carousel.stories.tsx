@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, userEvent, within } from "storybook/test";
 
-import { Card } from "../card/card";
-import { Carousel } from "./carousel";
+import { Card } from "../Card/Card";
+import { Carousel } from "./Carousel";
 
 const meta = {
   title: "Components/Carousel",

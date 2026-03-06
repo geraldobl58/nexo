@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { createRef, forwardRef, useImperativeHandle } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { Carousel, type CarouselHandle } from "./carousel";
+import { Carousel, type CarouselHandle } from "./Carousel";
 
 // Mock react-slick para ambiente jsdom
 vi.mock("react-slick", () => ({
