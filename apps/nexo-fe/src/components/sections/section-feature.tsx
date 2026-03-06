@@ -2,9 +2,9 @@
 
 import React from "react";
 
-import { Carousel } from "@/components/ui/carousel/carousel";
-import { Card } from "../ui/card/card";
-import { Heading } from "../ui/heading/heading";
+import { Carousel } from "@/components/ui/Carousel/Carousel";
+import { Card } from "../ui/Card/Card";
+import { Heading } from "../ui/Heading/Heading";
 
 const CARDS = Array.from({ length: 8 });
 
