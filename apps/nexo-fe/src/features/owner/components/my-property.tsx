@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useCallback, useRef, useState, DragEvent } from "react";
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PatternFormat } from "react-number-format";
@@ -15,6 +15,7 @@ import {
   TextField,
 } from "@mui/material";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
+import PhotoLibraryOutlinedIcon from "@mui/icons-material/PhotoLibraryOutlined";
 
 import { FormField } from "@/components/ui/form-field/form-field";
 import { SelectControl } from "@/components/ui/select-control/select-control";
@@ -24,6 +25,7 @@ import { LeafletMap } from "@/lib/leaflet-map";
 import { DEFAULT_LAT, DEFAULT_LNG, fetchCep } from "@/lib/fect-cep";
 
 import { useMyListingById, useUpdateMyListing } from "../hooks/use-my-listings";
+import { useListMedia } from "../hooks/use-media";
 import {
   createPublishLocationSchema,
   PublishLocationData,
@@ -39,7 +41,23 @@ import {
   PublishContactData,
 } from "../schemas/publish-contact";
 import { Purpose, PropertyType } from "../enums/publish-details-enums";
-import { UpdateListingInput } from "../types/publish-types";
+import { MediaItem, UpdateListingInput } from "../types/publish-types";
+import { MediaCard, MediaSlot } from "./media-card";
+import { deleteMedia, reorderMedia, uploadMedia } from "../http/publish";
+
+import {
+  ACCEPTED_EXTENSIONS,
+  ACCEPTED_TYPES,
+  MAX_IMAGES_FREE,
+  MAX_IMAGES_PAID,
+  MAX_VIDEOS,
+  validateFile,
+} from "@/lib/media-upload";
+
+// MOCK: enquanto o pagamento não estiver implementado os imóveis são criados
+// com plano FREE (limite de 5 fotos). Quando os planos pagos forem ativados,
+// esse valor virá do contexto/estado do usuário.
+const CURRENT_PLAN_MAX_IMAGES = MAX_IMAGES_FREE;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -253,7 +271,166 @@ export const MyProperty = ({ params }: MyPropertyProps) => {
     };
   }, [zipcode, locationForm]);
 
-  // ── Submit ────────────────────────────────────────────────────────────────
+  // ── Media (fotos/vídeos existentes) ──────────────────────────────────────
+
+  const { data: existingMedia, refetch: refetchMedia } = useListMedia(id);
+
+  // Slots unificados: existentes (MediaItem) + novos (File aguardando upload)
+  const [slots, setSlots] = useState<MediaSlot[]>([]);
+  // IDs das mídias existentes que foram removidas e devem ser deletadas ao salvar
+  const [removedIds, setRemovedIds] = useState<string[]>([]);
+  // Controla se os slots já foram inicializados com os dados da query
+  const [mediaInitialized, setMediaInitialized] = useState(false);
+  const [photoSaving, setPhotoSaving] = useState(false);
+
+  const [isDragging, setIsDragging] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  // Ref para evitar stale closure no drag-and-drop entre cards
+  const draggingIndexRef = useRef<number | null>(null);
+
+  // Inicializa (ou reinicializa após salvar) os slots com as mídias do servidor
+  useEffect(() => {
+    if (existingMedia && !mediaInitialized) {
+      setSlots(
+        [...existingMedia]
+          .sort((a, b) => a.order - b.order)
+          .map((item) => ({ kind: "existing" as const, item })),
+      );
+      setMediaInitialized(true);
+    }
+  }, [existingMedia, mediaInitialized]);
+
+  const imageCount = slots.filter((s) =>
+    s.kind === "existing"
+      ? s.item.type === "IMAGE"
+      : ACCEPTED_TYPES[s.file.type] === "IMAGE",
+  ).length;
+  const videoCount = slots.filter((s) =>
+    s.kind === "existing"
+      ? s.item.type === "VIDEO"
+      : ACCEPTED_TYPES[s.file.type] === "VIDEO",
+  ).length;
+
+  const addFiles = useCallback(
+    (incoming: FileList | File[]) => {
+      const newErrors: string[] = [];
+      const toAdd: File[] = [];
+
+      let imgs = imageCount;
+      let vids = videoCount;
+
+      Array.from(incoming).forEach((file) => {
+        const error = validateFile(file, imgs, vids, CURRENT_PLAN_MAX_IMAGES);
+        if (error) {
+          newErrors.push(error);
+          return;
+        }
+        toAdd.push(file);
+        if (ACCEPTED_TYPES[file.type] === "IMAGE") imgs++;
+        else vids++;
+      });
+
+      setErrors(newErrors);
+      if (toAdd.length > 0) {
+        setSlots((prev) => [
+          ...prev,
+          ...toAdd.map((file) => ({
+            kind: "new" as const,
+            file,
+            tempId: crypto.randomUUID(),
+          })),
+        ]);
+      }
+    },
+    [imageCount, videoCount],
+  );
+
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files) addFiles(e.target.files);
+      // Reset input para permitir selecionar o mesmo arquivo novamente
+      e.target.value = "";
+    },
+    [addFiles],
+  );
+
+  const handleRemove = useCallback((index: number) => {
+    setSlots((prev) => {
+      const slot = prev[index];
+      if (slot.kind === "existing") {
+        setRemovedIds((ids) => [...ids, slot.item.id]);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+  }, []);
+
+  // ── Drag-and-drop entre cards (reordenação) ────────────────────────────
+
+  const handleCardDragStart = useCallback(
+    (index: number, e: DragEvent<HTMLDivElement>) => {
+      draggingIndexRef.current = index;
+      // Necessário para que o evento dragover/drop funcione no Firefox
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", String(index));
+    },
+    [],
+  );
+
+  const handleCardDragOver = useCallback(
+    (index: number, e: DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation(); // não aciona o dropzone de arquivos
+      e.dataTransfer.dropEffect = "move";
+      setDragOverIndex(index);
+    },
+    [],
+  );
+
+  const handleCardDragLeave = useCallback(() => {
+    setDragOverIndex(null);
+  }, []);
+
+  const handleCardDrop = useCallback(
+    (toIndex: number, e: DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation(); // não aciona o dropzone de arquivos
+      const fromIndex = draggingIndexRef.current;
+      if (fromIndex !== null && fromIndex !== toIndex) {
+        setSlots((prev) => {
+          const next = [...prev];
+          const [moved] = next.splice(fromIndex, 1);
+          next.splice(toIndex, 0, moved);
+          return next;
+        });
+      }
+      draggingIndexRef.current = null;
+      setDragOverIndex(null);
+    },
+    [],
+  );
+
+  const handleCardDragEnd = useCallback(() => {
+    draggingIndexRef.current = null;
+    setDragOverIndex(null);
+  }, []);
+
+  // ── Drag-and-drop da zona de upload (adicionar arquivos) ───────────────
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+  const handleDragLeave = () => setIsDragging(false);
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files?.length) addFiles(e.dataTransfer.files);
+  };
+
+  // ── Submit — dados do imóvel ──────────────────────────────────────────────
 
   async function handleSave() {
     const details = detailsForm.getValues();
@@ -275,6 +452,74 @@ export const MyProperty = ({ params }: MyPropertyProps) => {
 
     setSaveMessage(msg);
     setTimeout(() => setSaveMessage(null), 4000);
+  }
+
+  // ── Submit — fotos ────────────────────────────────────────────────────────
+
+  async function handleSavePhotos() {
+    setPhotoSaving(true);
+    try {
+      // 1. Deletar mídias removidas (ignora 404 — já pode ter sido deletada
+      //    em uma tentativa anterior que falhou após o delete)
+      for (const mediaId of removedIds) {
+        try {
+          await deleteMedia(id, mediaId);
+        } catch (err: unknown) {
+          const status = (err as { response?: { status?: number } })?.response
+            ?.status;
+          if (status !== 404) throw err;
+        }
+      }
+
+      // 2. Fazer upload dos arquivos novos
+      const uploadedSlots: Array<{ tempId: string; item: MediaItem }> = [];
+      for (const slot of slots) {
+        if (slot.kind === "new") {
+          const item = await uploadMedia(id, slot.file);
+          uploadedSlots.push({ tempId: slot.tempId, item });
+        }
+      }
+
+      // 3. Montar lista final na ordem atual e reordenar no backend
+      const finalItems: MediaItem[] = slots
+        .map((slot) => {
+          if (slot.kind === "existing") return slot.item;
+          return (
+            uploadedSlots.find((u) => u.tempId === slot.tempId)?.item ?? null
+          );
+        })
+        .filter((item): item is MediaItem => item !== null);
+
+      if (finalItems.length > 0) {
+        await reorderMedia(
+          id,
+          finalItems.map((item, i) => ({ id: item.id, order: i })),
+        );
+      }
+
+      // 4. Reinicializar o estado a partir dos dados frescos do servidor
+      const { data: freshMedia } = await refetchMedia();
+      setRemovedIds([]);
+      if (freshMedia) {
+        setSlots(
+          [...freshMedia]
+            .sort((a, b) => a.order - b.order)
+            .map((item) => ({ kind: "existing" as const, item })),
+        );
+        setMediaInitialized(true);
+      }
+
+      setSaveMessage({ type: "success", text: "Fotos salvas com sucesso!" });
+      setTimeout(() => setSaveMessage(null), 4000);
+    } catch {
+      setSaveMessage({
+        type: "error",
+        text: "Erro ao salvar as fotos. Tente novamente.",
+      });
+      setTimeout(() => setSaveMessage(null), 4000);
+    } finally {
+      setPhotoSaving(false);
+    }
   }
 
   // ── Loading / Error ───────────────────────────────────────────────────────
@@ -319,20 +564,22 @@ export const MyProperty = ({ params }: MyPropertyProps) => {
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-2xl font-bold truncate">{listing.title}</h2>
-        <Button
-          variant="contained"
-          disabled={isPending}
-          onClick={handleSave}
-          startIcon={
-            isPending ? (
-              <CircularProgress size={16} color="inherit" />
-            ) : (
-              <SaveOutlinedIcon />
-            )
-          }
-        >
-          {isPending ? "Salvando..." : "Salvar alterações"}
-        </Button>
+        {activeTab !== 3 && (
+          <Button
+            variant="contained"
+            disabled={isPending}
+            onClick={handleSave}
+            startIcon={
+              isPending ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <SaveOutlinedIcon />
+              )
+            }
+          >
+            {isPending ? "Salvando..." : "Salvar alterações"}
+          </Button>
+        )}
       </div>
 
       {saveMessage && (
@@ -347,6 +594,7 @@ export const MyProperty = ({ params }: MyPropertyProps) => {
           <Tab label="Detalhes" />
           <Tab label="Localização" />
           <Tab label="Comodidades" />
+          <Tab label="Fotos" />
           <Tab label="Contato" />
         </Tabs>
       </Box>
@@ -643,8 +891,161 @@ export const MyProperty = ({ params }: MyPropertyProps) => {
         </div>
       </TabPanel>
 
-      {/* ── Tab 3: Contato ───────────────────────────────────────────────── */}
+      {/* ── Tab 3: Fotos ───────────────────────────────────────────────── */}
       <TabPanel value={activeTab} index={3}>
+        <div className="flex flex-col w-full px-4 py-4 rounded-lg space-y-6 mt-4 shadow-md bg-white">
+          <div className="flex items-center justify-between gap-4">
+            <h3 className="text-2xl font-bold">Fotos e vídeos do imóvel</h3>
+            <Button
+              variant="outlined"
+              disabled={photoSaving}
+              onClick={handleSavePhotos}
+              startIcon={
+                photoSaving ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <PhotoLibraryOutlinedIcon />
+                )
+              }
+            >
+              {photoSaving ? "Salvando fotos..." : "Salvar fotos"}
+            </Button>
+          </div>
+
+          {/* Badge de limite por plano */}
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-0.5 text-xs font-semibold text-amber-800">
+              Plano FREE — até {MAX_IMAGES_FREE} fotos
+            </span>
+            <span className="text-xs text-gray-400">
+              Planos pagos permitem até {MAX_IMAGES_PAID} fotos
+            </span>
+          </div>
+
+          <p className="text-sm text-gray-500">
+            A primeira imagem será usada como capa do anúncio. Arraste os cards
+            para reordenar. Clique em <strong>Salvar fotos</strong> para aplicar
+            as alterações.
+          </p>
+
+          {/* Contador */}
+          <div className="flex gap-4 text-sm text-gray-600">
+            <span>
+              📷 <strong>{imageCount}</strong>/{CURRENT_PLAN_MAX_IMAGES} fotos
+            </span>
+            <span>
+              🎥 <strong>{videoCount}</strong>/{MAX_VIDEOS} vídeos
+            </span>
+            {removedIds.length > 0 && (
+              <span className="text-amber-600">
+                ⚠️ {removedIds.length} foto(s) pendente(s) de exclusão
+              </span>
+            )}
+            {slots.some((s) => s.kind === "new") && (
+              <span className="text-green-600">
+                ✅ {slots.filter((s) => s.kind === "new").length} nova(s) para
+                enviar
+              </span>
+            )}
+          </div>
+
+          {/* Dropzone */}
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label="Clique ou arraste arquivos aqui"
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => inputRef.current?.click()}
+            onKeyDown={(e) => e.key === "Enter" && inputRef.current?.click()}
+            className={`flex flex-col items-center justify-center gap-3 p-8 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+              isDragging
+                ? "border-blue-500 bg-blue-50"
+                : "border-gray-300 hover:border-blue-400 hover:bg-gray-50"
+            }`}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-10 w-10 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            <div className="text-center">
+              <p className="font-medium text-gray-700">
+                Clique para selecionar ou arraste os arquivos aqui
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Fotos: JPEG, PNG, WebP — máx. 10 MB cada — até{" "}
+                {CURRENT_PLAN_MAX_IMAGES} no plano atual &nbsp;|&nbsp; Vídeos:
+                MP4, MOV — máx. 100 MB cada
+              </p>
+            </div>
+
+            <input
+              ref={inputRef}
+              type="file"
+              multiple
+              accept={ACCEPTED_EXTENSIONS}
+              className="hidden"
+              onChange={handleInputChange}
+            />
+          </div>
+
+          {/* Erros de validação */}
+          {errors.length > 0 && (
+            <ul className="space-y-1">
+              {errors.map((err, i) => (
+                <li
+                  key={i}
+                  className="text-sm text-red-600 flex items-start gap-1"
+                >
+                  <span>⚠️</span> {err}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Grid de prévias */}
+          {slots.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {slots.map((slot, index) => (
+                <MediaCard
+                  key={
+                    slot.kind === "existing"
+                      ? slot.item.id
+                      : `new-${slot.tempId}`
+                  }
+                  slot={slot}
+                  index={index}
+                  onRemove={handleRemove}
+                  isDragOver={dragOverIndex === index}
+                  onDragStart={(e) => handleCardDragStart(index, e)}
+                  onDragOver={(e) => handleCardDragOver(index, e)}
+                  onDragLeave={handleCardDragLeave}
+                  onDrop={(e) => handleCardDrop(index, e)}
+                  onDragEnd={handleCardDragEnd}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-sm text-gray-400 py-4">
+              Nenhuma foto adicionada ainda.
+            </p>
+          )}
+        </div>
+      </TabPanel>
+
+      {/* ── Tab 4: Contato ───────────────────────────────────────────────── */}
+      <TabPanel value={activeTab} index={4}>
         <div className="flex flex-col w-full px-4 py-4 rounded-lg space-y-8 mt-4 shadow-md bg-white">
           <h3 className="text-2xl font-bold">Dados de contato</h3>
 
