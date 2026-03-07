@@ -49,14 +49,14 @@ export const MediaCard = ({
       : ACCEPTED_TYPES[slot.file.type] === "IMAGE";
 
   const thumbnailUrl =
-    slot.kind === "existing"
-      ? slot.item.url
-      : isImage
-        ? URL.createObjectURL(slot.file)
-        : null;
+    slot.kind === "existing" ? slot.item.url : URL.createObjectURL(slot.file);
 
   const displayName =
-    slot.kind === "existing" ? `Foto ${index + 1}` : slot.file.name;
+    slot.kind === "existing"
+      ? isImage
+        ? `Foto ${index + 1}`
+        : `Vídeo ${index + 1}`
+      : slot.file.name;
 
   const displaySize = slot.kind === "new" ? formatBytes(slot.file.size) : null;
 
@@ -99,7 +99,7 @@ export const MediaCard = ({
 
       {/* Thumbnail */}
       <div className="h-28 flex items-center justify-center bg-gray-100">
-        {isImage && thumbnailUrl ? (
+        {isImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={thumbnailUrl}
@@ -110,28 +110,33 @@ export const MediaCard = ({
             }}
           />
         ) : (
-          <div className="flex flex-col items-center gap-1 text-gray-400">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-10 w-10"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span className="text-xs">Vídeo</span>
+          <div className="relative h-full w-full">
+            <video
+              src={thumbnailUrl}
+              className="h-full w-full object-cover"
+              muted
+              preload="auto"
+              onLoadedData={(e) => {
+                const video = e.target as HTMLVideoElement;
+                if (video.duration > 1) video.currentTime = 1;
+              }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="bg-black/40 rounded-full p-1.5">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 text-white"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+            </div>
           </div>
         )}
       </div>

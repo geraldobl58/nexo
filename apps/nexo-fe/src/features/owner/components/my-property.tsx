@@ -97,7 +97,12 @@ function TabPanel({
 
 export const MyProperty = ({ params }: MyPropertyProps) => {
   const id = params["my-property"];
-  const { listing, isLoading, error } = useMyListingById(id);
+  const {
+    listing,
+    isLoading,
+    isPending: isListingPending,
+    error,
+  } = useMyListingById(id);
   const { mutateAsync: doUpdate, isPending } = useUpdateMyListing();
 
   const [activeTab, setActiveTab] = useState(0);
@@ -524,7 +529,7 @@ export const MyProperty = ({ params }: MyPropertyProps) => {
 
   // ── Loading / Error ───────────────────────────────────────────────────────
 
-  if (isLoading) {
+  if (isLoading || isListingPending) {
     return (
       <div className="flex items-center justify-center py-20">
         <CircularProgress />

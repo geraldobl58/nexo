@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 import { DataTable } from "@/components/ui/data-table";
 import { useMyListings } from "@/features/owner/hooks/use-my-listings";
@@ -28,12 +29,38 @@ interface FilterFormValues {
 }
 
 export const MyProperties = () => {
-  // Committed query params sent to the API (updated only on submit)
-  const [filters, setFilters] = useState<MyListingsQueryParams>({});
-  const [paginationModel, setPaginationModel] = useState({
-    page: 0,
-    pageSize: 10,
-  });
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Helper to push the current filter+pagination state to the URL
+  const pushToUrl = useCallback(
+    (params: MyListingsQueryParams, page: number, pageSize: number) => {
+      const sp = new URLSearchParams();
+      if (params.search) sp.set("search", params.search);
+      if (params.status) sp.set("status", params.status);
+      if (params.purpose) sp.set("purpose", params.purpose);
+      if (page > 0) sp.set("page", String(page));
+      if (pageSize !== 10) sp.set("pageSize", String(pageSize));
+      const qs = sp.toString();
+      router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
+    },
+    [pathname, router],
+  );
+
+  // Committed query params sent to the API — initialised from URL
+  const [filters, setFilters] = useState<MyListingsQueryParams>(() => ({
+    search: searchParams.get("search") ?? undefined,
+    status:
+      (searchParams.get("status") as MyListingsQueryParams["status"]) ??
+      undefined,
+    purpose: searchParams.get("purpose") ?? undefined,
+  }));
+
+  const [paginationModel, setPaginationModel] = useState(() => ({
+    page: parseInt(searchParams.get("page") ?? "0"),
+    pageSize: parseInt(searchParams.get("pageSize") ?? "10"),
+  }));
 
   const { listings, total, isLoading, isAtFreeLimit } = useMyListings({
     ...filters,
@@ -43,19 +70,27 @@ export const MyProperties = () => {
 
   const { control, handleSubmit, reset, watch } = useForm<FilterFormValues>({
     defaultValues: {
-      search: "",
-      status: "",
-      purpose: "",
+      search: searchParams.get("search") ?? "",
+      status: searchParams.get("status") ?? "",
+      purpose: searchParams.get("purpose") ?? "",
     },
   });
 
   function onSearch(data: FilterFormValues) {
-    setPaginationModel((prev) => ({ ...prev, page: 0 })); // reset to first page
-    setFilters({
+    const newFilters: MyListingsQueryParams = {
       search: data.search || undefined,
       status: (data.status as MyListingsQueryParams["status"]) || undefined,
       purpose: data.purpose || undefined,
-    });
+    };
+    const newPage = 0;
+    setPaginationModel((prev) => ({ ...prev, page: newPage }));
+    setFilters(newFilters);
+    pushToUrl(newFilters, newPage, paginationModel.pageSize);
+  }
+
+  function handlePaginationChange(model: { page: number; pageSize: number }) {
+    setPaginationModel(model);
+    pushToUrl(filters, model.page, model.pageSize);
   }
 
   const formValues = watch();
@@ -89,67 +124,70 @@ export const MyProperties = () => {
           </span>
         </Tooltip>
       </div>
-      <form
-        onSubmit={handleSubmit(onSearch)}
-        className="flex flex-row items-center gap-4 bg-primary/5 p-4 rounded"
-      >
-        <div className="flex-[2]">
-          <FormField
-            control={control}
-            name="search"
-            label="Buscar por título, cidade ou bairro"
-            type="text"
-            size="small"
-            disabled={false}
-          />
-        </div>
-        <div className="flex-1">
-          <SelectControl
-            control={control}
-            name="status"
-            size="small"
-            label="Status"
-            options={[
-              { value: Listing.ACTIVE, label: "Ativo" },
-              { value: Listing.INACTIVE, label: "Inativo" },
-              { value: Listing.DRAFT, label: "Rascunho" },
-              { value: Listing.RENTED, label: "Alugado" },
-              { value: Listing.SOLD, label: "Vendido" },
-            ]}
-          />
-        </div>
-        <div className="flex-1">
-          <SelectControl
-            control={control}
-            name="purpose"
-            size="small"
-            label="Finalidade"
-            options={[
-              { value: Purpose.SALE, label: "Venda" },
-              { value: Purpose.RENT, label: "Aluguel" },
-            ]}
-          />
-        </div>
-        <Button
-          type="submit"
-          disabled={isLoading || !hasFilter}
-          variant="contained"
+      <div>
+        <form
+          onSubmit={handleSubmit(onSearch)}
+          className="flex flex-row items-center gap-4 bg-primary/5 p-4 rounded"
         >
-          Pesquisar
-        </Button>
-        <Button
-          type="button"
-          variant="outlined"
-          color="info"
-          onClick={() => {
-            reset();
-            setFilters({});
-            setPaginationModel({ page: 0, pageSize: 10 });
-          }}
-        >
-          Limpar
-        </Button>
-      </form>
+          <div className="flex-[2]">
+            <FormField
+              control={control}
+              name="search"
+              label="Buscar por título, cidade ou bairro"
+              type="text"
+              size="small"
+              disabled={false}
+            />
+          </div>
+          <div className="flex-1">
+            <SelectControl
+              control={control}
+              name="status"
+              size="small"
+              label="Status"
+              options={[
+                { value: Listing.ACTIVE, label: "Ativo" },
+                { value: Listing.INACTIVE, label: "Inativo" },
+                { value: Listing.DRAFT, label: "Rascunho" },
+                { value: Listing.RENTED, label: "Alugado" },
+                { value: Listing.SOLD, label: "Vendido" },
+              ]}
+            />
+          </div>
+          <div className="flex-1">
+            <SelectControl
+              control={control}
+              name="purpose"
+              size="small"
+              label="Finalidade"
+              options={[
+                { value: Purpose.SALE, label: "Venda" },
+                { value: Purpose.RENT, label: "Aluguel" },
+              ]}
+            />
+          </div>
+          <Button
+            type="submit"
+            disabled={isLoading || !hasFilter}
+            variant="contained"
+          >
+            Pesquisar
+          </Button>
+          <Button
+            type="button"
+            variant="outlined"
+            color="info"
+            onClick={() => {
+              reset();
+              setFilters({});
+              setPaginationModel({ page: 0, pageSize: 10 });
+              pushToUrl({}, 0, 10);
+            }}
+          >
+            Limpar
+          </Button>
+        </form>
+      </div>
 
       <div className="bg-primary/5 p-4 rounded">
         <DataTable<CreatePublishResponse>
@@ -160,7 +198,7 @@ export const MyProperties = () => {
           emptyMessage="Você ainda não cadastrou nenhum imóvel."
           pagination={{
             model: paginationModel,
-            onModelChange: setPaginationModel,
+            onModelChange: handlePaginationChange,
             pageSizeOptions: [10, 25, 50],
           }}
           total={total}

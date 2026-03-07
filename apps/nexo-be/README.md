@@ -490,6 +490,60 @@ A mensagem de erro informa o plano e o limite: `"Limite de imagens atingido para
 3. Associar o plano ao usuario (hoje e por imovel; no futuro sera por usuario/assinatura)
 4. Injetar o plano como atributo no token JWT do Keycloak pos-pagamento
 
+## Seed de Dados de Teste
+
+O arquivo `prisma/seed.ts` popula o banco com dados de desenvolvimento. Alem dos usuarios e imoveis basicos, ele inclui uma secao de **50 imoveis em lote** para facilitar testes de paginacao e filtros no painel do anunciante.
+
+### Rodar o seed
+
+```bash
+pnpm prisma:seed
+```
+
+### Imoveis em lote (secao 6b)
+
+O seed cria 50 imoveis distribuidos por tipo, finalidade, status e cidade:
+
+| Categoria                     | Quantidade |
+| ----------------------------- | ---------- |
+| Apartamentos / Venda (ACTIVE) | 17         |
+| Casas / Condominios (ACTIVE)  | 10         |
+| Terrenos / Comercial (ACTIVE) | 3          |
+| Apartamentos / Aluguel        | 8          |
+| Casas / Aluguel               | 2          |
+| Rascunhos (DRAFT)             | 5          |
+| Inativos (INACTIVE)           | 3          |
+| Vendido / Alugado             | 2          |
+| **Total**                     | **50**     |
+
+Os imoveis sao distribuidos entre 15 combinacoes de cidade/bairro (SP, RJ, MG, PR, RS, SC).
+
+Todos os 50 imoveis sao criados pertencentes a um unico usuario de teste (`seed.bulk@nexo-dev.local`), cujo `keycloakId` e configuravel via variavel de ambiente.
+
+### Vinculando ao seu usuario Keycloak
+
+Por padrao, o usuario de teste recebe o `keycloakId` ficticio `kc-seed-bulk-001`. Para que os 50 imoveis aparecam no painel do **seu** usuario Keycloak real, defina a variavel antes de rodar o seed:
+
+```bash
+# .env (apps/nexo-be)
+SEED_OWNER_KEYCLOAK_ID=<uuid-do-seu-usuario-no-keycloak>
+```
+
+Para obter o UUID do seu usuario no Keycloak:
+
+```bash
+# Via admin do Keycloak
+curl -s http://localhost:8080/realms/nexo/account \
+  -H "Authorization: Bearer <token>" | jq .id
+
+# Ou diretamente no JWT
+echo "<access_token>" | cut -d. -f2 | base64 -d 2>/dev/null | jq .sub
+```
+
+Sem essa variavel, os imoveis ainda sao criados normalmente no banco, mas ficam associados ao usuario ficticio `kc-seed-bulk-001` — invisivel no painel, util para testes de API.
+
+> **Atencao:** O seed usa `create` (nao `upsert`) para o usuario de lote. Rodar o seed duas vezes causara erro de chave duplicada. Use `pnpm prisma:migrate --force-reset` ou delete manualmente o usuario antes de re-executar.
+
 ## Scripts
 
 ```bash

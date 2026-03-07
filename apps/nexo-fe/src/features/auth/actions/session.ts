@@ -6,7 +6,7 @@ import type { User } from "../types";
 export type { User as SessionUserData };
 
 export async function setAuthCookie(userData?: Partial<User>) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const maxAge = 60 * 60 * 24;
   const secure = process.env.NODE_ENV === "production";
 
@@ -31,7 +31,7 @@ export async function setAuthCookie(userData?: Partial<User>) {
 }
 
 export async function clearAuthCookie() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.delete("nexo-session");
   cookieStore.delete("nexo-user");
 }

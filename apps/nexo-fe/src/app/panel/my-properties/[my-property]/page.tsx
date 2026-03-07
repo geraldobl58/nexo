@@ -1,16 +1,17 @@
 import { MyProperty } from "@/features/owner/components/my-property";
 
 type MyPropertyProps = {
-  params: {
+  params: Promise<{
     "my-property": string;
-  };
+  }>;
 };
 
-const MyPropertyPage = ({ params }: MyPropertyProps) => {
+const MyPropertyPage = async ({ params }: MyPropertyProps) => {
+  const resolvedParams = await params;
   return (
     <div>
       <div>
-        <MyProperty params={params} />
+        <MyProperty params={resolvedParams} />
       </div>
     </div>
   );

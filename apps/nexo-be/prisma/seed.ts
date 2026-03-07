@@ -610,6 +610,697 @@ async function main() {
   console.log(`   ✅ ${aptoDraft.title} [DRAFT]`);
 
   // -------------------------------------------------------------------------
+  // 6b. BULK TEST LISTINGS (50 imóveis para paginação e filtros)
+  // -------------------------------------------------------------------------
+  console.log('\n🏘️  Criando 50 imóveis de teste em lote...');
+  console.log(
+    '   ℹ️  Defina SEED_OWNER_KEYCLOAK_ID=<uuid> no .env do backend para que',
+  );
+  console.log(
+    '       esses imóveis apareçam no painel do seu usuário Keycloak.\n',
+  );
+
+  const seedOwnerKeycloakId =
+    process.env.SEED_OWNER_KEYCLOAK_ID ??
+    '03916ee1-861e-45d5-85cd-11635d42b4d4';
+
+  const seedOwner = await prisma.user.create({
+    data: {
+      keycloakId: seedOwnerKeycloakId,
+      email: 'seed.bulk@nexo-dev.local',
+      name: 'Dev Bulk Tester',
+      isActive: true,
+      advertiserType: 'OWNER',
+    },
+  });
+
+  const bulkCities = [
+    { city: 'São Paulo', state: 'SP', district: 'Jardins' },
+    { city: 'São Paulo', state: 'SP', district: 'Moema' },
+    { city: 'São Paulo', state: 'SP', district: 'Pinheiros' },
+    { city: 'São Paulo', state: 'SP', district: 'Itaim Bibi' },
+    { city: 'São Paulo', state: 'SP', district: 'Vila Madalena' },
+    { city: 'Rio de Janeiro', state: 'RJ', district: 'Ipanema' },
+    { city: 'Rio de Janeiro', state: 'RJ', district: 'Leblon' },
+    { city: 'Rio de Janeiro', state: 'RJ', district: 'Copacabana' },
+    { city: 'Rio de Janeiro', state: 'RJ', district: 'Botafogo' },
+    { city: 'Belo Horizonte', state: 'MG', district: 'Savassi' },
+    { city: 'Belo Horizonte', state: 'MG', district: 'Lourdes' },
+    { city: 'Curitiba', state: 'PR', district: 'Batel' },
+    { city: 'Curitiba', state: 'PR', district: 'Água Verde' },
+    { city: 'Porto Alegre', state: 'RS', district: 'Moinhos de Vento' },
+    { city: 'Florianópolis', state: 'SC', district: 'Centro' },
+  ] as const;
+
+  type BulkStatus = 'ACTIVE' | 'DRAFT' | 'INACTIVE' | 'SOLD' | 'RENTED';
+  type BulkPurpose = 'SALE' | 'RENT';
+  type BulkType =
+    | 'APARTMENT'
+    | 'HOUSE'
+    | 'STUDIO'
+    | 'CONDO_HOUSE'
+    | 'LAND'
+    | 'COMMERCIAL';
+
+  interface BulkSpec {
+    title: string;
+    type: BulkType;
+    purpose: BulkPurpose;
+    status: BulkStatus;
+    price: number;
+    areaM2: number;
+    bedrooms?: number;
+    bathrooms?: number;
+    garageSpots?: number;
+  }
+
+  const bulkSpecs: BulkSpec[] = [
+    // ── SALE · APARTMENT (17) ───────────────────────────────────────────────
+    {
+      title: 'Apartamento 1 quarto compacto',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 28000000,
+      areaM2: 45,
+      bedrooms: 1,
+      bathrooms: 1,
+      garageSpots: 1,
+    },
+    {
+      title: 'Apartamento 2 quartos com vista',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 52000000,
+      areaM2: 72,
+      bedrooms: 2,
+      bathrooms: 2,
+      garageSpots: 1,
+    },
+    {
+      title: 'Apartamento 3 quartos alto padrão',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 89000000,
+      areaM2: 100,
+      bedrooms: 3,
+      bathrooms: 3,
+      garageSpots: 2,
+    },
+    {
+      title: 'Cobertura duplex com terraço',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 175000000,
+      areaM2: 200,
+      bedrooms: 4,
+      bathrooms: 4,
+      garageSpots: 3,
+    },
+    {
+      title: 'Studio moderno próximo ao metrô',
+      type: 'STUDIO',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 24000000,
+      areaM2: 38,
+      bedrooms: 1,
+      bathrooms: 1,
+      garageSpots: 1,
+    },
+    {
+      title: 'Apartamento reformado 2 quartos',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 45000000,
+      areaM2: 68,
+      bedrooms: 2,
+      bathrooms: 1,
+      garageSpots: 1,
+    },
+    {
+      title: 'Apartamento 4 suítes luxuoso',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 230000000,
+      areaM2: 180,
+      bedrooms: 4,
+      bathrooms: 4,
+      garageSpots: 4,
+    },
+    {
+      title: 'Kitnet bem localizada',
+      type: 'STUDIO',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 18500000,
+      areaM2: 28,
+      bedrooms: 1,
+      bathrooms: 1,
+    },
+    {
+      title: 'Apartamento garden com quintal privativo',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 67000000,
+      areaM2: 90,
+      bedrooms: 2,
+      bathrooms: 2,
+      garageSpots: 2,
+    },
+    {
+      title: 'Apê 2 quartos em condomínio clube',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 58000000,
+      areaM2: 76,
+      bedrooms: 2,
+      bathrooms: 2,
+      garageSpots: 2,
+    },
+    {
+      title: 'Apartamento 3 quartos 2 suítes',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 112000000,
+      areaM2: 120,
+      bedrooms: 3,
+      bathrooms: 3,
+      garageSpots: 2,
+    },
+    {
+      title: 'Loft industrial reformado',
+      type: 'STUDIO',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 35000000,
+      areaM2: 55,
+      bedrooms: 1,
+      bathrooms: 1,
+      garageSpots: 1,
+    },
+    {
+      title: 'Apartamento 2 quartos perto do parque',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 48000000,
+      areaM2: 65,
+      bedrooms: 2,
+      bathrooms: 2,
+      garageSpots: 1,
+    },
+    {
+      title: 'Apê novo em prédio com lazer completo',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 74000000,
+      areaM2: 85,
+      bedrooms: 2,
+      bathrooms: 2,
+      garageSpots: 2,
+    },
+    {
+      title: 'Cobertura 3 quartos vista panorâmica',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 145000000,
+      areaM2: 160,
+      bedrooms: 3,
+      bathrooms: 3,
+      garageSpots: 3,
+    },
+    {
+      title: 'Apartamento padrão médio 2 quartos',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 36000000,
+      areaM2: 60,
+      bedrooms: 2,
+      bathrooms: 1,
+      garageSpots: 1,
+    },
+    {
+      title: 'Apartamento alto padrão 1 suíte',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 62000000,
+      areaM2: 78,
+      bedrooms: 2,
+      bathrooms: 2,
+      garageSpots: 1,
+    },
+    // ── SALE · HOUSE / CONDO_HOUSE (10) ─────────────────────────────────────
+    {
+      title: 'Casa 3 quartos com quintal',
+      type: 'HOUSE',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 65000000,
+      areaM2: 150,
+      bedrooms: 3,
+      bathrooms: 2,
+      garageSpots: 2,
+    },
+    {
+      title: 'Casa em condomínio fechado',
+      type: 'CONDO_HOUSE',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 120000000,
+      areaM2: 200,
+      bedrooms: 4,
+      bathrooms: 4,
+      garageSpots: 3,
+    },
+    {
+      title: 'Casa térrea ampla 4 quartos',
+      type: 'HOUSE',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 85000000,
+      areaM2: 180,
+      bedrooms: 4,
+      bathrooms: 3,
+      garageSpots: 2,
+    },
+    {
+      title: 'Sobrado 3 quartos rua tranquila',
+      type: 'HOUSE',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 72000000,
+      areaM2: 160,
+      bedrooms: 3,
+      bathrooms: 3,
+      garageSpots: 2,
+    },
+    {
+      title: 'Casa luxuosa com piscina e churrasqueira',
+      type: 'HOUSE',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 220000000,
+      areaM2: 350,
+      bedrooms: 5,
+      bathrooms: 5,
+      garageSpots: 4,
+    },
+    {
+      title: 'Casa geminada 2 quartos',
+      type: 'HOUSE',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 39000000,
+      areaM2: 90,
+      bedrooms: 2,
+      bathrooms: 1,
+      garageSpots: 1,
+    },
+    {
+      title: 'Casa nova em condomínio clube',
+      type: 'CONDO_HOUSE',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 95000000,
+      areaM2: 160,
+      bedrooms: 3,
+      bathrooms: 3,
+      garageSpots: 2,
+    },
+    {
+      title: 'Casa 3 suítes próxima ao comércio',
+      type: 'HOUSE',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 78000000,
+      areaM2: 170,
+      bedrooms: 3,
+      bathrooms: 3,
+      garageSpots: 2,
+    },
+    {
+      title: 'Sobrado moderno 4 quartos',
+      type: 'HOUSE',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 110000000,
+      areaM2: 210,
+      bedrooms: 4,
+      bathrooms: 4,
+      garageSpots: 2,
+    },
+    {
+      title: 'Casa simples 2 quartos boa localização',
+      type: 'HOUSE',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 32000000,
+      areaM2: 80,
+      bedrooms: 2,
+      bathrooms: 1,
+      garageSpots: 1,
+    },
+    // ── SALE · LAND / COMMERCIAL (3) ─────────────────────────────────────────
+    {
+      title: 'Terreno 450m² em condomínio',
+      type: 'LAND',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 38000000,
+      areaM2: 450,
+    },
+    {
+      title: 'Sala comercial 50m² edifício corporativo',
+      type: 'COMMERCIAL',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 42000000,
+      areaM2: 50,
+    },
+    {
+      title: 'Terreno plano 600m²',
+      type: 'LAND',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 55000000,
+      areaM2: 600,
+    },
+    // ── RENT · APARTMENT / STUDIO (8) ────────────────────────────────────────
+    {
+      title: 'Apartamento 1 quarto para locação',
+      type: 'APARTMENT',
+      purpose: 'RENT',
+      status: 'ACTIVE',
+      price: 180000,
+      areaM2: 45,
+      bedrooms: 1,
+      bathrooms: 1,
+      garageSpots: 1,
+    },
+    {
+      title: 'Apartamento mobiliado 2 quartos',
+      type: 'APARTMENT',
+      purpose: 'RENT',
+      status: 'ACTIVE',
+      price: 350000,
+      areaM2: 70,
+      bedrooms: 2,
+      bathrooms: 2,
+      garageSpots: 1,
+    },
+    {
+      title: 'Studio mobiliado perto do metrô',
+      type: 'STUDIO',
+      purpose: 'RENT',
+      status: 'ACTIVE',
+      price: 120000,
+      areaM2: 35,
+      bedrooms: 1,
+      bathrooms: 1,
+    },
+    {
+      title: 'Apartamento 3 quartos para família',
+      type: 'APARTMENT',
+      purpose: 'RENT',
+      status: 'ACTIVE',
+      price: 520000,
+      areaM2: 90,
+      bedrooms: 3,
+      bathrooms: 2,
+      garageSpots: 2,
+    },
+    {
+      title: 'Flat executivo para temporada',
+      type: 'STUDIO',
+      purpose: 'RENT',
+      status: 'ACTIVE',
+      price: 280000,
+      areaM2: 42,
+      bedrooms: 1,
+      bathrooms: 1,
+      garageSpots: 1,
+    },
+    {
+      title: 'Apartamento alto padrão para locação',
+      type: 'APARTMENT',
+      purpose: 'RENT',
+      status: 'ACTIVE',
+      price: 980000,
+      areaM2: 130,
+      bedrooms: 3,
+      bathrooms: 3,
+      garageSpots: 2,
+    },
+    {
+      title: 'Kitnet central bem localizada',
+      type: 'STUDIO',
+      purpose: 'RENT',
+      status: 'ACTIVE',
+      price: 95000,
+      areaM2: 25,
+      bedrooms: 1,
+      bathrooms: 1,
+    },
+    {
+      title: 'Sala comercial pronta para uso',
+      type: 'COMMERCIAL',
+      purpose: 'RENT',
+      status: 'ACTIVE',
+      price: 220000,
+      areaM2: 60,
+    },
+    // ── RENT · HOUSE (2) ─────────────────────────────────────────────────────
+    {
+      title: 'Casa 3 quartos com jardim para locação',
+      type: 'HOUSE',
+      purpose: 'RENT',
+      status: 'ACTIVE',
+      price: 450000,
+      areaM2: 140,
+      bedrooms: 3,
+      bathrooms: 2,
+      garageSpots: 2,
+    },
+    {
+      title: 'Casa em condomínio para locação',
+      type: 'CONDO_HOUSE',
+      purpose: 'RENT',
+      status: 'ACTIVE',
+      price: 580000,
+      areaM2: 160,
+      bedrooms: 3,
+      bathrooms: 3,
+      garageSpots: 2,
+    },
+    // ── DRAFT (5) ────────────────────────────────────────────────────────────
+    {
+      title: 'Apartamento novo sem fotos rascunho',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'DRAFT',
+      price: 55000000,
+      areaM2: 75,
+      bedrooms: 2,
+      bathrooms: 2,
+      garageSpots: 1,
+    },
+    {
+      title: 'Casa 4 quartos em construção rascunho',
+      type: 'HOUSE',
+      purpose: 'SALE',
+      status: 'DRAFT',
+      price: 92000000,
+      areaM2: 180,
+      bedrooms: 4,
+      bathrooms: 3,
+      garageSpots: 2,
+    },
+    {
+      title: 'Terreno bairro nobre rascunho',
+      type: 'LAND',
+      purpose: 'SALE',
+      status: 'DRAFT',
+      price: 44000000,
+      areaM2: 500,
+    },
+    {
+      title: 'Studio aluguel aguardando fotos',
+      type: 'STUDIO',
+      purpose: 'RENT',
+      status: 'DRAFT',
+      price: 130000,
+      areaM2: 32,
+      bedrooms: 1,
+      bathrooms: 1,
+    },
+    {
+      title: 'Apartamento 2q revisão de informações',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'DRAFT',
+      price: 42000000,
+      areaM2: 62,
+      bedrooms: 2,
+      bathrooms: 1,
+      garageSpots: 1,
+    },
+    // ── INACTIVE (3) ─────────────────────────────────────────────────────────
+    {
+      title: 'Apartamento pausado temporariamente',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'INACTIVE',
+      price: 67000000,
+      areaM2: 85,
+      bedrooms: 2,
+      bathrooms: 2,
+      garageSpots: 1,
+    },
+    {
+      title: 'Casa anúncio suspenso para reforma',
+      type: 'HOUSE',
+      purpose: 'SALE',
+      status: 'INACTIVE',
+      price: 88000000,
+      areaM2: 160,
+      bedrooms: 3,
+      bathrooms: 2,
+      garageSpots: 2,
+    },
+    {
+      title: 'Studio aluguel pausado',
+      type: 'STUDIO',
+      purpose: 'RENT',
+      status: 'INACTIVE',
+      price: 110000,
+      areaM2: 30,
+      bedrooms: 1,
+      bathrooms: 1,
+    },
+    // ── SOLD / RENTED (2) ────────────────────────────────────────────────────
+    {
+      title: 'Apartamento vendido histórico',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'SOLD',
+      price: 72000000,
+      areaM2: 80,
+      bedrooms: 2,
+      bathrooms: 2,
+      garageSpots: 1,
+    },
+    {
+      title: 'Casa alugada contrato vigente',
+      type: 'HOUSE',
+      purpose: 'RENT',
+      status: 'RENTED',
+      price: 420000,
+      areaM2: 120,
+      bedrooms: 3,
+      bathrooms: 2,
+      garageSpots: 1,
+    },
+  ];
+
+  const bulkProperties = await prisma.property.createManyAndReturn({
+    data: bulkSpecs.map((spec, i) => {
+      const loc = bulkCities[i % bulkCities.length];
+      return {
+        createdById: seedOwner.id,
+        status: spec.status,
+        purpose: spec.purpose,
+        type: spec.type,
+        title: spec.title,
+        slug: slugify(spec.title, `bulk-${i + 1}`),
+        description: `Imóvel de teste gerado automaticamente pelo seed. Localizado em ${loc.district}, ${loc.city} - ${loc.state}.`,
+        price: spec.price,
+        areaM2: spec.areaM2,
+        bedrooms: spec.bedrooms,
+        bathrooms: spec.bathrooms,
+        garageSpots: spec.garageSpots,
+        city: loc.city,
+        state: loc.state,
+        district: loc.district,
+        publishedAt: spec.status === 'ACTIVE' ? new Date() : undefined,
+        viewsCount: Math.floor(Math.random() * 800),
+        uniqueViewsCount: Math.floor(Math.random() * 500),
+        listingPlan: 'FREE' as const,
+        acceptsFinancing: spec.purpose === 'SALE',
+        isReadyToMove: spec.status === 'ACTIVE',
+      };
+    }),
+  });
+
+  console.log(
+    `   ✅ ${bulkSpecs.length} imóveis criados (keycloakId: ${seedOwnerKeycloakId})`,
+  );
+
+  // Adiciona 3 fotos + 1 vídeo (a cada 5 imóveis) para cada imóvel em lote
+  const BULK_PHOTO_SEEDS = [
+    ['architecture', 'living-room-01', 'bedroom-01'],
+    ['house-01', 'kitchen-01', 'bathroom-01'],
+    ['apartment-01', 'balcony-01', 'hall-01'],
+    ['condo-01', 'pool-01', 'facade-01'],
+    ['studio-01', 'open-plan-01', 'window-01'],
+  ];
+
+  // Vídeos de amostra do Google CDN — sempre disponíveis, sem autenticação
+  const BULK_VIDEO_URLS = [
+    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+  ];
+
+  await prisma.propertyMedia.createMany({
+    data: bulkProperties.flatMap((prop, i) => {
+      const seeds = BULK_PHOTO_SEEDS[i % BULK_PHOTO_SEEDS.length];
+      const photos = seeds.map((seed, order) => ({
+        propertyId: prop.id,
+        type: 'IMAGE' as const,
+        url: `https://picsum.photos/seed/nexo-${seed}-${i}/1200/800`,
+        publicId: `seed/bulk-${i + 1}-photo-${order}`,
+        order,
+      }));
+      // Adiciona 1 vídeo a cada 5 imóveis (índices 0, 5, 10, 15, …)
+      const videoEntry =
+        i % 5 === 0
+          ? [
+              {
+                propertyId: prop.id,
+                type: 'VIDEO' as const,
+                url: BULK_VIDEO_URLS[
+                  Math.floor(i / 5) % BULK_VIDEO_URLS.length
+                ],
+                publicId: `seed/bulk-${i + 1}-video`,
+                order: seeds.length, // depois das fotos
+              },
+            ]
+          : [];
+      return [...photos, ...videoEntry];
+    }),
+  });
+
+  const bulkVideoCount = bulkProperties.filter((_, i) => i % 5 === 0).length;
+  console.log(
+    `   📷 ${bulkProperties.length * 3} fotos + 🎬 ${bulkVideoCount} vídeos adicionados aos imóveis em lote`,
+  );
+
+  // -------------------------------------------------------------------------
   // 7. MÍDIAS DOS IMÓVEIS (fotos + vídeos)
   // -------------------------------------------------------------------------
   console.log('\n📸 Adicionando mídias (fotos e vídeos)...');
@@ -620,28 +1311,28 @@ async function main() {
       {
         propertyId: apto1.id,
         type: 'IMAGE',
-        url: 'https://placehold.co/1200x800?text=Sala+Jardins',
+        url: 'https://picsum.photos/seed/nexo-sala-jardins/1200/800',
         publicId: 'seed/apto1-sala-jardins',
         order: 0, // capa
       },
       {
         propertyId: apto1.id,
         type: 'IMAGE',
-        url: 'https://placehold.co/1200x800?text=Quarto+Principal',
+        url: 'https://picsum.photos/seed/nexo-quarto-principal/1200/800',
         publicId: 'seed/apto1-quarto-principal',
         order: 1,
       },
       {
         propertyId: apto1.id,
         type: 'IMAGE',
-        url: 'https://placehold.co/1200x800?text=Varanda+Gourmet',
+        url: 'https://picsum.photos/seed/nexo-varanda-gourmet/1200/800',
         publicId: 'seed/apto1-varanda-gourmet',
         order: 2,
       },
       {
         propertyId: apto1.id,
         type: 'IMAGE',
-        url: 'https://placehold.co/1200x800?text=Cozinha',
+        url: 'https://picsum.photos/seed/nexo-cozinha-01/1200/800',
         publicId: 'seed/apto1-cozinha',
         order: 3,
       },
@@ -649,14 +1340,14 @@ async function main() {
       {
         propertyId: apto2.id,
         type: 'IMAGE',
-        url: 'https://placehold.co/1200x800?text=Studio+Itaim',
+        url: 'https://picsum.photos/seed/nexo-studio-itaim/1200/800',
         publicId: 'seed/apto2-studio-itaim',
         order: 0, // capa
       },
       {
         propertyId: apto2.id,
         type: 'IMAGE',
-        url: 'https://placehold.co/1200x800?text=Banheiro',
+        url: 'https://picsum.photos/seed/nexo-banheiro-01/1200/800',
         publicId: 'seed/apto2-banheiro',
         order: 1,
       },
@@ -664,28 +1355,28 @@ async function main() {
       {
         propertyId: casa1.id,
         type: 'IMAGE',
-        url: 'https://placehold.co/1200x800?text=Fachada+Casa',
+        url: 'https://picsum.photos/seed/nexo-fachada-casa/1200/800',
         publicId: 'seed/casa1-fachada',
         order: 0, // capa
       },
       {
         propertyId: casa1.id,
         type: 'IMAGE',
-        url: 'https://placehold.co/1200x800?text=Piscina',
+        url: 'https://picsum.photos/seed/nexo-piscina-01/1200/800',
         publicId: 'seed/casa1-piscina',
         order: 1,
       },
       {
         propertyId: casa1.id,
         type: 'IMAGE',
-        url: 'https://placehold.co/1200x800?text=Sala+Grande',
+        url: 'https://picsum.photos/seed/nexo-sala-grande/1200/800',
         publicId: 'seed/casa1-sala-grande',
         order: 2,
       },
       {
         propertyId: casa1.id,
         type: 'IMAGE',
-        url: 'https://placehold.co/1200x800?text=Suite+Master',
+        url: 'https://picsum.photos/seed/nexo-suite-master/1200/800',
         publicId: 'seed/casa1-suite-master',
         order: 3,
       },
@@ -693,29 +1384,29 @@ async function main() {
       {
         propertyId: apto3.id,
         type: 'IMAGE',
-        url: 'https://placehold.co/1200x800?text=Vista+Mar',
+        url: 'https://picsum.photos/seed/nexo-vista-mar/1200/800',
         publicId: 'seed/apto3-vista-mar',
         order: 0, // capa
       },
       {
         propertyId: apto3.id,
         type: 'IMAGE',
-        url: 'https://placehold.co/1200x800?text=Piscina+Privativa',
+        url: 'https://picsum.photos/seed/nexo-piscina-privativa/1200/800',
         publicId: 'seed/apto3-piscina-privativa',
         order: 1,
       },
       {
         propertyId: apto3.id,
         type: 'IMAGE',
-        url: 'https://placehold.co/1200x800?text=Sala+Leblon',
+        url: 'https://picsum.photos/seed/nexo-sala-leblon/1200/800',
         publicId: 'seed/apto3-sala-leblon',
         order: 2,
       },
       {
-        // Vídeo de tour virtual — demonstra o suporte a MediaType VIDEO
+        // Vídeo de tour virtual — Big Buck Bunny (Google CDN, sempre disponível)
         propertyId: apto3.id,
         type: 'VIDEO',
-        url: 'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
+        url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
         publicId: 'seed/apto3-tour-virtual',
         order: 3,
       },
@@ -723,14 +1414,14 @@ async function main() {
       {
         propertyId: apto4.id,
         type: 'IMAGE',
-        url: 'https://placehold.co/1200x800?text=Sala+Ipanema',
+        url: 'https://picsum.photos/seed/nexo-sala-ipanema/1200/800',
         publicId: 'seed/apto4-sala-ipanema',
         order: 0, // capa
       },
       {
         propertyId: apto4.id,
         type: 'IMAGE',
-        url: 'https://placehold.co/1200x800?text=Vista+Parcial',
+        url: 'https://picsum.photos/seed/nexo-vista-parcial/1200/800',
         publicId: 'seed/apto4-vista-parcial',
         order: 1,
       },
@@ -738,7 +1429,7 @@ async function main() {
       {
         propertyId: aptoProprietario.id,
         type: 'IMAGE',
-        url: 'https://placehold.co/1200x800?text=Sala+Moema',
+        url: 'https://picsum.photos/seed/nexo-sala-moema/1200/800',
         publicId: 'seed/aptoProprietario-sala-moema',
         order: 0, // capa
       },
@@ -746,7 +1437,9 @@ async function main() {
     ],
   });
 
-  console.log('   ✅ 17 mídias adicionadas (16 imagens + 1 vídeo)');
+  console.log(
+    '   ✅ 17 mídias adicionadas aos imóveis nomeados (16 imagens + 1 vídeo)',
+  );
 
   // -------------------------------------------------------------------------
   // 8. COMODIDADES DOS IMÓVEIS
@@ -1057,7 +1750,9 @@ async function main() {
   console.log('═══════════════════════════════════════');
   console.log(`   👤 Usuários:        ${counts[0]}`);
   console.log(`   👥 Clientes:        ${counts[1]}`);
-  console.log(`   🏠 Imóveis:         ${counts[2]}`);
+  console.log(
+    `   🏠 Imóveis:         ${counts[2]} (7 detalhados + 50 de teste em lote)`,
+  );
   console.log(`   📸 Mídias:          ${counts[3]}`); // imagens + vídeos
   console.log(`   🏊 Comodidades:     ${counts[4]}`);
   console.log(`   📋 Planos:          ${counts[11]}`);
@@ -1067,6 +1762,21 @@ async function main() {
   console.log(`   ⭐ Avaliações:      ${counts[8]}`);
   console.log(`   🗓️  Visitas:         ${counts[9]}`);
   console.log(`   📝 Propostas:       ${counts[10]}`);
+  console.log('═══════════════════════════════════════');
+  console.log('');
+  console.log('🔑 Usuário de teste em lote:');
+  console.log(
+    `   keycloakId: ${process.env.SEED_OWNER_KEYCLOAK_ID ?? 'kc-seed-bulk-001'}`,
+  );
+  console.log(
+    '   Para logar como este usuário no Keycloak, certifique-se de que',
+  );
+  console.log(
+    '   o UUID acima corresponde ao sub do JWT do seu usuário Keycloak.',
+  );
+  console.log(
+    '   Defina SEED_OWNER_KEYCLOAK_ID=<seu-uuid> no .env do backend.',
+  );
   console.log('═══════════════════════════════════════\n');
 }
 

@@ -1,11 +1,12 @@
 import { ListingDetail } from "@/features/owner/components/listing-detail";
 
 type ImovelPageProps = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
-export default function ImovelPage({ params }: ImovelPageProps) {
-  return <ListingDetail id={params.id} />;
+export default async function ImovelPage({ params }: ImovelPageProps) {
+  const { id } = await params;
+  return <ListingDetail id={id} />;
 }

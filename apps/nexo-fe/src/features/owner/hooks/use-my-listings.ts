@@ -116,6 +116,7 @@ export function useMyListingById(id: string | undefined) {
   return {
     listing: query.data ?? null,
     isLoading: query.isLoading,
+    isPending: query.isPending,
     isFetching: query.isFetching,
     error: query.error,
     refetch: query.refetch,
