@@ -1,7 +1,8 @@
 import { Heading } from "@/components/ui/Heading/Heading";
+import { PublishProvider } from "@/contexts/publish-context";
+
 import { ProtectedRoute } from "@/features/auth";
-import { PublishProvider } from "@/features/owner/context/publish-context";
-import { PublishWizardContent } from "@/features/owner/components/publish-wizard-content";
+import { MyPropertyPublishWizard } from "@/features/owner/components/my-property-publish-wizard";
 
 const PageOwner = () => {
   return (
@@ -14,7 +15,7 @@ const PageOwner = () => {
             description="Preencha as informações do seu imóvel para criar o anúncio e começar a receber propostas de interessados."
           />
           <PublishProvider>
-            <PublishWizardContent />
+            <MyPropertyPublishWizard />
           </PublishProvider>
         </div>
       </div>

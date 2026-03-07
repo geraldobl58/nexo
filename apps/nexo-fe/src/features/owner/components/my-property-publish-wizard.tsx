@@ -19,7 +19,7 @@ import { PUBLISH_STEPS, usePublish } from "@/contexts/publish-context";
 
 import { useAuth } from "@/features/auth/hooks/use-auth";
 
-export function PublishWizardContent() {
+export function MyPropertyPublishWizard() {
   const {
     activeStep,
     goNext,
