@@ -1,7 +1,10 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useSyncExternalStore } from "react";
+
 import Image from "next/image";
+import { useQuery } from "@tanstack/react-query";
+
 import { Alert, Chip, CircularProgress, Divider } from "@mui/material";
 import {
   Bath,
@@ -16,7 +19,6 @@ import {
   MessageCircle,
 } from "lucide-react";
 
-import { useSyncExternalStore } from "react";
 import keycloak from "@/lib/keycloak";
 import { getListingById } from "../http/listing";
 import {
@@ -26,35 +28,9 @@ import {
   Listing,
 } from "../enums/publish-details-enums";
 import { CreatePublishResponse } from "../types/publish-types";
+import { InfoItem } from "@/components/ui/info-item/info-item";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function formatCurrency(cents: number): string {
-  return (cents / 100).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
-
-function InfoItem({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string | number;
-}) {
-  return (
-    <div className="flex flex-col items-center gap-1 p-3 bg-gray-50 rounded-lg">
-      <span className="text-primary">{icon}</span>
-      <span className="text-lg font-bold text-gray-800">{value}</span>
-      <span className="text-xs text-gray-500">{label}</span>
-    </div>
-  );
-}
+import { formatCurrency } from "@/lib/formatted-money";
 
 // ---------------------------------------------------------------------------
 // Keycloak ready guard — waits for keycloak.init() to fully resolve so the
@@ -78,7 +54,7 @@ function getKeycloakReady() {
 // Component
 // ---------------------------------------------------------------------------
 
-export function ListingDetail({ id }: { id: string }) {
+export function MyPropertyById({ id }: { id: string }) {
   // Wait for keycloak.init() to fully resolve (keycloak.authenticated !== undefined)
   // before firing the query. Without this, a sessionStorage token makes authLoading
   // flip to false BEFORE the JWT is attached → 404 on DRAFT listings.

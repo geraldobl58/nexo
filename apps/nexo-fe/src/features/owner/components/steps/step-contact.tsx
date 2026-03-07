@@ -5,11 +5,11 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { FormField } from "@/components/ui/form-field/form-field";
-import { usePublish } from "../context/publish-context";
+import { usePublish } from "@/contexts/publish-context";
 import {
   createPushlishContactSchema,
   PublishContactData,
-} from "../schemas/publish-contact";
+} from "../../schemas/publish-contact";
 
 export const StepContact = () => {
   const { formData, setContactData, setContactValid } = usePublish();

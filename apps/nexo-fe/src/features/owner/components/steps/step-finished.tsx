@@ -1,78 +1,17 @@
 "use client";
 
-import { Alert, Button, Chip, Divider } from "@mui/material";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import { Alert, Chip, Divider } from "@mui/material";
 
-import { usePublish } from "../context/publish-context";
+import { usePublish } from "@/contexts/publish-context";
 import {
   PurposeLabel,
   PropertyTypeLabel,
   Purpose,
   PropertyType,
-} from "../enums/publish-details-enums";
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function currency(value?: number) {
-  if (value === undefined || value === null) return "—";
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
-}
-
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
-interface SectionProps {
-  title: string;
-  onEdit: () => void;
-  children: React.ReactNode;
-}
-
-function Section({ title, onEdit, children }: SectionProps) {
-  return (
-    <div>
-      <div className="flex items-center justify-between rounded-lg p-4 bg-primary/5">
-        <span className="text-sm font-semibold text-foreground">{title}</span>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<EditOutlinedIcon fontSize="small" />}
-          onClick={onEdit}
-          className="!text-xs"
-        >
-          Editar
-        </Button>
-      </div>
-      <div className="p-4">{children}</div>
-    </div>
-  );
-}
-
-interface FieldProps {
-  label: string;
-  value?: string | number | null;
-}
-
-function Field({ label, value }: FieldProps) {
-  if (value === undefined || value === null || value === "") return null;
-  return (
-    <div className="flex flex-col space-y-2 gap-0.5">
-      <span className="text-xs uppercase tracking-wide text-muted-foreground font-bold mt-4">
-        {label}
-      </span>
-      <span className="text-xs text-foreground">{value}</span>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Props
-// ---------------------------------------------------------------------------
+} from "../../enums/publish-details-enums";
+import { currency } from "@/lib/formatted-money";
+import { Field } from "@/components/ui/field/field";
+import { Section } from "@/components/ui/section/section";
 
 export interface StepFinishedProps {
   publishResult?: { success: boolean; message?: string } | null;

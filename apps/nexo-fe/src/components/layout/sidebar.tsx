@@ -8,7 +8,7 @@ import { LogOut } from "lucide-react";
 import { Divider, IconButton } from "@mui/material";
 
 import { sections } from "@/routes";
-import { Logo } from "@/components/ui/Logo/Logo";
+import { Logo } from "@/components/ui/logo/logo";
 import { useAuth } from "@/features/auth";
 import Image from "next/image";
 

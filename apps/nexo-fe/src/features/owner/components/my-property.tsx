@@ -42,7 +42,7 @@ import {
 } from "../schemas/publish-contact";
 import { Purpose, PropertyType } from "../enums/publish-details-enums";
 import { MediaItem, UpdateListingInput } from "../types/publish-types";
-import { MediaCard, MediaSlot } from "./media-card";
+import { MyPropertyMediaCard } from "./my-property-media-card";
 import { deleteMedia, reorderMedia, uploadMedia } from "../http/publish";
 
 import {
@@ -53,11 +53,9 @@ import {
   MAX_VIDEOS,
   validateFile,
 } from "@/lib/media-upload";
-
-// MOCK: enquanto o pagamento não estiver implementado os imóveis são criados
-// com plano FREE (limite de 5 fotos). Quando os planos pagos forem ativados,
-// esse valor virá do contexto/estado do usuário.
-const CURRENT_PLAN_MAX_IMAGES = MAX_IMAGES_FREE;
+import { fromCents } from "@/lib/formatted-money";
+import { MediaSlot } from "../types/my-property-media-card";
+import { CURRENT_PLAN_MAX_IMAGES } from "@/constants";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -72,12 +70,6 @@ type MyPropertyProps = {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/** Converte centavos → reais para exibição no formulário. */
-function fromCents(value: number | null | undefined): number | undefined {
-  if (value == null) return undefined;
-  return value / 100;
-}
 
 function TabPanel({
   children,
@@ -1023,7 +1015,7 @@ export const MyProperty = ({ params }: MyPropertyProps) => {
           {slots.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {slots.map((slot, index) => (
-                <MediaCard
+                <MyPropertyMediaCard
                   key={
                     slot.kind === "existing"
                       ? slot.item.id

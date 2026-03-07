@@ -21,14 +21,7 @@ import {
   UpdateListingInput,
 } from "../types/publish-types";
 
-/**
- * Converte reais → centavos. O formulário armazena valores em reais;
- * a API espera centavos (R$ 350.000 = 35000000).
- */
-function toCents(value?: number): number | undefined {
-  if (value === undefined || value === null) return undefined;
-  return Math.round(value * 100);
-}
+import { toCents } from "@/lib/formatted-money";
 
 /**
  * Remove campos com valor string vazio ("") do objeto para que o backend

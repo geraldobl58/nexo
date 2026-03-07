@@ -1,38 +1,10 @@
-import { DragEvent } from "react";
-
 import { Button, Chip } from "@mui/material";
 
 import { ACCEPTED_TYPES, formatBytes } from "@/lib/media-upload";
 
-import type { MediaItem } from "../types/publish-types";
+import { MediaCardProps } from "../types/my-property-media-card";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-/** Representa um item na galeria de edição: pode ser um arquivo existente
- *  (já salvo no servidor) ou um arquivo novo aguardando upload. */
-export type MediaSlot =
-  | { kind: "existing"; item: MediaItem }
-  | { kind: "new"; file: File; tempId: string };
-
-type MediaCardProps = {
-  slot: MediaSlot;
-  index: number;
-  onRemove: (index: number) => void;
-  isDragOver?: boolean;
-  onDragStart?: (e: DragEvent<HTMLDivElement>) => void;
-  onDragOver?: (e: DragEvent<HTMLDivElement>) => void;
-  onDragLeave?: (e: DragEvent<HTMLDivElement>) => void;
-  onDrop?: (e: DragEvent<HTMLDivElement>) => void;
-  onDragEnd?: (e: DragEvent<HTMLDivElement>) => void;
-};
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
-export const MediaCard = ({
+export const MyPropertyMediaCard = ({
   slot,
   index,
   onRemove,
@@ -87,7 +59,6 @@ export const MediaCard = ({
           <path d="M7 2a1 1 0 000 2 1 1 0 000-2zM13 2a1 1 0 000 2 1 1 0 000-2zM7 8a1 1 0 000 2 1 1 0 000-2zM13 8a1 1 0 000 2 1 1 0 000-2zM7 14a1 1 0 000 2 1 1 0 000-2zM13 14a1 1 0 000 2 1 1 0 000-2z" />
         </svg>
       </div>
-
       {/* Badge "Novo" para arquivos ainda não enviados */}
       {isNewFile && (
         <div className="absolute top-7 left-1 z-10">
@@ -96,7 +67,6 @@ export const MediaCard = ({
           </span>
         </div>
       )}
-
       {/* Thumbnail */}
       <div className="h-28 flex items-center justify-center bg-gray-100">
         {isImage ? (
@@ -140,7 +110,6 @@ export const MediaCard = ({
           </div>
         )}
       </div>
-
       {/* Info */}
       <div className="px-2 py-1">
         <p className="text-xs text-gray-700 truncate" title={displayName}>
@@ -151,7 +120,6 @@ export const MediaCard = ({
         </p>
         {displaySize && <p className="text-xs text-gray-400">{displaySize}</p>}
       </div>
-
       <div className="w-full flex items-center justify-center pb-1">
         {/* Badge tipo */}
         <Chip

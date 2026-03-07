@@ -10,11 +10,11 @@ import { PatternFormat } from "react-number-format";
 import {
   createPublishLocationSchema,
   PublishLocationData,
-} from "../schemas/publish-location";
+} from "../../schemas/publish-location";
 import { FormField } from "@/components/ui/form-field/form-field";
-import { usePublish } from "../context/publish-context";
+import { usePublish } from "@/contexts/publish-context";
 import { LinearProgress, TextField } from "@mui/material";
-import { StepLocationProps } from "../types/publish-location-types";
+import { StepLocationProps } from "../../types/publish-location-types";
 import { DEFAULT_LAT, DEFAULT_LNG, fetchCep } from "@/lib/fect-cep";
 import { LeafletMap } from "@/lib/leaflet-map";
 

@@ -4,13 +4,14 @@ import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { usePublish } from "../context/publish-context";
+import { usePublish } from "@/contexts/publish-context";
+
+import { FormField } from "@/components/ui/form-field/form-field";
+import { CheckboxCustom } from "@/components/ui/checkbox-custom/checkbox-custom";
 import {
   createPublishComoditiesSchema,
   PublishComoditiesData,
-} from "../schemas/publish-comodities";
-import { FormField } from "@/components/ui/form-field/form-field";
-import { CheckboxCustom } from "@/components/ui/checkbox-custom/checkbox-custom";
+} from "../../schemas/publish-comodities";
 
 export const StepComodities = () => {
   const { formData, setComoditiesData, setComoditiesValid } = usePublish();

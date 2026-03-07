@@ -54,7 +54,6 @@ export const PreviewCard = ({
           <path d="M7 2a1 1 0 000 2 1 1 0 000-2zM13 2a1 1 0 000 2 1 1 0 000-2zM7 8a1 1 0 000 2 1 1 0 000-2zM13 8a1 1 0 000 2 1 1 0 000-2zM7 14a1 1 0 000 2 1 1 0 000-2zM13 14a1 1 0 000 2 1 1 0 000-2z" />
         </svg>
       </div>
-
       {/* Thumbnail */}
       <div className="h-28 flex items-center justify-center bg-gray-100">
         {isImage && objectUrl ? (
@@ -91,7 +90,6 @@ export const PreviewCard = ({
           </div>
         )}
       </div>
-
       {/* Info */}
       <div className="px-2 py-1">
         <p className="text-xs text-gray-700 truncate" title={file.name}>
@@ -102,7 +100,6 @@ export const PreviewCard = ({
         </p>
         <p className="text-xs text-gray-400">{formatBytes(file.size)}</p>
       </div>
-
       <div className="w-full flex items-center justify-center">
         {/* Badge tipo */}
         <Chip

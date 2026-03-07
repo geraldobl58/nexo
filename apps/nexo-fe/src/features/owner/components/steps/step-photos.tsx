@@ -3,7 +3,7 @@
 
 import { useCallback, useRef, useState, DragEvent } from "react";
 
-import { usePublish } from "../context/publish-context";
+import { usePublish } from "@/contexts/publish-context";
 
 import {
   ACCEPTED_EXTENSIONS,
@@ -19,7 +19,7 @@ import {
 // forem ativados, esse valor virá do contexto/estado do usuário.
 const CURRENT_PLAN_MAX_IMAGES = MAX_IMAGES_FREE;
 
-import { PreviewCard } from "./preview-card";
+import { PreviewCard } from "../../../../components/ui/preview-card/preview-card";
 
 export const StepPhotos = () => {
   const [isDragging, setIsDragging] = useState(false);

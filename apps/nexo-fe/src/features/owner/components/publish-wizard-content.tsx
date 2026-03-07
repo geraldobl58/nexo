@@ -5,17 +5,19 @@ import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { StepperWizard } from "@/components/ui/stepper-wizard/stepper-wizard";
-import { useAuth } from "@/features/auth/hooks/use-auth";
-import { PUBLISH_STEPS, usePublish } from "../context/publish-context";
 import { createPublication, uploadMediaFiles } from "../actions/publish";
 
 import { Purpose, PropertyType } from "../enums/publish-details-enums";
-import { StepLocation } from "./step-location";
-import { StepDetails } from "./step-details";
-import { StepPhotos } from "./step-photos";
-import { StepComodities } from "./step-comodities";
-import { StepFinished } from "./step-finished";
-import { StepContact } from "./step-contact";
+import { StepLocation } from "./steps/step-location";
+import { StepDetails } from "./steps/step-details";
+import { StepPhotos } from "./steps/step-photos";
+import { StepComodities } from "./steps/step-comodities";
+import { StepFinished } from "./steps/step-finished";
+import { StepContact } from "./steps/step-contact";
+
+import { PUBLISH_STEPS, usePublish } from "@/contexts/publish-context";
+
+import { useAuth } from "@/features/auth/hooks/use-auth";
 
 export function PublishWizardContent() {
   const {
