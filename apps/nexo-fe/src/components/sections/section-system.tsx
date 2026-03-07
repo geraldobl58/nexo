@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { BadgeCheck } from "lucide-react";
 
-import { Heading } from "@/components/ui/Heading/Heading";
+import { Heading } from "@/components/ui/heading/heading";
 import Button from "@mui/material/Button";
 
 export const SectionSystem = () => {

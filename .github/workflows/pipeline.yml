@@ -832,6 +832,7 @@ jobs:
       - name: Send Discord Notification
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message || github.event.pull_request.title || '' }}
         run: |
           ENV="${{ needs.preflight.outputs.environment }}"
           NAMESPACE="${{ needs.preflight.outputs.namespace }}"
@@ -839,8 +840,8 @@ jobs:
           BRANCH="${{ needs.preflight.outputs.branch }}"
           SHORT_SHA="${{ github.sha }}"
           SHORT_SHA="${SHORT_SHA:0:7}"
-          # Capturar mensagem do commit via git para evitar quebra de shell com mensagens multi-linha
-          COMMIT_MSG=$(git log -1 --format='%s')
+          # Capturar mensagem do commit via contexto do GitHub (sem necessidade de checkout)
+          COMMIT_MSG="${COMMIT_MESSAGE:-}"
           ACTOR="${{ github.actor }}"
           REPO="${{ github.repository }}"
           RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

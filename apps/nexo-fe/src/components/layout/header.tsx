@@ -4,14 +4,17 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/features/auth";
+import { useMyListings } from "@/features/owner/hooks/use-my-listings";
 import Button from "@mui/material/Button";
+import Tooltip from "@mui/material/Tooltip";
 
 import { MobileSidebar } from "./mobile-sidebar";
 import { NavBar } from "./navbar";
-import { Logo } from "../ui/logo/logo";
+import { Logo } from "@/components/ui/logo/logo";
 
 export const Header = () => {
   const { login, user } = useAuth();
+  const { isAtFreeLimit } = useMyListings();
   // Só renderiza botões de auth depois da hidratação para evitar mismatch
   // (server não conhece o estado Keycloak; cliente pode já ter user definido)
   const [mounted, setMounted] = useState(false);
@@ -52,9 +55,32 @@ export const Header = () => {
               Entrar
             </Button>
           )}
-          <Button variant="contained" component={Link} href="/publish">
-            Anuncie Grátis
-          </Button>
+          {mounted && user ? (
+            <Tooltip
+              title={
+                isAtFreeLimit
+                  ? "Plano FREE: limite de 1 imóvel atingido. Faça upgrade para anunciar mais."
+                  : ""
+              }
+              arrow
+            >
+              {/* span necessário para o Tooltip funcionar em botão desabilitado */}
+              <span>
+                <Button
+                  variant="contained"
+                  component={Link}
+                  href="/publish/owner"
+                  disabled={isAtFreeLimit}
+                >
+                  Anuncie Grátis
+                </Button>
+              </span>
+            </Tooltip>
+          ) : (
+            <Button variant="contained" component={Link} href="/publish">
+              Anuncie Grátis
+            </Button>
+          )}
         </div>
       </div>
     </header>

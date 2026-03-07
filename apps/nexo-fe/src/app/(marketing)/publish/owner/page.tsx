@@ -1,4 +1,4 @@
-import { Heading } from "@/components/ui/Heading/Heading";
+import { Heading } from "@/components/ui/heading/heading";
 import { PublishProvider } from "@/contexts/publish-context";
 
 import { ProtectedRoute } from "@/features/auth";

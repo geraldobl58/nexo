@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Building, ShoppingBag, User2 } from "lucide-react";
 
 import { CardInformation } from "@/components/ui/card-information/card-information";
-import { Heading } from "@/components/ui/Heading/Heading";
+import { Heading } from "@/components/ui/heading/heading";
 import Image from "next/image";
 import Button from "@mui/material/Button";
 

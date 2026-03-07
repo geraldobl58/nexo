@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 
 import { LogOut } from "lucide-react";
@@ -10,7 +11,6 @@ import { Divider, IconButton } from "@mui/material";
 import { sections } from "@/routes";
 import { Logo } from "@/components/ui/logo/logo";
 import { useAuth } from "@/features/auth";
-import Image from "next/image";
 
 export const PanelSidebar = () => {
   const pathname = usePathname();
