@@ -126,3 +126,122 @@ spec:
       path: /metrics
       interval: 30s
       scrapeTimeout: 10s
+
+
+# ============================================================================
+# ServiceMonitors para ambientes nexo-qa e nexo-staging
+# ============================================================================
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nexo-be
+  namespace: nexo-qa
+  labels:
+    app: nexo-be
+    environment: qa
+spec:
+  selector:
+    matchLabels:
+      app: nexo-be
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nexo-fe
+  namespace: nexo-qa
+  labels:
+    app: nexo-fe
+    environment: qa
+spec:
+  selector:
+    matchLabels:
+      app: nexo-fe
+  endpoints:
+    - port: http
+      path: /api/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nexo-auth
+  namespace: nexo-qa
+  labels:
+    app: nexo-auth
+    environment: qa
+spec:
+  selector:
+    matchLabels:
+      app: nexo-auth
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nexo-be
+  namespace: nexo-staging
+  labels:
+    app: nexo-be
+    environment: staging
+spec:
+  selector:
+    matchLabels:
+      app: nexo-be
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nexo-fe
+  namespace: nexo-staging
+  labels:
+    app: nexo-fe
+    environment: staging
+spec:
+  selector:
+    matchLabels:
+      app: nexo-fe
+  endpoints:
+    - port: http
+      path: /api/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nexo-auth
+  namespace: nexo-staging
+  labels:
+    app: nexo-auth
+    environment: staging
+spec:
+  selector:
+    matchLabels:
+      app: nexo-auth
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

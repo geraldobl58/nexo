@@ -45,14 +45,15 @@ import { ReorderMediaDto } from './dtos/reorder-media.dto';
  * CONTROLLER DE MÍDIA DO ANÚNCIO
  *
  * Gerencia o ciclo de vida das fotos e vídeos de um imóvel.
+ * Todas as rotas exigem autenticação JWT.
  *
  * Rotas:
  *  POST   /marketing/:id/media           → upload (auth)
- *  GET    /marketing/:id/media           → listar (público)
+ *  GET    /marketing/:id/media           → listar mídias (auth)
  *  DELETE /marketing/:id/media/:mediaId  → deletar (auth)
  *  PATCH  /marketing/:id/media/reorder   → reordenar (auth)
  */
-@ApiTags('Marketing')
+@ApiTags('Meus Imóveis')
 @Controller('marketing/:id/media')
 export class MediaController {
   constructor(
@@ -161,19 +162,25 @@ export class MediaController {
   }
 
   // ---------------------------------------------------------------------------
-  // GET /marketing/:id/media — Listar mídias (público)
+  // GET /marketing/:id/media — Listar mídias (auth)
   // ---------------------------------------------------------------------------
 
   @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Listar mídias do imóvel',
     description:
       'Retorna todas as fotos e vídeos ordenados por posição (order ASC). ' +
-      'A primeira mídia (order 0) é a foto de capa.',
+      'A primeira mídia (order 0) é a foto de capa. Requer autenticação.',
   })
   @ApiOkResponse({
     description: 'Lista de mídias ordenada',
     type: [MediaResponseDto],
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token JWT ausente, expirado ou inválido',
+    schema: { example: { statusCode: 401, message: 'Unauthorized' } },
   })
   @ApiTooManyRequestsResponse({
     description: 'Limite de requisições excedido',
