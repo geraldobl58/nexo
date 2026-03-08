@@ -1215,9 +1215,24 @@ async function main() {
     },
   ];
 
+  // Distribui planos de forma realista: ~30% FREE, ~40% STANDARD, ~20% FEATURED, ~7% PREMIUM, ~3% SUPER
+  const BULK_PLANS = [
+    'FREE',
+    'STANDARD',
+    'STANDARD',
+    'FEATURED',
+    'STANDARD',
+    'FREE',
+    'STANDARD',
+    'FEATURED',
+    'PREMIUM',
+    'SUPER',
+  ] as const;
+
   const bulkProperties = await prisma.property.createManyAndReturn({
     data: bulkSpecs.map((spec, i) => {
       const loc = bulkCities[i % bulkCities.length];
+      const plan = BULK_PLANS[i % BULK_PLANS.length];
       return {
         createdById: seedOwner.id,
         status: spec.status,
@@ -1237,7 +1252,9 @@ async function main() {
         publishedAt: spec.status === 'ACTIVE' ? new Date() : undefined,
         viewsCount: Math.floor(Math.random() * 800),
         uniqueViewsCount: Math.floor(Math.random() * 500),
-        listingPlan: 'FREE' as const,
+        listingPlan: plan,
+        isFeatured:
+          plan === 'FEATURED' || plan === 'PREMIUM' || plan === 'SUPER',
         acceptsFinancing: spec.purpose === 'SALE',
         isReadyToMove: spec.status === 'ACTIVE',
       };
