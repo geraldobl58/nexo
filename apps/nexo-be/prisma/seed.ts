@@ -24,6 +24,9 @@
  *  pnpm prisma:seed
  *    ou
  *  npx ts-node prisma/seed.ts
+ *
+ * USUÁRIOS EM SEED:
+ *  - 3 clientes + 1 Jane Doe (keycloak: 03916ee1-861e-45d5-85cd-11635d42b4d4)
  */
 
 import 'dotenv/config';
@@ -319,9 +322,19 @@ async function main() {
     },
   });
 
+  const clienteJane = await prisma.customer.create({
+    data: {
+      keycloakId: '03916ee1-861e-45d5-85cd-11635d42b4d4',
+      name: 'Jane Doe',
+      email: 'janedoe@email.com',
+      isVerified: true,
+    },
+  });
+
   console.log(`   ✅ ${clienteJoao.name}`);
   console.log(`   ✅ ${clienteAna.name}`);
   console.log(`   ✅ ${clienteRoberto.name}`);
+  console.log(`   ✅ ${clienteJane.name}`);
 
   // -------------------------------------------------------------------------
   // 6. COMODIDADES (AMENITIES)
@@ -1844,8 +1857,12 @@ async function main() {
   console.log('✅ SEED CONCLUÍDO COM SUCESSO!');
   console.log('═══════════════════════════════════════');
   console.log(`   👤 Usuários internos:  ${usersCount}`);
-  console.log(`   🏢 Anunciantes:        ${advertisersCount} (agency, broker, owner, developer + bulk)`);
-  console.log(`   📋 Planos:             ${plansCount} (BASIC, INTERMEDIATE, PREMIUM)`);
+  console.log(
+    `   🏢 Anunciantes:        ${advertisersCount} (agency, broker, owner, developer + bulk)`,
+  );
+  console.log(
+    `   📋 Planos:             ${plansCount} (BASIC, INTERMEDIATE, PREMIUM)`,
+  );
   console.log(`   💳 Assinaturas:        ${subscriptionsCount}`);
   console.log(`   👥 Clientes:           ${customersCount}`);
   console.log(
@@ -1866,9 +1883,7 @@ async function main() {
   console.log(
     '   Para logar como este anunciante no Keycloak, certifique-se de que',
   );
-  console.log(
-    '   o UUID acima corresponde ao sub do JWT do seu Keycloak.',
-  );
+  console.log('   o UUID acima corresponde ao sub do JWT do seu Keycloak.');
   console.log(
     '   Defina SEED_OWNER_KEYCLOAK_ID=<seu-uuid> no .env do backend.',
   );

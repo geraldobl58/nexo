@@ -100,5 +100,7 @@ ENV PORT=3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start application (server.js is in /app from standalone output)
-CMD ["node", "/app/server.js"]
+# Start application
+# Note: with outputFileTracingRoot pointing to monorepo root, Next.js standalone
+# places server.js at apps/nexo-fe/server.js within the standalone output dir.
+CMD ["node", "/app/apps/nexo-fe/server.js"]
