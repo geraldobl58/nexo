@@ -46,7 +46,7 @@ export class GetListingUseCase {
     // dono ou para Admin/Moderador. Para qualquer outro caller, retorna 404
     // (não 403) para não vazar informação sobre a existência do rascunho.
     if (listing.status !== ListingStatus.ACTIVE) {
-      const isOwner = requesterId && listing.createdById === requesterId;
+      const isOwner = requesterId && listing.advertiserId === requesterId;
       const isPrivileged =
         requesterRole === 'ADMIN' || requesterRole === 'MODERATOR';
       if (!isOwner && !isPrivileged) {

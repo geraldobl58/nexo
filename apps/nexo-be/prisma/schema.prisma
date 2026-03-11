@@ -11,149 +11,154 @@ datasource db {
 //
 
 enum PropertyPurpose {
-  RENT
-  SALE
+  RENT // Aluguel
+  SALE // Venda
 }
 
 enum PropertyType {
-  APARTMENT
-  HOUSE
-  CONDO_HOUSE
-  STUDIO
-  LAND
-  COMMERCIAL
-  FARM
-  OTHER
+  APARTMENT   // Apartamento
+  HOUSE       // Casa
+  CONDO_HOUSE // Casa em condomínio
+  STUDIO      // Studio
+  LAND        // Terreno
+  COMMERCIAL  // Comercial
+  FARM        // Fazenda/Sítio
+  OTHER       // Outro
 }
 
 enum PropertyStatus {
-  DRAFT
-  ACTIVE
-  INACTIVE
-  SOLD
-  RENTED
+  DRAFT    // Rascunho
+  ACTIVE   // Ativo
+  INACTIVE // Inativo
+  SOLD     // Vendido
+  RENTED   // Alugado
 }
 
 enum MediaType {
-  IMAGE
-  VIDEO
+  IMAGE // Imagem
+  VIDEO // Vídeo
 }
 
 enum LeadStatus {
-  NEW
-  CONTACTED
-  QUALIFIED
-  LOST
-  WON
+  NEW       // Novo
+  CONTACTED // Contatado
+  QUALIFIED // Qualificado
+  LOST      // Perdido
+  WON       // Ganhou
 }
 
 enum NotificationType {
-  EMAIL
-  SMS
-  PUSH
-  WHATSAPP
+  EMAIL    // Email
+  SMS      // SMS
+  PUSH     // Push
+  WHATSAPP // WhatsApp
 }
 
 enum NotificationStatus {
-  PENDING
-  SENT
-  FAILED
-  READ
+  PENDING // Pendente
+  SENT    // Enviado
+  FAILED  // Falhou
+  READ    // Lido
 }
 
 enum VisitStatus {
-  SCHEDULED
-  CONFIRMED
-  COMPLETED
-  CANCELED
+  SCHEDULED // Agendado
+  CONFIRMED // Confirmado
+  COMPLETED // Concluído
+  CANCELED  // Cancelado
   NO_SHOW
 }
 
 enum ProposalStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-  COUNTER_OFFER
-  EXPIRED
+  PENDING       // Pendente
+  ACCEPTED      // Aceito
+  REJECTED      // Rejeitado
+  COUNTER_OFFER // Contra-proposta
+  EXPIRED       // Expirado
 }
 
 enum IntegrationStatus {
-  ACTIVE
-  INACTIVE
-  ERROR
+  ACTIVE   // Ativo
+  INACTIVE // Inativo
+  ERROR    // Erro
 }
 
 enum WebhookEventType {
-  PROPERTY_CREATED
-  PROPERTY_UPDATED
-  PROPERTY_DELETED
-  LEAD_CREATED
-  LEAD_UPDATED
-  VISIT_SCHEDULED
-  PROPOSAL_CREATED
+  PROPERTY_CREATED // Imóvel criado
+  PROPERTY_UPDATED // Imóvel atualizado
+  PROPERTY_DELETED // Imóvel deletado
+  LEAD_CREATED     // Lead criado
+  LEAD_UPDATED     // Lead atualizado
+  VISIT_SCHEDULED  // Visita agendada
+  PROPOSAL_CREATED // Proposta criada
 }
 
 enum UserRole {
-  ADMIN
-  MODERATOR
-  SUPPORT
+  ADMIN     // Administrador
+  MODERATOR // Moderador
+  SUPPORT   // Suporte
 }
 
 enum AdvertiserType {
-  AGENCY // Imobiliária
-  BROKER // Corretor independente
-  OWNER // Proprietário direto
+  AGENCY    // Imobiliária
+  BROKER    // Corretor independente
+  OWNER     // Proprietário direto
   DEVELOPER // Construtora/Incorporadora
 }
 
 enum AdvertiserStatus {
-  PENDING // Aguardando aprovação
-  ACTIVE // Ativo
+  PENDING   // Aguardando aprovação
+  ACTIVE    // Ativo
   SUSPENDED // Suspenso
-  BLOCKED // Bloqueado permanentemente
+  BLOCKED   // Bloqueado permanentemente
 }
 
-enum ListingPlanType {
-  FREE // Anúncio gratuito básico
-  STANDARD // Anúncio padrão
-  FEATURED // Destaque (aparece em topo)
-  PREMIUM // Premium (múltiplas fotos, tour virtual)
-  SUPER // Super Destaque (homepage, cor especial)
+enum PlanType {
+  BASIC        // Básico - gratuito (1 imóvel, 5 fotos, sem vídeo)
+  INTERMEDIATE // Intermediário - R$ 49,90/mês (5 imóveis, 10 fotos, 1 vídeo)
+  PREMIUM      // Premium - R$ 99,90/mês (ilimitado, 10 fotos, 1 vídeo)
+}
+
+enum SubscriptionStatus {
+  ACTIVE          // Ativo
+  CANCELED        // Cancelado
+  EXPIRED         // Expirado
+  PENDING_PAYMENT // Aguardando pagamento
 }
 
 enum BoostStatus {
-  ACTIVE
-  EXPIRED
-  CANCELED
+  ACTIVE   // Ativo
+  EXPIRED  // Expirado
+  CANCELED // Cancelado
 }
 
 enum MessageStatus {
-  SENT
-  DELIVERED
-  READ
+  SENT      // Enviado
+  DELIVERED // Entregue
+  READ      // Lido
 }
 
 enum ReportReason {
-  FAKE_LISTING // Anúncio falso
-  WRONG_PRICE // Preço incorreto
-  ALREADY_SOLD // Já vendido/alugado
-  SPAM // Spam
+  FAKE_LISTING  // Anúncio falso
+  WRONG_PRICE   // Preço incorreto
+  ALREADY_SOLD  // Já vendido/alugado
+  SPAM          // Spam
   INAPPROPRIATE // Conteúdo inapropriado
-  SCAM // Golpe/fraude
-  DUPLICATE // Duplicado
-  OTHER // Outro
+  SCAM          // Golpe/fraude
+  DUPLICATE     // Duplicado
+  OTHER         // Outro
 }
 
 enum ReportStatus {
-  PENDING
-  UNDER_REVIEW
-  RESOLVED
-  REJECTED
+  PENDING      // Pendente
+  UNDER_REVIEW // Em revisão
+  RESOLVED     // Resolvido
+  REJECTED     // Rejeitado
 }
 
 //
-// USERS (ADMINISTRADORES E MODERADORES DO PORTAL)
-// Apenas equipe interna - Roles vêm do Keycloak
+// USER (EQUIPE INTERNA — ADMINS E MODERADORES DO PORTAL)
+// Roles vêm do Keycloak
 //
 
 model User {
@@ -166,14 +171,9 @@ model User {
 
   role UserRole @default(SUPPORT)
 
-  // Tipo de anunciante (quando o usuário também anuncia imóveis)
-  advertiserType AdvertiserType?
-
-  // Preferências
   timezone String? @default("America/Sao_Paulo")
   language String? @default("pt-BR")
 
-  // Notificações
   emailNotifications Boolean @default(true)
   pushNotifications  Boolean @default(true)
 
@@ -184,16 +184,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  leadsAssigned      Lead[]        @relation("AssignedLeads")
-  visitsScheduled    Visit[]       @relation("ScheduledBy")
-  activitiesCreated  ActivityLog[]
-  reportsReviewed    Report[]      @relation("ReviewedBy")
-  propertiesCreated  Property[]    @relation("CreatedByUser")
-  propertyBoosts     PropertyBoost[] @relation("BoostUser")
-  conversations      Conversation[]  @relation("ConversationUser")
-  sentMessages       Message[]       @relation("SentByUser")
-  reviewsReceived    Review[]        @relation("ReviewsReceived")
-  reportsReceived    Report[]        @relation("ReportedUser")
+  leadsAssigned     Lead[]        @relation("AssignedLeads")
+  activitiesCreated ActivityLog[]
+  reportsReviewed   Report[]      @relation("ReviewedBy")
 
   @@index([email])
   @@index([role])
@@ -201,8 +194,137 @@ model User {
 }
 
 //
-// CUSTOMER (USUÁRIO FINAL DO PORTAL / MARKETPLACE)
-// Pode autenticar via Keycloak ou ser anônimo
+// ADVERTISER (ANUNCIANTE — OS 4 TIPOS DE USUÁRIOS DO SISTEMA)
+// Imobiliária, Corretor independente, Proprietário direto, Construtora/Incorporadora
+//
+
+model Advertiser {
+  id         String  @id @default(uuid())
+  keycloakId String  @unique
+  email      String  @unique
+  name       String
+  phone      String?
+  avatar     String?
+  document   String? // CPF ou CNPJ
+
+  type   AdvertiserType
+  status AdvertiserStatus @default(PENDING)
+
+  // Dados profissionais
+  companyName String? // Para Imobiliária e Construtora/Incorporadora
+  creciNumber String? // Número CRECI (para Imobiliária e Corretor)
+  website     String?
+  bio         String? @db.Text
+
+  // Localização
+  city    String?
+  state   String?
+  address String?
+
+  // Preferências
+  timezone String? @default("America/Sao_Paulo")
+  language String? @default("pt-BR")
+
+  // Notificações
+  emailNotifications Boolean @default(true)
+  pushNotifications  Boolean @default(true)
+  smsNotifications   Boolean @default(false)
+
+  // Controle
+  isVerified  Boolean   @default(false)
+  lastLoginAt DateTime?
+  deletedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  properties      Property[]
+  subscriptions   Subscription[]
+  boosts          PropertyBoost[] @relation("BoostAdvertiser")
+  conversations   Conversation[]  @relation("ConversationAdvertiser")
+  sentMessages    Message[]       @relation("SentByAdvertiser")
+  reviews         Review[]        @relation("AdvertiserReviews")
+  reportsReceived Report[]        @relation("ReportedAdvertiser")
+
+  @@index([email])
+  @@index([type])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+//
+// PLAN (PLANOS DE ASSINATURA)
+// Básico (gratuito), Intermediário e Premium
+//
+
+model Plan {
+  id String @id @default(uuid())
+
+  type        PlanType @unique
+  name        String
+  description String?
+
+  // Preço mensal em centavos (0 para gratuito)
+  priceMonthly Int
+
+  // Limites
+  maxProperties Int // -1 = ilimitado
+  maxPhotos     Int
+  maxVideos     Int // 0 = sem vídeo permitido
+
+  // Funcionalidades
+  featuredInSearch   Boolean @default(false)
+  featuredInHomepage Boolean @default(false)
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@index([type])
+  @@index([isActive])
+}
+
+//
+// SUBSCRIPTION (ASSINATURA DO ANUNCIANTE)
+//
+
+model Subscription {
+  id           String     @id @default(uuid())
+  advertiserId String
+  advertiser   Advertiser @relation(fields: [advertiserId], references: [id], onDelete: Cascade)
+
+  planId String
+  plan   Plan   @relation(fields: [planId], references: [id])
+
+  status SubscriptionStatus @default(ACTIVE)
+
+  // Período
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+
+  // Pagamento (futuro)
+  amount    Int?    // Valor pago em centavos
+  paymentId String? // ID do pagamento externo
+
+  // Controle
+  canceledAt   DateTime?
+  cancelReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([advertiserId, status])
+  @@index([planId])
+  @@index([status])
+  @@index([endDate])
+}
+
+//
+// CUSTOMER (USUÁRIO FINAL / INTERESSADO EM IMÓVEIS)
+// Pode autenticar via Keycloak ou navegar como anônimo
 //
 
 model Customer {
@@ -213,22 +335,17 @@ model Customer {
   name       String?
   avatar     String?
 
-  // Documento (CPF)
-  document String?
+  document String? // CPF
 
-  // Informações adicionais
   city       String?
   state      String?
   occupation String?
 
-  // Preferências de busca
   searchPreferences Json?
 
-  // Configurações de notificação
   emailNotifications Boolean @default(true)
   smsNotifications   Boolean @default(false)
 
-  // Controle
   isVerified Boolean   @default(false)
   deletedAt  DateTime?
 
@@ -255,10 +372,10 @@ model Customer {
 
 model Property {
   id         String  @id @default(uuid())
-  externalId String? @unique // ID de integração externa (VivaReal, OLX, etc)
+  externalId String? @unique // ID de integração externa (VivaReal, OLX, etc.)
 
-  createdById String?
-  createdBy   User?   @relation("CreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
+  advertiserId String
+  advertiser   Advertiser @relation(fields: [advertiserId], references: [id], onDelete: Cascade)
 
   status  PropertyStatus  @default(DRAFT)
   purpose PropertyPurpose
@@ -275,9 +392,9 @@ model Property {
   // Negociação
   acceptsExchange  Boolean @default(false)
   acceptsFinancing Boolean @default(true)
-  acceptsCarTrade  Boolean @default(false) // Aceita carro/moto na troca
+  acceptsCarTrade  Boolean @default(false)
   isLaunch         Boolean @default(false) // Imóvel na planta/lançamento
-  isReadyToMove    Boolean @default(false) // Pronto para morar
+  isReadyToMove    Boolean @default(false)
 
   // Características
   areaM2      Int?
@@ -305,7 +422,7 @@ model Property {
   latitude     Decimal? @db.Decimal(10, 7)
   longitude    Decimal? @db.Decimal(10, 7)
 
-  // Contato específico do anúncio (pode ser diferente do anunciante)
+  // Contato específico do anúncio (pode diferir do anunciante)
   contactName     String?
   contactEmail    String?
   contactPhone    String?
@@ -315,7 +432,7 @@ model Property {
   slug            String  @unique
   metaTitle       String?
   metaDescription String?
-  videoUrl        String? // Tour virtual
+  videoUrl        String? // Vídeo/tour virtual
   virtualTourUrl  String?
 
   // Analytics
@@ -328,29 +445,22 @@ model Property {
   whatsappClicksCount Int @default(0)
   emailClicksCount    Int @default(0)
 
-  // Origem dos leads
-  leadSourcePortal   Int @default(0)
-  leadSourceSearch   Int @default(0)
-  leadSourceMap      Int @default(0)
-  leadSourceFeatured Int @default(0)
-
-  // Destaque e plano
-  listingPlan    ListingPlanType @default(FREE)
-  isFeatured     Boolean         @default(false)
+  // Destaque (para impulsionamentos futuros)
+  isFeatured     Boolean   @default(false)
   highlightUntil DateTime?
 
   // Rating
   averageRating Float? @default(0)
   totalReviews  Int    @default(0)
 
-  // Integração com portais
+  // Integração com portais externos
   publishToVivaReal   Boolean @default(false)
   publishToOLX        Boolean @default(false)
   publishToZapImoveis Boolean @default(false)
 
   // Controle
   publishedAt DateTime?
-  expiresAt   DateTime? // Data de expiração do anúncio
+  expiresAt   DateTime?
   deletedAt   DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -361,20 +471,18 @@ model Property {
   favorites     FavoriteProperty[]
   visits        Visit[]
   proposals     Proposal[]
-  activities    ActivityLog[]
   boosts        PropertyBoost[]
   reviews       Review[]           @relation("PropertyReviews")
   reports       Report[]           @relation("ReportedProperty")
   conversations Conversation[]
 
-  @@index([createdById])
+  @@index([advertiserId])
   @@index([status])
   @@index([purpose, type])
   @@index([city, state, district])
   @@index([price])
   @@index([bedrooms])
   @@index([isFeatured])
-  @@index([listingPlan])
   @@index([publishedAt])
   @@index([expiresAt])
   @@index([averageRating])
@@ -391,10 +499,10 @@ model PropertyMedia {
 
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  type      MediaType @default(IMAGE)
-  url       String
-  publicId  String // Cloudinary public_id para deleção
-  order     Int       @default(0)
+  type     MediaType @default(IMAGE)
+  url      String
+  publicId String // Cloudinary public_id para deleção
+  order    Int       @default(0)
 
   createdAt DateTime @default(now())
 
@@ -495,18 +603,18 @@ model SavedSearch {
 //
 
 model Notification {
-  id         String  @id @default(uuid())
-  userId     String? // Para admins/corretores
-  customerId String? // Para customers
+  id           String  @id @default(uuid())
+  userId       String? // Para admins/moderadores
+  advertiserId String? // Para anunciantes
+  customerId   String? // Para customers
 
   type   NotificationType
   status NotificationStatus @default(PENDING)
 
   title   String
   message String @db.Text
-  data    Json? // Dados adicionais
+  data    Json?
 
-  // Controle de envio
   sentAt       DateTime?
   readAt       DateTime?
   failedAt     DateTime?
@@ -516,6 +624,7 @@ model Notification {
 
   @@index([status])
   @@index([userId])
+  @@index([advertiserId])
   @@index([customerId])
   @@index([createdAt])
 }
@@ -533,9 +642,6 @@ model Visit {
   customerId String?
   customer   Customer? @relation("CustomerVisits", fields: [customerId], references: [id], onDelete: SetNull)
 
-  scheduledById String?
-  scheduledBy   User?   @relation("ScheduledBy", fields: [scheduledById], references: [id], onDelete: SetNull)
-
   status VisitStatus @default(SCHEDULED)
 
   // Dados do interessado (se não for customer autenticado)
@@ -543,12 +649,10 @@ model Visit {
   email String?
   phone String?
 
-  // Data e hora da visita
   scheduledDate DateTime
 
   notes String? @db.Text
 
-  // Controle
   confirmedAt  DateTime?
   completedAt  DateTime?
   canceledAt   DateTime?
@@ -583,19 +687,15 @@ model Proposal {
   phone    String
   document String? // CPF/CNPJ
 
-  // Proposta
-  proposedPrice Int
-  message       String? @db.Text
+  proposedPrice   Int
+  message         String? @db.Text
 
-  // Financiamento
   financingNeeded Boolean @default(false)
   financingAmount Int?
 
-  // Resposta
   responseMessage String?   @db.Text
   respondedAt     DateTime?
 
-  // Validade
   expiresAt DateTime
 
   createdAt DateTime @default(now())
@@ -608,42 +708,7 @@ model Proposal {
 }
 
 //
-// LISTING PLANS (PLANOS DE ANÚNCIO)
-// Não é SaaS - são planos por anúncio individual
-//
-
-model ListingPlan {
-  id String @id @default(uuid())
-
-  type        ListingPlanType @unique
-  name        String
-  description String?
-
-  // Preço
-  price    Int // Em centavos
-  duration Int // Duração em dias
-
-  // Recursos incluídos
-  maxPhotos          Int     @default(10)
-  maxVideos          Int     @default(0)
-  allowVirtualTour   Boolean @default(false)
-  featuredInSearch   Boolean @default(false)
-  featuredInHomepage Boolean @default(false)
-  highlightColor     String? // Cor de destaque
-  badge              String? // Badge especial (ex: "PREMIUM", "SUPER")
-
-  // Controle
-  isActive Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  boosts PropertyBoost[]
-}
-
-//
 // PROPERTY BOOST (IMPULSIONAMENTO DE ANÚNCIOS)
-// Registro de quando um anúncio é impulsionado
 //
 
 model PropertyBoost {
@@ -652,23 +717,17 @@ model PropertyBoost {
   propertyId String
   property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  userId String
-  user   User @relation("BoostUser", fields: [userId], references: [id], onDelete: Cascade)
-
-  planId String
-  plan   ListingPlan @relation(fields: [planId], references: [id])
+  advertiserId String
+  advertiser   Advertiser @relation("BoostAdvertiser", fields: [advertiserId], references: [id], onDelete: Cascade)
 
   status BoostStatus @default(ACTIVE)
 
-  // Período
   startDate DateTime @default(now())
   endDate   DateTime
 
-  // Pagamento
-  amount    Int // Valor pago em centavos
-  paymentId String? // ID do pagamento (Stripe, etc)
+  amount    Int     // Valor em centavos
+  paymentId String? // ID do pagamento (futuro)
 
-  // Controle
   canceledAt   DateTime?
   cancelReason String?
 
@@ -676,7 +735,7 @@ model PropertyBoost {
   updatedAt DateTime @updatedAt
 
   @@index([propertyId])
-  @@index([userId])
+  @@index([advertiserId])
   @@index([status])
   @@index([startDate, endDate])
 }
@@ -694,15 +753,13 @@ model Conversation {
   customerId String
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
-  userId String
-  user   User @relation("ConversationUser", fields: [userId], references: [id], onDelete: Cascade)
+  advertiserId String
+  advertiser   Advertiser @relation("ConversationAdvertiser", fields: [advertiserId], references: [id], onDelete: Cascade)
 
-  // Última mensagem (para listar conversas)
   lastMessage   String?
   lastMessageAt DateTime?
   lastMessageBy String? // "customer" ou "advertiser"
 
-  // Status
   isRead     Boolean @default(false)
   isArchived Boolean @default(false)
 
@@ -713,7 +770,7 @@ model Conversation {
 
   @@unique([propertyId, customerId])
   @@index([customerId])
-  @@index([userId])
+  @@index([advertiserId])
   @@index([lastMessageAt])
 }
 
@@ -727,22 +784,18 @@ model Message {
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
-  // Remetente
   senderId   String?
   senderType String // "customer" ou "advertiser"
 
-  // Relações
   customerId String?
   customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
-  userId String?
-  user   User? @relation("SentByUser", fields: [userId], references: [id], onDelete: SetNull)
+  advertiserId String?
+  advertiser   Advertiser? @relation("SentByAdvertiser", fields: [advertiserId], references: [id], onDelete: SetNull)
 
-  // Conteúdo
   content     String @db.Text
-  attachments Json? // URLs de imagens/arquivos
+  attachments Json?
 
-  // Status
   status MessageStatus @default(SENT)
   readAt DateTime?
 
@@ -763,31 +816,28 @@ model Review {
   propertyId String?
   property   Property? @relation("PropertyReviews", fields: [propertyId], references: [id], onDelete: Cascade)
 
-  userId String?
-  user   User? @relation("ReviewsReceived", fields: [userId], references: [id], onDelete: Cascade)
+  advertiserId String?
+  advertiser   Advertiser? @relation("AdvertiserReviews", fields: [advertiserId], references: [id], onDelete: Cascade)
 
   // Quem avaliou
   customerId String
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
-  // Avaliação
   rating  Int // 1-5 estrelas
   title   String?
   comment String? @db.Text
 
-  // Resposta do anunciante
   response    String?   @db.Text
   respondedAt DateTime?
 
-  // Controle
-  isVerified  Boolean @default(false) // Verificado se cliente realmente visitou/negociou
+  isVerified  Boolean @default(false)
   isPublished Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([propertyId])
-  @@index([userId])
+  @@index([advertiserId])
   @@index([customerId])
   @@index([rating])
   @@index([createdAt])
@@ -800,14 +850,12 @@ model Review {
 model Report {
   id String @id @default(uuid())
 
-  // O que está sendo denunciado
   propertyId String?
   property   Property? @relation("ReportedProperty", fields: [propertyId], references: [id], onDelete: Cascade)
 
-  userId String?
-  user   User? @relation("ReportedUser", fields: [userId], references: [id], onDelete: Cascade)
+  advertiserId String?
+  advertiser   Advertiser? @relation("ReportedAdvertiser", fields: [advertiserId], references: [id], onDelete: Cascade)
 
-  // Quem denunciou
   customerId String?
   customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
@@ -815,28 +863,24 @@ model Report {
   reporterName  String?
   reporterEmail String?
 
-  // Detalhes
   reason      ReportReason
   description String?      @db.Text
-  evidence    Json? // URLs de screenshots, etc
+  evidence    Json?
 
-  // Status
   status ReportStatus @default(PENDING)
 
-  // Revisão
   reviewedById String?
   reviewedBy   User?     @relation("ReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
   reviewedAt   DateTime?
   reviewNotes  String?   @db.Text
 
-  // Ação tomada
-  actionTaken String? // "removed", "warned", "suspended", "no_action"
+  actionTaken String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([propertyId])
-  @@index([userId])
+  @@index([advertiserId])
   @@index([customerId])
   @@index([status])
   @@index([reason])
@@ -850,19 +894,17 @@ model Report {
 model Integration {
   id String @id @default(uuid())
 
-  name     String // VivaReal, OLX, ZapImoveis, WhatsApp Business, etc
-  provider String @unique // Identificador único do provedor
+  name     String
+  provider String @unique
 
   status IntegrationStatus @default(ACTIVE)
 
-  // Credenciais (criptografadas)
   apiKey       String?
   apiSecret    String?
   accessToken  String?
   refreshToken String?
-  config       Json? // Configurações específicas da integração
+  config       Json?
 
-  // Controle de sincronização
   lastSyncAt DateTime?
   nextSyncAt DateTime?
   syncErrors Json?
@@ -884,15 +926,12 @@ model Webhook {
 
   name   String
   url    String
-  secret String? // Secret para validar requisições
+  secret String?
 
-  // Eventos que disparam o webhook
   events WebhookEventType[]
 
-  // Headers customizados
   headers Json?
 
-  // Controle
   isActive        Boolean   @default(true)
   lastTriggeredAt DateTime?
   failureCount    Int       @default(0)
@@ -913,11 +952,9 @@ model WebhookDelivery {
   event   WebhookEventType
   payload Json
 
-  // Resposta
   statusCode Int?
   response   String? @db.Text
 
-  // Controle
   success     Boolean   @default(false)
   attempts    Int       @default(1)
   nextRetryAt DateTime?
@@ -938,18 +975,16 @@ model ActivityLog {
   userId String?
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  // Recurso afetado
-  entityType String // Property, Lead, User, etc
+  advertiserId String? // Anunciante que realizou a ação
+
+  entityType String // Property, Lead, Advertiser, etc.
   entityId   String
-  property   Property? @relation(fields: [entityId], references: [id], onDelete: Cascade)
 
-  action String // created, updated, deleted, published, etc
+  action String // created, updated, deleted, published, etc.
 
-  // Dados da mudança
   oldValues Json?
   newValues Json?
 
-  // Metadados
   ipAddress String?
   userAgent String?
 
@@ -957,5 +992,6 @@ model ActivityLog {
 
   @@index([entityType, entityId])
   @@index([userId])
+  @@index([advertiserId])
   @@index([createdAt])
 }

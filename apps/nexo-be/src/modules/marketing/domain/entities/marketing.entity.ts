@@ -1,5 +1,4 @@
 import { ListingStatus } from '../enums/marketing-status.enum';
-import { ListingPlan } from '../enums/marketing-plan.enum';
 import { MediaEntity } from './marketing-media.entity';
 
 /**
@@ -25,8 +24,8 @@ export interface ListingEntity {
   /** ID de integração externa (VivaReal, OLX, ZAP, etc.) */
   externalId: string | null;
 
-  /** ID do usuário admin que criou o anúncio */
-  createdById: string | null;
+  /** ID do anunciante dono do anúncio */
+  advertiserId: string;
 
   // --- Status e classificação ---
 
@@ -183,17 +182,7 @@ export interface ListingEntity {
   /** Cliques no botão de e-mail */
   emailClicksCount: number;
 
-  // --- Origem dos leads ---
-
-  leadSourcePortal: number;
-  leadSourceSearch: number;
-  leadSourceMap: number;
-  leadSourceFeatured: number;
-
   // --- Plano e destaque ---
-
-  /** Plano do anúncio (FREE, STANDARD, FEATURED, PREMIUM, SUPER) */
-  listingPlan: ListingPlan;
 
   /** Se o anúncio está atualmente em destaque */
   isFeatured: boolean;

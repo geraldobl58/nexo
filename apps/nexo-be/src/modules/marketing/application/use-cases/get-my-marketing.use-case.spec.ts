@@ -2,7 +2,7 @@
  * TESTES: GetMyListingsUseCase
  *
  * Comportamentos validados:
- *  1. Força createdById = userId (isolamento do dono)
+ *  1. Força advertiserId = userId (isolamento do dono)
  *  2. Por padrão passa todos os status (nenhum filtro de status único)
  *  3. Quando status é fornecido, usa status singular e não statuses[]
  *  4. Corrige paginação inválida (page < 1, limit > 100)
@@ -15,7 +15,6 @@ import {
 } from '../../domain/repositories/marketing.repository';
 import { ListingEntity } from '../../domain/entities/marketing.entity';
 import { ListingStatus } from '../../domain/enums/marketing-status.enum';
-import { ListingPlan } from '../../domain/enums/marketing-plan.enum';
 
 // ─── Fixture helpers ──────────────────────────────────────────────────────────
 
@@ -24,7 +23,7 @@ const makeListing = (
   status = ListingStatus.DRAFT,
 ): ListingEntity => ({
   id,
-  createdById: 'owner-uuid',
+  advertiserId: 'owner-uuid',
   status,
   purpose: 'SALE',
   type: 'APARTMENT',
@@ -75,11 +74,6 @@ const makeListing = (
   phoneClicksCount: 0,
   whatsappClicksCount: 0,
   emailClicksCount: 0,
-  leadSourcePortal: 0,
-  leadSourceSearch: 0,
-  leadSourceMap: 0,
-  leadSourceFeatured: 0,
-  listingPlan: ListingPlan.FREE,
   isFeatured: false,
   highlightUntil: null,
   averageRating: null,
@@ -98,7 +92,7 @@ const makeListing = (
 const makePaginated = (
   items: ListingEntity[],
   page = 1,
-  limit = 20,
+  limit = 10,
 ): PaginatedResult<ListingEntity> => ({
   items,
   total: items.length,
@@ -127,6 +121,12 @@ describe('GetMyListingsUseCase', () => {
       findById: jest.fn(),
       update: jest.fn(),
       findMany: jest.fn(),
+      countActiveByAdvertiser: jest.fn().mockResolvedValue(0),
+      getAdvertiserPlanLimits: jest.fn().mockResolvedValue({
+        maxProperties: 1,
+        maxPhotos: 5,
+        maxVideos: 0,
+      }),
       slugExists: jest.fn(),
       softDelete: jest.fn(),
     };
@@ -139,26 +139,26 @@ describe('GetMyListingsUseCase', () => {
 
   // ─── Isolamento do dono ───────────────────────────────────────────────────
 
-  it('deve forçar createdById com o userId fornecido', async () => {
+  it('deve forçar advertiserId com o userId fornecido', async () => {
     const userId = 'owner-uuid';
     mockRepo.findMany.mockResolvedValue(makePaginated([]));
 
     await useCase.execute(userId);
 
     expect(mockRepo.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ createdById: userId }),
+      expect.objectContaining({ advertiserId: userId }),
     );
   });
 
-  it('não deve permitir que um filtro externo sobrescreva createdById', async () => {
+  it('não deve permitir que um filtro externo sobrescreva advertiserId', async () => {
     const userId = 'owner-uuid';
     mockRepo.findMany.mockResolvedValue(makePaginated([]));
 
     // Simula um payload malicioso tentando ver outro usuário
-    await useCase.execute(userId, { page: 1, limit: 20 } as any);
+    await useCase.execute(userId, { page: 1, limit: 10 } as any);
 
     expect(mockRepo.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ createdById: userId }),
+      expect.objectContaining({ advertiserId: userId }),
     );
   });
 
@@ -210,13 +210,13 @@ describe('GetMyListingsUseCase', () => {
 
   // ─── Paginação ────────────────────────────────────────────────────────────
 
-  it('deve usar page=1 e limit=20 como padrão', async () => {
+  it('deve usar page=1 e limit=10 como padrão', async () => {
     mockRepo.findMany.mockResolvedValue(makePaginated([]));
 
     await useCase.execute('owner-uuid', {});
 
     expect(mockRepo.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ page: 1, limit: 20 }),
+      expect.objectContaining({ page: 1, limit: 10 }),
     );
   });
 

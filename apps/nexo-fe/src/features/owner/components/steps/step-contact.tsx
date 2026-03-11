@@ -7,9 +7,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { FormField } from "@/components/ui/form-field/form-field";
 import { usePublish } from "@/contexts/publish-context";
 import {
-  createPushlishContactSchema,
+  createPublishContactSchema,
   PublishContactData,
-} from "../../schemas/publish-contact";
+} from "../../schemas/publish-contact.schema";
 
 export const StepContact = () => {
   const { formData, setContactData, setContactValid } = usePublish();
@@ -18,7 +18,7 @@ export const StepContact = () => {
     control,
     formState: { errors, isValid },
   } = useForm<PublishContactData>({
-    resolver: zodResolver(createPushlishContactSchema),
+    resolver: zodResolver(createPublishContactSchema),
     mode: "onChange",
     // Restaura os dados salvos no context ao voltar para este step
     defaultValues: {

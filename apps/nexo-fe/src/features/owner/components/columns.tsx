@@ -6,14 +6,14 @@ import { ptBR } from "date-fns/locale";
 import { GridColDef } from "@mui/x-data-grid";
 import { Chip } from "@mui/material";
 
-import { CreatePublishResponse } from "../types/publish-types";
+import { CreatePublishResponse } from "../types/publish.type";
 
 import {
   Listing,
   PropertyType,
   PropertyTypeLabel,
   StatusLabel,
-} from "../enums/publish-details-enums";
+} from "../enums/listing.enum";
 import { ActionsCell } from "./action-cell";
 
 export const listingColumns: GridColDef<CreatePublishResponse>[] = [

@@ -4,22 +4,18 @@
  */
 
 import {
+  ListingPlan,
   PropertyType,
   Purpose,
-} from "@/features/owner/enums/publish-details-enums";
+} from "@/features/owner/enums/listing.enum";
+
+export { ListingPlan };
 
 // ---------------------------------------------------------------------------
 // Enums espelhados do backend
 // ---------------------------------------------------------------------------
 
 export type ListingStatus = "DRAFT" | "ACTIVE" | "INACTIVE" | "SOLD" | "RENTED";
-
-export type ListingPlan =
-  | "FREE"
-  | "STANDARD"
-  | "FEATURED"
-  | "PREMIUM"
-  | "SUPER";
 
 // ---------------------------------------------------------------------------
 // Mídia — GET /marketing/:id/media

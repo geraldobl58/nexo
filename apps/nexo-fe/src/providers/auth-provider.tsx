@@ -6,10 +6,10 @@ import keycloak from "@/lib/keycloak";
 import {
   setAuthCookie,
   clearAuthCookie,
-} from "@/features/auth/actions/session";
-import { AUTH_SESSION_KEY } from "@/features/auth/hooks/use-auth";
-import { USER_QUERY_KEY } from "@/features/auth/hooks/use-user";
-import { syncMeAction } from "@/features/auth/actions/sync-me";
+} from "@/features/auth/actions/session.action";
+import { AUTH_SESSION_KEY } from "@/features/auth/hooks/use-auth.hook";
+import { USER_QUERY_KEY } from "@/features/auth/hooks/use-user.hook";
+import { syncMeAction } from "@/features/auth/actions/sync-me.action";
 
 const KC_TOKEN_KEY = "kc_token";
 const KC_REFRESH_KEY = "kc_refresh_token";

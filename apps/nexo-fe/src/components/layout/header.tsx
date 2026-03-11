@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/features/auth";
-import { useMyListings } from "@/features/owner/hooks/use-my-listings";
+import { useMyListings } from "@/features/owner/hooks/use-my-listings.hook";
 import Button from "@mui/material/Button";
 import Tooltip from "@mui/material/Tooltip";
 

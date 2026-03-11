@@ -34,7 +34,7 @@ const paginatedResult = {
   data: [makeUser()],
   total: 1,
   page: 1,
-  limit: 20,
+  limit: 10,
   totalPages: 1,
 };
 
@@ -80,7 +80,7 @@ describe('UsersController', () => {
     it('deve retornar lista paginada de usuários', async () => {
       mockListUsers.execute.mockResolvedValue(paginatedResult);
 
-      const query: ListUsersQueryDto = { page: 1, limit: 20 };
+      const query: ListUsersQueryDto = { page: 1, limit: 10 };
       const result = await controller.findAll(query);
 
       expect(result.total).toBe(1);

@@ -6,10 +6,11 @@ import { useMarketing } from "../hooks/use-marketing.hook";
 
 import { formatCurrency } from "@/lib/formatted-money";
 
-import { ListingPlan, MarketingResponse } from "../types/marketing.type";
+import { MarketingResponse } from "../types/marketing.type";
 import { SectionFeature } from "@/components/sections/section-feature";
 import { Heading } from "@/components/ui/heading/heading";
 import { Carousel } from "@/components/ui/carousel/carousel";
+import { SETTINGS_CAROUSEL } from "@/lib/settings-carousel";
 
 function toCarouselItems(marketing: MarketingResponse[]) {
   return marketing.map((marketing) => (
@@ -35,69 +36,27 @@ function toCarouselItems(marketing: MarketingResponse[]) {
   ));
 }
 
-const CAROUSEL_PROPS = {
-  dots: true,
-  arrows: true,
-  infinite: false,
-  slidesToShow: 3,
-  slidesToScroll: 2,
-} as const;
-
-const PLAN_SECTIONS: {
-  plan: ListingPlan;
-  title: string;
-  description: string;
-  badge: string;
-}[] = [
-  {
-    plan: "SUPER",
-    title: "Super Destaques",
-    description:
-      "Os imóveis com maior visibilidade da plataforma. Exclusivos, selecionados e prontos para você.",
-    badge: "SUPER",
-  },
-  {
-    plan: "PREMIUM",
-    title: "Imóveis Premium",
-    description:
-      "Imóveis premium com tour virtual e fotos profissionais. Qualidade e sofisticação em cada detalhe.",
-    badge: "PREMIUM",
-  },
-  {
-    plan: "FEATURED",
-    title: "Imóveis em Destaque",
-    description:
-      "Imóveis selecionados com os melhores preços do mercado. Encontre a casa dos seus sonhos hoje mesmo!",
-    badge: "DESTAQUE",
-  },
-];
-
 export const MarketingCard = () => {
   const { listings } = useMarketing({ status: "ACTIVE", page: 1, limit: 50 });
 
-  const byPlan = (plan: ListingPlan) =>
-    toCarouselItems(listings.filter((l) => l.listingPlan === plan));
+  const featuredItems = toCarouselItems(listings.filter((l) => l.isFeatured));
 
-  const regularItems = toCarouselItems(
-    listings.filter(
-      (l) => l.listingPlan === "FREE" || l.listingPlan === "STANDARD",
-    ),
-  );
+  const regularItems = toCarouselItems(listings.filter((l) => !l.isFeatured));
 
   return (
     <div>
-      {PLAN_SECTIONS.map(({ plan, title, description, badge }) => {
-        const items = byPlan(plan);
-        if (items.length === 0) return null;
-        return (
-          <SectionFeature key={plan}>
-            <>
-              <Heading title={title} description={description} badge={badge} />
-              <Carousel items={items} {...CAROUSEL_PROPS} />
-            </>
-          </SectionFeature>
-        );
-      })}
+      {featuredItems.length > 0 && (
+        <SectionFeature>
+          <>
+            <Heading
+              title="Imóveis em Destaque"
+              description="Imóveis selecionados com os melhores preços do mercado. Encontre a casa dos seus sonhos hoje mesmo!"
+              badge="DESTAQUE"
+            />
+            <Carousel items={featuredItems} {...SETTINGS_CAROUSEL} />
+          </>
+        </SectionFeature>
+      )}
 
       {regularItems.length > 0 && (
         <SectionFeature>
@@ -106,7 +65,7 @@ export const MarketingCard = () => {
               title="Mais imóveis para você"
               description="Imóveis com ótimos preços, selecionados para você. Encontre a casa dos seus sonhos hoje mesmo!"
             />
-            <Carousel items={regularItems} {...CAROUSEL_PROPS} />
+            <Carousel items={regularItems} {...SETTINGS_CAROUSEL} />
           </>
         </SectionFeature>
       )}

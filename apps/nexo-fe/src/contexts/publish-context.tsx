@@ -1,9 +1,9 @@
 "use client";
 
-import { PublishComoditiesData } from "@/features/owner/schemas/publish-comodities";
-import { PublishContactData } from "@/features/owner/schemas/publish-contact";
-import { PublishDetailsData } from "@/features/owner/schemas/publish-details";
-import { PublishLocationData } from "@/features/owner/schemas/publish-location";
+import { PublishComoditiesData } from "@/features/owner/schemas/publish-comodities.schema";
+import { PublishContactData } from "@/features/owner/schemas/publish-contact.schema";
+import { PublishDetailsData } from "@/features/owner/schemas/publish-details.schema";
+import { PublishLocationData } from "@/features/owner/schemas/publish-location.schema";
 import {
   createContext,
   useCallback,

@@ -5,18 +5,18 @@ import { useForm } from "react-hook-form";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 import { DataTable } from "@/components/ui/data-table";
-import { useMyListings } from "@/features/owner/hooks/use-my-listings";
+import { useMyListings } from "@/features/owner/hooks/use-my-listings.hook";
 import {
   CreatePublishResponse,
   MyListingsQueryParams,
-} from "@/features/owner/types/publish-types";
+} from "@/features/owner/types/publish.type";
 
 import { listingColumns } from "./columns";
 import { FormField } from "@/components/ui/form-field/form-field";
 import { Button, Tooltip } from "@mui/material";
 import Link from "next/link";
 import { SelectControl } from "@/components/ui/select-control/select-control";
-import { Listing, Purpose } from "../enums/publish-details-enums";
+import { Listing, Purpose } from "../enums/listing.enum";
 
 // ---------------------------------------------------------------------------
 // Filter form — all fields are optional, no zod validation needed

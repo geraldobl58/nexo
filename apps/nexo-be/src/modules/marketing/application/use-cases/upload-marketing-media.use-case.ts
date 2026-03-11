@@ -17,27 +17,6 @@ import {
   MediaType,
 } from '../../domain/entities/marketing-media.entity';
 import { CloudinaryService } from '../../infrastructure/cloudinary/cloudinary.service';
-import { ListingPlan } from '../../domain/enums/marketing-plan.enum';
-
-// ---------------------------------------------------------------------------
-// Limites de imagens por plano
-//
-// MOCK: enquanto o módulo de pagamento não estiver pronto, todos os imóveis
-// criados recebem plano FREE. Os limites abaixo já estão preparados para
-// quando os planos pagos forem implementados.
-// ---------------------------------------------------------------------------
-/** Plano FREE: máximo de 5 fotos por imóvel */
-const MAX_IMAGES_FREE = 5;
-/** Planos pagos (STANDARD, FEATURED, PREMIUM, SUPER): máximo de 10 fotos */
-const MAX_IMAGES_PAID = 10;
-
-/** Retorna o limite de imagens de acordo com o plano do anúncio. */
-function maxImagesByPlan(plan: ListingPlan): number {
-  return plan === ListingPlan.FREE ? MAX_IMAGES_FREE : MAX_IMAGES_PAID;
-}
-
-/** Limite de vídeos (igual para todos os planos) */
-const MAX_VIDEOS = 2;
 
 /** Tipos MIME aceitos */
 const ALLOWED_IMAGE_MIME = new Set([
@@ -129,21 +108,21 @@ export class UploadMediaUseCase {
       );
     }
 
-    // 4. Verifica limite de mídias
+    // 4. Verifica limite de mídias via plano do anunciante
+    const planLimits = await this.listingRepo.getAdvertiserPlanLimits(
+      listing.advertiserId,
+    );
     const currentCount = await this.mediaRepo.countByPropertyAndType(
       input.propertyId,
       mediaType,
     );
 
-    const maxAllowed = isImage
-      ? maxImagesByPlan(listing.listingPlan)
-      : MAX_VIDEOS;
+    const maxAllowed = isImage ? planLimits.maxPhotos : planLimits.maxVideos;
 
     if (currentCount >= maxAllowed) {
       throw new BadRequestException(
         isImage
-          ? `Limite de imagens atingido para o plano ${listing.listingPlan} ` +
-              `(máximo: ${maxAllowed} fotos por imóvel).`
+          ? `Limite de imagens atingido para este imóvel (máximo: ${maxAllowed} fotos).`
           : `Limite de vídeos atingido (máximo: ${maxAllowed} por imóvel).`,
       );
     }

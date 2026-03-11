@@ -2,7 +2,7 @@
 // Coordenadas padrão: centro do Brasil
 // ---------------------------------------------------------------------------
 
-import { BrasilApiCepResponse } from "@/features/owner/types/publish-location-types";
+import { BrasilApiCepResponse } from "@/features/owner/types/publish-location.type";
 
 export const DEFAULT_LAT = -15.7801;
 export const DEFAULT_LNG = -47.9292;

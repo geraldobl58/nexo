@@ -49,7 +49,7 @@ export class PublishListingUseCase {
     }
 
     // 2. Verifica ownership: apenas o dono ou Admin/Moderador podem publicar.
-    const isOwner = listing.createdById === requesterId;
+    const isOwner = listing.advertiserId === requesterId;
     const isPrivileged =
       requesterRole === 'ADMIN' || requesterRole === 'MODERATOR';
     if (!isOwner && !isPrivileged) {

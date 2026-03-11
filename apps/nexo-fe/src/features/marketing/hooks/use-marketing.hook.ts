@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { MarketingQueryParams } from "../types/marketing.type";
-import { getMarketing } from "../http/marketing.http";
+import { getMarketing } from "../services/marketing.service";
 
 /**
  * Retorna a lista paginada dos imóveis do usuário logado.

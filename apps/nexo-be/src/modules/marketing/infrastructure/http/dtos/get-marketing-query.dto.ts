@@ -258,8 +258,8 @@ export class GetListingsQueryDto {
 
   @ApiPropertyOptional({
     description: 'Itens por página (máximo: 100)',
-    example: 20,
-    default: 20,
+    example: 10,
+    default: 10,
   })
   @IsOptional()
   @Type(() => Number)

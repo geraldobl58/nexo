@@ -164,7 +164,7 @@ export class MyListingsController {
   ): Promise<ListingResponseDto> {
     const listing = await this.createListing.execute({
       ...dto,
-      createdById: currentUser.id,
+      advertiserId: currentUser.id,
     });
     return ListingResponseDto.fromEntity(listing);
   }

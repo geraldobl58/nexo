@@ -1,4 +1,4 @@
-import { SectionForm } from "./search-form";
+import { MarketingSearchForm } from "../../features/marketing/components/marketing-search-form.component";
 
 export const SectionHero = () => {
   return (
@@ -16,7 +16,7 @@ export const SectionHero = () => {
         maneira mais segura de fechar negócio no Brasil.
       </p>
 
-      <SectionForm />
+      <MarketingSearchForm />
     </div>
   );
 };

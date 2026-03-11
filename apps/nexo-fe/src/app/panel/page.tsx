@@ -3,7 +3,7 @@
 import { HouseHeart } from "lucide-react";
 
 import { ChartLastDays } from "@/features/dashboard/components/chart-last-days";
-import { useMyListingsCount } from "@/features/dashboard/hooks/use-my-listings-count";
+import { useMyListingsCount } from "@/features/dashboard/hooks/use-my-listings-count.hook";
 
 const PanelPage = () => {
   const { count, isLoading } = useMyListingsCount();

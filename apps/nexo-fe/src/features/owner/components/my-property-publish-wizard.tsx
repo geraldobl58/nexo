@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { StepperWizard } from "@/components/ui/stepper-wizard/stepper-wizard";
-import { createPublication, uploadMediaFiles } from "../actions/publish";
+import { createPublication, uploadMediaFiles } from "../actions/publish.action";
 
-import { Purpose, PropertyType } from "../enums/publish-details-enums";
+import { Purpose, PropertyType } from "../enums/listing.enum";
 import { StepLocation } from "./steps/step-location";
 import { StepDetails } from "./steps/step-details";
 import { StepPhotos } from "./steps/step-photos";
@@ -17,7 +17,7 @@ import { StepContact } from "./steps/step-contact";
 
 import { PUBLISH_STEPS, usePublish } from "@/contexts/publish-context";
 
-import { useAuth } from "@/features/auth/hooks/use-auth";
+import { useAuth } from "@/features/auth/hooks/use-auth.hook";
 
 export function MyPropertyPublishWizard() {
   const {

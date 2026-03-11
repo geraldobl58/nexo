@@ -18,9 +18,9 @@ import {
   useDeleteMyListing,
   usePublishMyListing,
   useUnpublishMyListing,
-} from "../hooks/use-my-listings";
+} from "../hooks/use-my-listings.hook";
 
-import { CreatePublishResponse } from "../types/publish-types";
+import { CreatePublishResponse } from "../types/publish.type";
 
 // ---------------------------------------------------------------------------
 // ActionsCell — componente dedicado para que hooks possam ser usados

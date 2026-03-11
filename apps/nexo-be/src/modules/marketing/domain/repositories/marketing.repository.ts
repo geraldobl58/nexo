@@ -1,5 +1,4 @@
 import { ListingEntity } from '../entities/marketing.entity';
-import { ListingPlan } from '../enums/marketing-plan.enum';
 
 /**
  * TOKEN DE INJEÇÃO DE DEPENDÊNCIA
@@ -26,7 +25,7 @@ export const LISTING_REPOSITORY = 'LISTING_REPOSITORY';
  * (esses são gerados pelo sistema, não informados pelo usuário)
  */
 export type CreateListingData = {
-  createdById: string;
+  advertiserId: string;
   purpose: ListingEntity['purpose'];
   type: ListingEntity['type'];
   title: string;
@@ -71,8 +70,7 @@ export type CreateListingData = {
   // Mídia e tours
   videoUrl?: string;
   virtualTourUrl?: string;
-  // Plano e destaque
-  listingPlan?: ListingPlan;
+  // Destaque
   isFeatured?: boolean;
   highlightUntil?: Date;
   // Integração com portais externos
@@ -87,9 +85,10 @@ export type CreateListingData = {
  * você envia apenas o que quer mudar.
  */
 export type UpdateListingData = Partial<
-  Omit<CreateListingData, 'advertiserId'>
+  Omit<CreateListingData, 'advertiserId' | 'slug'>
 > & {
   status?: ListingEntity['status'];
+  slug?: string;
   publishedAt?: Date;
   expiresAt?: Date;
 };
@@ -197,13 +196,13 @@ export type ListingFilters = {
    */
   statuses?: ListingEntity['status'][];
 
-  /** Filtrar apenas por usuário que criou */
-  createdById?: string;
+  /** Filtrar apenas pelos anúncios do anunciante autenticado */
+  advertiserId?: string;
 
   /** Página atual (começa em 1). Default: 1 */
   page?: number;
 
-  /** Quantidade de itens por página. Default: 20, máx: 100 */
+  /** Quantidade de itens por página. Default: 10, máx: 100 */
   limit?: number;
 };
 
@@ -277,10 +276,21 @@ export interface ListingRepository {
   findMany(filters: ListingFilters): Promise<PaginatedResult<ListingEntity>>;
 
   /**
-   * Conta quantos anúncios FREE (não deletados, não SOLD/RENTED) o dono possui.
-   * Usado para aplicar o limite do plano FREE (máximo 1 anúncio ativo).
+   * Conta quantos anúncios ativos (não deletados, não SOLD/RENTED) o anunciante possui.
+   * Usado para verificar o limite de imóveis do plano.
    */
-  countActiveFreeByOwner(userId: string): Promise<number>;
+  countActiveByAdvertiser(advertiserId: string): Promise<number>;
+
+  /**
+   * Retorna os limites do plano ativo do anunciante.
+   * Busca a assinatura ativa e retorna maxProperties, maxPhotos e maxVideos.
+   * maxProperties = -1 significa ilimitado (plano PREMIUM).
+   */
+  getAdvertiserPlanLimits(advertiserId: string): Promise<{
+    maxProperties: number;
+    maxPhotos: number;
+    maxVideos: number;
+  }>;
 
   /**
    * Verifica se um slug já existe (para garantir unicidade de URL).

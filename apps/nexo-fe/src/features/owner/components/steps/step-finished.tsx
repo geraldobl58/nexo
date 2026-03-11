@@ -8,7 +8,7 @@ import {
   PropertyTypeLabel,
   Purpose,
   PropertyType,
-} from "../../enums/publish-details-enums";
+} from "../../enums/listing.enum";
 import { currency } from "@/lib/formatted-money";
 import { Field } from "@/components/ui/field/field";
 import { Section } from "@/components/ui/section/section";

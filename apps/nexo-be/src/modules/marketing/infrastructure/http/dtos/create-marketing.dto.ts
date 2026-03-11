@@ -13,7 +13,6 @@ import {
   Min,
 } from 'class-validator';
 import { ListingEntity } from '../../../domain/entities/marketing.entity';
-import { ListingPlan } from '../../../domain/enums/marketing-plan.enum';
 
 /**
  * DTO DE CRIAÇÃO DE ANÚNCIO
@@ -350,18 +349,6 @@ export class CreateListingDto {
   @IsOptional()
   @IsUrl()
   virtualTourUrl?: string;
-
-  // --- Plano ---
-
-  @ApiPropertyOptional({
-    description: 'Plano do anúncio',
-    enum: ListingPlan,
-    default: ListingPlan.FREE,
-    example: ListingPlan.STANDARD,
-  })
-  @IsOptional()
-  @IsEnum(ListingPlan)
-  listingPlan?: ListingPlan;
 
   // --- Integração com portais ---
 

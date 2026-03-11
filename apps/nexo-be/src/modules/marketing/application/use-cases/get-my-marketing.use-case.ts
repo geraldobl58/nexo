@@ -44,15 +44,15 @@ export class GetMyListingsUseCase {
    */
   async execute(
     userId: string,
-    filters: Omit<ListingFilters, 'createdById'> = {},
+    filters: Omit<ListingFilters, 'advertiserId'> = {},
   ): Promise<PaginatedResult<ListingEntity>> {
     const page = Math.max(1, filters.page ?? 1);
-    const limit = Math.min(100, Math.max(1, filters.limit ?? 20));
+    const limit = Math.min(100, Math.max(1, filters.limit ?? 10));
 
     return this.listings.findMany({
       ...filters,
-      // Isola os dados: somente anúncios do dono autenticado
-      createdById: userId,
+      // Isola os dados: somente anúncios do anunciante autenticado
+      advertiserId: userId,
       // Quando nenhum status é informado, retorna TODOS (não apenas ACTIVE)
       statuses: filters.status ? undefined : ALL_STATUSES,
       page,

@@ -11,7 +11,6 @@ import {
 } from '../../domain/repositories/marketing.repository';
 import { ListingEntity } from '../../domain/entities/marketing.entity';
 import { ListingTitle } from '../../domain/value-objects/marketing-title.vo';
-import { ListingPlan } from '../../domain/enums/marketing-plan.enum';
 import { generateListingSlug } from '../utils/slug.util';
 
 /**
@@ -22,7 +21,7 @@ import { generateListingSlug } from '../utils/slug.util';
  * e o use-case valida as regras de negócio.
  */
 export type CreateListingInput = {
-  createdById: string;
+  advertiserId: string;
   purpose: ListingEntity['purpose'];
   type: ListingEntity['type'];
   title: string;
@@ -57,8 +56,6 @@ export type CreateListingInput = {
   isReadyToMove?: boolean;
   metaTitle?: string;
   metaDescription?: string;
-  // Identificação externa
-  externalId?: string;
   // Contato específico do anúncio
   contactName?: string;
   contactEmail?: string;
@@ -67,8 +64,7 @@ export type CreateListingInput = {
   // Mídia
   videoUrl?: string;
   virtualTourUrl?: string;
-  // Plano e integração
-  listingPlan?: ListingPlan;
+  // Integração com portais
   publishToVivaReal?: boolean;
   publishToOLX?: boolean;
   publishToZapImoveis?: boolean;
@@ -124,15 +120,18 @@ export class CreateListingUseCase {
       throw new BadRequestException('O preço deve ser maior que zero.');
     }
 
-    // 3. Limite do plano FREE: máximo 1 anúncio (não-deletado, não SOLD/RENTED).
-    const effectivePlan = input.listingPlan ?? ListingPlan.FREE;
-    if (effectivePlan === ListingPlan.FREE) {
-      const freeCount = await this.listings.countActiveFreeByOwner(
-        input.createdById,
+    // 3. Verifica o limite de imóveis do plano do anunciante.
+    const planLimits = await this.listings.getAdvertiserPlanLimits(
+      input.advertiserId,
+    );
+    if (planLimits.maxProperties !== -1) {
+      const activeCount = await this.listings.countActiveByAdvertiser(
+        input.advertiserId,
       );
-      if (freeCount >= 1) {
+      if (activeCount >= planLimits.maxProperties) {
         throw new ForbiddenException(
-          'O plano FREE permite apenas 1 imóvel ativo. Faça upgrade para continuar anunciando.',
+          `Você atingiu o limite de ${planLimits.maxProperties} imóvel(is) do seu plano. ` +
+            'Faça upgrade do plano para continuar anunciando.',
         );
       }
     }
@@ -158,7 +157,7 @@ export class CreateListingUseCase {
     // Monta o objeto de criação com todos os campos + slug gerado.
     // Status "DRAFT" é definido pelo repositório como padrão (via Prisma schema).
     const data: CreateListingData = {
-      createdById: input.createdById,
+      advertiserId: input.advertiserId,
       purpose: input.purpose,
       type: input.type,
       title: titleVO.value, // usamos o título normalizado (sem espaços extras)
@@ -194,8 +193,6 @@ export class CreateListingUseCase {
       slug,
       metaTitle: input.metaTitle,
       metaDescription: input.metaDescription,
-      // Identificação externa
-      externalId: input.externalId,
       // Contato específico do anúncio
       contactName: input.contactName,
       contactEmail: input.contactEmail,
@@ -204,8 +201,7 @@ export class CreateListingUseCase {
       // Mídia
       videoUrl: input.videoUrl,
       virtualTourUrl: input.virtualTourUrl,
-      // Plano e integração
-      listingPlan: input.listingPlan,
+      // Integração com portais
       publishToVivaReal: input.publishToVivaReal ?? false,
       publishToOLX: input.publishToOLX ?? false,
       publishToZapImoveis: input.publishToZapImoveis ?? false,

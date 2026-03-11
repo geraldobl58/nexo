@@ -1,12 +1,6 @@
-// ---------------------------------------------------------------------------
-// Tipos de plano (espelha o enum do backend)
-// ---------------------------------------------------------------------------
-export type ListingPlanType =
-  | "FREE"
-  | "STANDARD"
-  | "FEATURED"
-  | "PREMIUM"
-  | "SUPER";
+import { ListingPlan } from "@/features/owner/enums/listing.enum";
+
+export { ListingPlan };
 
 // ---------------------------------------------------------------------------
 // Limites por plano
@@ -25,8 +19,8 @@ export const MAX_IMAGES_PAID = 10;
  * Retorna o limite de imagens para o plano informado.
  * Quando o plano não for informado (ex.: wizard de criação), assume FREE.
  */
-export function getMaxImages(plan?: ListingPlanType): number {
-  return !plan || plan === "FREE" ? MAX_IMAGES_FREE : MAX_IMAGES_PAID;
+export function getMaxImages(plan?: ListingPlan): number {
+  return !plan || plan === ListingPlan.FREE ? MAX_IMAGES_FREE : MAX_IMAGES_PAID;
 }
 
 // ---------------------------------------------------------------------------

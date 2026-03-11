@@ -16,7 +16,6 @@ import { CreateListingUseCase } from './create-marketing.use-case';
 import { ListingRepository } from '../../domain/repositories/marketing.repository';
 import { ListingEntity } from '../../domain/entities/marketing.entity';
 import { ListingStatus } from '../../domain/enums/marketing-status.enum';
-import { ListingPlan } from '../../domain/enums/marketing-plan.enum';
 
 // ─── Fixture helpers ─────────────────────────────────────────────────────────
 
@@ -26,7 +25,7 @@ import { ListingPlan } from '../../domain/enums/marketing-plan.enum';
  */
 const makeListing = (override: Partial<ListingEntity> = {}): ListingEntity => ({
   id: 'uuid-1',
-  createdById: 'user-uuid',
+  advertiserId: 'user-uuid',
   status: ListingStatus.DRAFT,
   purpose: 'SALE',
   type: 'APARTMENT',
@@ -80,12 +79,7 @@ const makeListing = (override: Partial<ListingEntity> = {}): ListingEntity => ({
   phoneClicksCount: 0,
   whatsappClicksCount: 0,
   emailClicksCount: 0,
-  leadSourcePortal: 0,
-  leadSourceSearch: 0,
-  leadSourceMap: 0,
-  leadSourceFeatured: 0,
-  // Plano
-  listingPlan: ListingPlan.FREE,
+  // Destaque
   isFeatured: false,
   highlightUntil: null,
   // Avaliação
@@ -111,7 +105,7 @@ const makeListing = (override: Partial<ListingEntity> = {}): ListingEntity => ({
 const makeInput = (
   override: Partial<Parameters<CreateListingUseCase['execute']>[0]> = {},
 ) => ({
-  createdById: 'user-uuid',
+  advertiserId: 'user-uuid',
   purpose: 'SALE' as const,
   type: 'APARTMENT' as const,
   title: 'Apartamento 3 quartos no centro',
@@ -137,7 +131,12 @@ describe('CreateListingUseCase', () => {
       findMany: jest.fn(),
       slugExists: jest.fn(),
       softDelete: jest.fn(),
-      countActiveFreeByOwner: jest.fn().mockResolvedValue(0),
+      countActiveByAdvertiser: jest.fn().mockResolvedValue(0),
+      getAdvertiserPlanLimits: jest.fn().mockResolvedValue({
+        maxProperties: 1,
+        maxPhotos: 5,
+        maxVideos: 0,
+      }),
     };
 
     // Instancia o use-case diretamente (sem NestJS TestingModule)
@@ -265,23 +264,35 @@ describe('CreateListingUseCase', () => {
     });
   });
 
-  // ─── Limite do plano FREE ─────────────────────────────────────────────────
+  // ─── Limite do plano do anunciante ──────────────────────────────────────────
 
-  describe('execute() — limite do plano FREE', () => {
-    it('deve permitir criar anúncio FREE quando o usuário ainda não possui nenhum', async () => {
-      // Arrange: nenhum anúncio ativo FREE
-      mockRepo.countActiveFreeByOwner.mockResolvedValue(0);
+  describe('execute() — limite de imóveis do plano', () => {
+    it('deve permitir criar imóvel quando o anunciante ainda está abaixo do limite', async () => {
+      // Arrange: plano BASIC (1 imóvel), nenhum ativo ainda
+      mockRepo.getAdvertiserPlanLimits.mockResolvedValue({
+        maxProperties: 1,
+        maxPhotos: 5,
+        maxVideos: 0,
+      });
+      mockRepo.countActiveByAdvertiser.mockResolvedValue(0);
       mockRepo.slugExists.mockResolvedValue(false);
       mockRepo.create.mockResolvedValue(makeListing());
 
       // Act & Assert: não lança ForbiddenException
       await expect(useCase.execute(makeInput())).resolves.toBeDefined();
-      expect(mockRepo.countActiveFreeByOwner).toHaveBeenCalledWith('user-uuid');
+      expect(mockRepo.countActiveByAdvertiser).toHaveBeenCalledWith(
+        'user-uuid',
+      );
     });
 
-    it('deve lançar ForbiddenException quando usuário FREE já possui 1 anúncio ativo', async () => {
-      // Arrange: já existe 1 anúncio FREE ativo
-      mockRepo.countActiveFreeByOwner.mockResolvedValue(1);
+    it('deve lançar ForbiddenException quando anunciante BASIC já atingiu o limite (1 imóvel)', async () => {
+      // Arrange: plano BASIC (1 imóvel), já tem 1 ativo
+      mockRepo.getAdvertiserPlanLimits.mockResolvedValue({
+        maxProperties: 1,
+        maxPhotos: 5,
+        maxVideos: 0,
+      });
+      mockRepo.countActiveByAdvertiser.mockResolvedValue(1);
 
       // Act & Assert
       await expect(useCase.execute(makeInput())).rejects.toThrow(
@@ -292,31 +303,39 @@ describe('CreateListingUseCase', () => {
       expect(mockRepo.slugExists).not.toHaveBeenCalled();
     });
 
-    it('deve lançar ForbiddenException com mensagem indicando o limite do plano FREE', async () => {
+    it('deve lançar ForbiddenException com mensagem indicando o limite do plano', async () => {
       // Arrange
-      mockRepo.countActiveFreeByOwner.mockResolvedValue(1);
+      mockRepo.getAdvertiserPlanLimits.mockResolvedValue({
+        maxProperties: 1,
+        maxPhotos: 5,
+        maxVideos: 0,
+      });
+      mockRepo.countActiveByAdvertiser.mockResolvedValue(1);
 
       // Act & Assert
       await expect(useCase.execute(makeInput())).rejects.toThrow(
         new ForbiddenException(
-          'O plano FREE permite apenas 1 imóvel ativo. Faça upgrade para continuar anunciando.',
+          'Você atingiu o limite de 1 imóvel(is) do seu plano. ' +
+            'Faça upgrade do plano para continuar anunciando.',
         ),
       );
     });
 
-    it('não deve verificar limite FREE quando o plano informado não é FREE', async () => {
-      // Arrange: listingPlan explicitamente diferente de FREE
-      const input = makeInput({ listingPlan: ListingPlan.STANDARD });
+    it('não deve verificar limite quando o plano é PREMIUM (maxProperties = -1)', async () => {
+      // Arrange: plano PREMIUM — maxProperties = -1 significa ilimitado
+      mockRepo.getAdvertiserPlanLimits.mockResolvedValue({
+        maxProperties: -1,
+        maxPhotos: 10,
+        maxVideos: 1,
+      });
       mockRepo.slugExists.mockResolvedValue(false);
-      mockRepo.create.mockResolvedValue(
-        makeListing({ listingPlan: ListingPlan.STANDARD }),
-      );
+      mockRepo.create.mockResolvedValue(makeListing());
 
       // Act
-      await useCase.execute(input);
+      await useCase.execute(makeInput());
 
-      // Assert: countActiveFreeByOwner NÃO deve ser chamado para planos pagos
-      expect(mockRepo.countActiveFreeByOwner).not.toHaveBeenCalled();
+      // Assert: countActiveByAdvertiser NÃO deve ser chamado para planos ilimitados
+      expect(mockRepo.countActiveByAdvertiser).not.toHaveBeenCalled();
     });
   });
 });

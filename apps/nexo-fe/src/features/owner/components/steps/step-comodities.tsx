@@ -11,7 +11,7 @@ import { CheckboxCustom } from "@/components/ui/checkbox-custom/checkbox-custom"
 import {
   createPublishComoditiesSchema,
   PublishComoditiesData,
-} from "../../schemas/publish-comodities";
+} from "../../schemas/publish-comodities.schema";
 
 export const StepComodities = () => {
   const { formData, setComoditiesData, setComoditiesValid } = usePublish();

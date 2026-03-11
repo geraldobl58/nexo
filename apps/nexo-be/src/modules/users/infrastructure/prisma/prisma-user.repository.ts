@@ -48,7 +48,7 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async findMany(filters: UserFilters): Promise<PaginatedResult<UserEntity>> {
-    const { role, isActive, search, page = 1, limit = 20 } = filters;
+    const { role, isActive, search, page = 1, limit = 10 } = filters;
 
     const where: Prisma.UserWhereInput = {
       deletedAt: null,
@@ -107,10 +107,10 @@ export class PrismaUserRepository implements IUserRepository {
     userId: string,
     filters: MyPropertiesFilters,
   ): Promise<PaginatedResult<PropertySummaryEntity>> {
-    const { status, purpose, search, page = 1, limit = 20 } = filters;
+    const { status, purpose, search, page = 1, limit = 10 } = filters;
 
     const where: Prisma.PropertyWhereInput = {
-      createdById: userId,
+      advertiserId: userId,
       deletedAt: null,
       ...(status && { status: status as Prisma.EnumPropertyStatusFilter }),
       ...(purpose && { purpose: purpose as Prisma.EnumPropertyPurposeFilter }),

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PropertyStatus, ListingPlanType, Prisma } from '@prisma/client';
+import { PropertyStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '@/libs/prisma/prisma.service';
 import {
   CreateListingData,
@@ -70,7 +70,7 @@ export class PrismaListingRepository implements ListingRepository {
     return {
       id: p.id,
       externalId: p.externalId,
-      createdById: p.createdById,
+      advertiserId: p.advertiserId,
       status: p.status as unknown as ListingStatus,
       purpose: p.purpose as ListingEntity['purpose'],
       type: p.type as ListingEntity['type'],
@@ -124,13 +124,7 @@ export class PrismaListingRepository implements ListingRepository {
       phoneClicksCount: p.phoneClicksCount,
       whatsappClicksCount: p.whatsappClicksCount,
       emailClicksCount: p.emailClicksCount,
-      // Origem dos leads
-      leadSourcePortal: p.leadSourcePortal,
-      leadSourceSearch: p.leadSourceSearch,
-      leadSourceMap: p.leadSourceMap,
-      leadSourceFeatured: p.leadSourceFeatured,
       // Plano e destaque
-      listingPlan: p.listingPlan as unknown as ListingPlan,
       isFeatured: p.isFeatured,
       highlightUntil: p.highlightUntil,
       // Avaliação
@@ -168,7 +162,7 @@ export class PrismaListingRepository implements ListingRepository {
       const record = await this.prisma.property.create({
         data: {
           externalId: data.externalId,
-          createdById: data.createdById,
+          advertiserId: data.advertiserId,
           purpose: data.purpose,
           type: data.type,
           title: data.title,
@@ -212,8 +206,7 @@ export class PrismaListingRepository implements ListingRepository {
           // Mídia
           videoUrl: data.videoUrl,
           virtualTourUrl: data.virtualTourUrl,
-          // Plano e integração
-          listingPlan: data.listingPlan,
+          // Destaque e integração
           isFeatured: data.isFeatured ?? false,
           highlightUntil: data.highlightUntil,
           publishToVivaReal: data.publishToVivaReal ?? false,
@@ -235,7 +228,7 @@ export class PrismaListingRepository implements ListingRepository {
         err.code === 'P2003'
       ) {
         throw new NotFoundException(
-          `Usuário com id "${data.createdById}" não encontrado.`,
+          `Anunciante com id "${data.advertiserId}" não encontrado.`,
         );
       }
       throw err;
@@ -333,10 +326,7 @@ export class PrismaListingRepository implements ListingRepository {
         ...(data.virtualTourUrl !== undefined && {
           virtualTourUrl: data.virtualTourUrl,
         }),
-        // Plano e destaque
-        ...(data.listingPlan !== undefined && {
-          listingPlan: data.listingPlan,
-        }),
+        // Destaque
         ...(data.isFeatured !== undefined && { isFeatured: data.isFeatured }),
         ...(data.highlightUntil !== undefined && {
           highlightUntil: data.highlightUntil,
@@ -367,7 +357,7 @@ export class PrismaListingRepository implements ListingRepository {
     filters: ListingFilters,
   ): Promise<PaginatedResult<ListingEntity>> {
     const page = filters.page ?? 1;
-    const limit = filters.limit ?? 20;
+    const limit = filters.limit ?? 10;
     const skip = (page - 1) * limit; // quantos registros pular
 
     /**
@@ -387,7 +377,7 @@ export class PrismaListingRepository implements ListingRepository {
 
       ...(filters.purpose && { purpose: filters.purpose }),
       ...(filters.type && { type: filters.type }),
-      ...(filters.createdById && { createdById: filters.createdById }),
+      ...(filters.advertiserId && { advertiserId: filters.advertiserId }),
 
       // Filtro de cidade (case-insensitive via `mode: 'insensitive'`)
       // Localização
@@ -509,19 +499,57 @@ export class PrismaListingRepository implements ListingRepository {
   }
 
   /**
-   * Conta os anúncios FREE não-deletados e não-finalizados (SOLD/RENTED)
-   * do proprietário. Usado para impor o limite do plano FREE (máx. 1).
+   * Conta os anúncios ativos (não deletados, não SOLD/RENTED) do anunciante.
+   * Usado para verificar o limite de imóveis do plano atual.
    */
-  async countActiveFreeByOwner(userId: string): Promise<number> {
+  async countActiveByAdvertiser(advertiserId: string): Promise<number> {
     return this.prisma.property.count({
       where: {
-        createdById: userId,
+        advertiserId,
         deletedAt: null,
-        listingPlan: ListingPlanType.FREE,
         status: {
           notIn: [PropertyStatus.SOLD, PropertyStatus.RENTED],
         },
       },
     });
+  }
+
+  /**
+   * Retorna os limites do plano ativo do anunciante.
+   * Busca a assinatura ACTIVE e retorna maxProperties/maxPhotos/maxVideos do plano.
+   * Se não houver assinatura ativa, retorna os limites do plano BÁSICO (gratuito).
+   */
+  async getAdvertiserPlanLimits(advertiserId: string): Promise<{
+    maxProperties: number;
+    maxPhotos: number;
+    maxVideos: number;
+  }> {
+    const subscription = await this.prisma.subscription.findFirst({
+      where: {
+        advertiserId,
+        status: 'ACTIVE',
+      },
+      include: { plan: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (subscription) {
+      return {
+        maxProperties: subscription.plan.maxProperties,
+        maxPhotos: subscription.plan.maxPhotos,
+        maxVideos: subscription.plan.maxVideos,
+      };
+    }
+
+    // Sem assinatura ativa → limites do plano BÁSICO (gratuito)
+    const basicPlan = await this.prisma.plan.findUnique({
+      where: { type: 'BASIC' },
+    });
+
+    return {
+      maxProperties: basicPlan?.maxProperties ?? 1,
+      maxPhotos: basicPlan?.maxPhotos ?? 5,
+      maxVideos: basicPlan?.maxVideos ?? 0,
+    };
   }
 }

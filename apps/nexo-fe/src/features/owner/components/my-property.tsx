@@ -24,26 +24,33 @@ import { CheckboxCustom } from "@/components/ui/checkbox-custom/checkbox-custom"
 import { LeafletMap } from "@/lib/leaflet-map";
 import { DEFAULT_LAT, DEFAULT_LNG, fetchCep } from "@/lib/fect-cep";
 
-import { useMyListingById, useUpdateMyListing } from "../hooks/use-my-listings";
-import { useListMedia } from "../hooks/use-media";
+import {
+  useMyListingById,
+  useUpdateMyListing,
+} from "../hooks/use-my-listings.hook";
+import { useListMedia } from "../hooks/use-media.hook";
 import {
   createPublishLocationSchema,
   PublishLocationData,
-} from "../schemas/publish-location";
-import { createPushlishDetailsSchema } from "../schemas/publish-details";
-import { CreatePublishDetailsData } from "../types/publish-details-types";
+} from "../schemas/publish-location.schema";
+import { createPublishDetailsSchema } from "../schemas/publish-details.schema";
+import { CreatePublishDetailsData } from "../types/publish-details.type";
 import {
   createPublishComoditiesSchema,
   PublishComoditiesData,
-} from "../schemas/publish-comodities";
+} from "../schemas/publish-comodities.schema";
 import {
-  createPushlishContactSchema,
+  createPublishContactSchema,
   PublishContactData,
-} from "../schemas/publish-contact";
-import { Purpose, PropertyType } from "../enums/publish-details-enums";
-import { MediaItem, UpdateListingInput } from "../types/publish-types";
+} from "../schemas/publish-contact.schema";
+import { Purpose, PropertyType } from "../enums/listing.enum";
+import { MediaItem, UpdateListingInput } from "../types/publish.type";
 import { MyPropertyMediaCard } from "./my-property-media-card";
-import { deleteMedia, reorderMedia, uploadMedia } from "../http/publish";
+import {
+  deleteMedia,
+  reorderMedia,
+  uploadMedia,
+} from "../services/publish.service";
 
 import {
   ACCEPTED_EXTENSIONS,
@@ -54,7 +61,7 @@ import {
   validateFile,
 } from "@/lib/media-upload";
 import { fromCents } from "@/lib/formatted-money";
-import { MediaSlot } from "../types/my-property-media-card";
+import { MediaSlot } from "../types/my-property-media-card.type";
 import { CURRENT_PLAN_MAX_IMAGES } from "@/constants";
 
 // ---------------------------------------------------------------------------
@@ -106,7 +113,7 @@ export const MyProperty = ({ params }: MyPropertyProps) => {
   // ── Form: Detalhes ────────────────────────────────────────────────────────
 
   const detailsForm = useForm<CreatePublishDetailsData>({
-    resolver: zodResolver(createPushlishDetailsSchema),
+    resolver: zodResolver(createPublishDetailsSchema),
     mode: "onChange",
     defaultValues: {
       purpose: "" as Purpose,
@@ -148,7 +155,7 @@ export const MyProperty = ({ params }: MyPropertyProps) => {
   // ── Form: Contato ─────────────────────────────────────────────────────────
 
   const contactForm = useForm<PublishContactData>({
-    resolver: zodResolver(createPushlishContactSchema),
+    resolver: zodResolver(createPublishContactSchema),
     mode: "onChange",
     defaultValues: {
       contactName: "",

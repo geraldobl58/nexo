@@ -2,7 +2,7 @@ import { Button, Chip } from "@mui/material";
 
 import { ACCEPTED_TYPES, formatBytes } from "@/lib/media-upload";
 
-import { MediaCardProps } from "../types/my-property-media-card";
+import { MediaCardProps } from "../types/my-property-media-card.type";
 
 export const MyPropertyMediaCard = ({
   slot,

@@ -49,7 +49,7 @@ export class UnpublishListingUseCase {
     }
 
     // 2. Verifica ownership: apenas o dono ou Admin/Moderador podem despublicar.
-    const isOwner = listing.createdById === requesterId;
+    const isOwner = listing.advertiserId === requesterId;
     const isPrivileged =
       requesterRole === 'ADMIN' || requesterRole === 'MODERATOR';
     if (!isOwner && !isPrivileged) {

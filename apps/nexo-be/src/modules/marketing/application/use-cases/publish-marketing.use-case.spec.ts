@@ -18,7 +18,6 @@ import { PublishListingUseCase } from './publish-marketing.use-case';
 import { ListingRepository } from '../../domain/repositories/marketing.repository';
 import { ListingEntity } from '../../domain/entities/marketing.entity';
 import { ListingStatus } from '../../domain/enums/marketing-status.enum';
-import { ListingPlan } from '../../domain/enums/marketing-plan.enum';
 
 // ─── Fixture helper ───────────────────────────────────────────────────────────
 
@@ -26,7 +25,7 @@ const makeDraftListing = (
   override: Partial<ListingEntity> = {},
 ): ListingEntity => ({
   id: 'listing-uuid-1',
-  createdById: 'owner-uuid',
+  advertiserId: 'owner-uuid',
   status: ListingStatus.DRAFT,
   purpose: 'SALE',
   type: 'APARTMENT',
@@ -80,12 +79,6 @@ const makeDraftListing = (
   phoneClicksCount: 0,
   whatsappClicksCount: 0,
   emailClicksCount: 0,
-  leadSourcePortal: 0,
-  leadSourceSearch: 0,
-  leadSourceMap: 0,
-  leadSourceFeatured: 0,
-  // Plano
-  listingPlan: ListingPlan.FREE,
   isFeatured: false,
   highlightUntil: null,
   // Avaliação
@@ -117,9 +110,14 @@ describe('PublishListingUseCase', () => {
       findById: jest.fn(),
       update: jest.fn(),
       findMany: jest.fn(),
+      countActiveByAdvertiser: jest.fn().mockResolvedValue(0),
+      getAdvertiserPlanLimits: jest.fn().mockResolvedValue({
+        maxProperties: 1,
+        maxPhotos: 5,
+        maxVideos: 0,
+      }),
       slugExists: jest.fn(),
       softDelete: jest.fn(),
-      countActiveFreeByOwner: jest.fn().mockResolvedValue(0),
     };
 
     useCase = new PublishListingUseCase(mockRepo);

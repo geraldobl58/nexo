@@ -4,9 +4,9 @@ import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { createPushlishDetailsSchema } from "../../schemas/publish-details";
-import { CreatePublishDetailsData } from "../../types/publish-details-types";
-import { Purpose, PropertyType } from "../../enums/publish-details-enums";
+import { createPublishDetailsSchema } from "../../schemas/publish-details.schema";
+import { CreatePublishDetailsData } from "../../types/publish-details.type";
+import { Purpose, PropertyType } from "../../enums/listing.enum";
 import { SelectControl } from "@/components/ui/select-control/select-control";
 import { FormField } from "@/components/ui/form-field/form-field";
 import { CurrencyField } from "@/components/ui/currency-field/currency-field";
@@ -19,7 +19,7 @@ export const StepDetails = () => {
     control,
     formState: { errors, isValid },
   } = useForm<CreatePublishDetailsData>({
-    resolver: zodResolver(createPushlishDetailsSchema),
+    resolver: zodResolver(createPublishDetailsSchema),
     mode: "onChange",
     // Restaura os dados salvos no context ao voltar para este step
     defaultValues: {

@@ -15,14 +15,13 @@ import { GetListingUseCase } from '../../application/use-cases/get-marketing-by-
 import { GetListingsUseCase } from '../../application/use-cases/get-marketing.use-case';
 import { ListingEntity } from '../../domain/entities/marketing.entity';
 import { ListingStatus } from '../../domain/enums/marketing-status.enum';
-import { ListingPlan } from '../../domain/enums/marketing-plan.enum';
 import { GetListingsQueryDto } from './dtos/get-marketing-query.dto';
 
 // ─── Fixture helper ───────────────────────────────────────────────────────────
 
 const makeListing = (override: Partial<ListingEntity> = {}): ListingEntity => ({
   id: 'listing-uuid-1',
-  createdById: 'user-uuid',
+  advertiserId: 'user-uuid',
   status: ListingStatus.DRAFT,
   purpose: 'SALE',
   type: 'APARTMENT',
@@ -76,12 +75,6 @@ const makeListing = (override: Partial<ListingEntity> = {}): ListingEntity => ({
   phoneClicksCount: 0,
   whatsappClicksCount: 0,
   emailClicksCount: 0,
-  leadSourcePortal: 0,
-  leadSourceSearch: 0,
-  leadSourceMap: 0,
-  leadSourceFeatured: 0,
-  // Plano
-  listingPlan: ListingPlan.FREE,
   isFeatured: false,
   highlightUntil: null,
   // Avaliação
@@ -140,17 +133,17 @@ describe('MarketingController', () => {
         items: [listing],
         total: 1,
         page: 1,
-        limit: 20,
+        limit: 10,
         totalPages: 1,
       });
 
       const result = await controller.list(
-        { page: 1, limit: 20 } as GetListingsQueryDto,
+        { page: 1, limit: 10 } as GetListingsQueryDto,
         null,
       );
 
       expect(mockGetListings.execute).toHaveBeenCalledWith(
-        expect.objectContaining({ page: 1, limit: 20 }),
+        expect.objectContaining({ page: 1, limit: 10 }),
       );
       expect(result.items).toHaveLength(1);
       expect(result.total).toBe(1);
@@ -162,7 +155,7 @@ describe('MarketingController', () => {
         items: [],
         total: 0,
         page: 1,
-        limit: 20,
+        limit: 10,
         totalPages: 0,
       });
 

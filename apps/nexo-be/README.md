@@ -1,148 +1,133 @@
 # Nexo Backend (nexo-be)
 
-API backend do Nexo — marketplace imobiliario construido com NestJS, Prisma e Keycloak.
+API backend do Nexo — marketplace imobiliário construído com NestJS, Prisma e Keycloak.
 
 ## Arquitetura
 
-O projeto segue **Clean Architecture** com **Domain-Driven Design (DDD)**, separando responsabilidades em 4 camadas:
+O projeto segue **Clean Architecture** com **Domain-Driven Design (DDD)**, separando responsabilidades em camadas dentro de cada módulo:
 
 ```
 src/
-├── domain/                  # Regras de negocio puras (tipos, interfaces)
-│   ├── auth/
-│   │   └── auth-user.ts         # Tipo AuthUser (payload do JWT)
-│   └── user/
-│       └── user.repository.ts   # Interface UserRepository + UserDTO
-│
-├── application/             # Casos de uso (orquestram o domain)
-│   └── auth/
-│       └── me.usecase.ts        # Sincroniza user Keycloak → banco
-│
-├── infrastructure/          # Implementacoes concretas (banco, auth)
-│   ├── auth/
-│   │   └── keycloak.strategy.ts # Passport JWT Strategy
-│   └── database/
-│       └── repositories/
-│           └── prisma-user.repository.ts
-│
-├── presentation/            # Camada HTTP (controllers, guards)
-│   └── auth/
-│       ├── auth.controller.ts       # GET /auth/me
-│       ├── jwt-auth.guard.ts        # Guard de autenticacao
-│       └── current-user.decorator.ts # @CurrentUser()
-│
-├── modules/                 # Modulos NestJS (wiring de DI)
-│   ├── auth/auth.module.ts
-│   └── health/
-│
-├── libs/prisma/             # PrismaModule global
+├── modules/
+│   ├── auth/                    # Autenticação Keycloak (JWT / Passport)
+│   ├── identity/                # Sincronização de usuários internos (equipe)
+│   ├── marketing/               # Módulo de anúncios de imóveis
+│   │   ├── domain/              # Entidades, interfaces e enums (sem deps externas)
+│   │   │   ├── entities/        # ListingEntity
+│   │   │   ├── enums/           # ListingStatus, ListingPlan, etc.
+│   │   │   ├── repositories/    # Interface ListingRepository
+│   │   │   └── value-objects/
+│   │   ├── application/         # Casos de uso (orquestram o domain)
+│   │   │   └── use-cases/       # Create, Get, Update, Delete, Publish, etc.
+│   │   ├── infrastructure/      # Implementações concretas
+│   │   │   ├── prisma/          # PrismaListingRepository
+│   │   │   ├── cloudinary/      # Upload de mídias
+│   │   │   └── http/            # Controllers + DTOs
+│   │   └── modules/             # Wiring NestJS (DI)
+│   └── users/                   # Módulo de anunciantes externos
+├── libs/                        # Módulos compartilhados (PrismaModule, etc.)
 ├── app.module.ts
 └── main.ts
 ```
 
-### Principios
+### Princípios
 
 - **Domain** nunca importa de infrastructure — define apenas interfaces e tipos
-- **Infrastructure** implementa as interfaces do domain (ex: `PrismaUserRepository` implementa `UserRepository`)
+- **Infrastructure** implementa as interfaces do domain (ex: `PrismaListingRepository` implementa `ListingRepository`)
 - **Application** orquestra domain sem saber da infra (depende apenas de interfaces)
-- **Presentation** lida exclusivamente com HTTP (guards, decorators, controllers)
-- **Module** faz o wiring via `useFactory` — unico lugar que conhece todas as camadas
+- **HTTP** lida exclusivamente com requisições (guards, decorators, controllers, DTOs)
+- **Module** faz o wiring via DI — único lugar que conhece todas as camadas
 
-### Fluxo de autenticacao
+## Modelo de Negócio
 
-```
-Cliente envia request com Bearer Token
-  → JwtAuthGuard intercepta
-    → KeycloakStrategy valida JWT via JWKS (chaves publicas do Keycloak)
-      → validate() extrai claims e retorna AuthUser
-        → @CurrentUser() disponibiliza no controller
-          → MeUseCase.execute() faz upsert no banco (cria ou atualiza)
-            → Retorna UserDTO com dados do banco local
-```
+### Atores do sistema
+
+O sistema distingue dois tipos de atores autenticados:
+
+| Modelo       | Quem é                          | Origem do JWT               |
+| ------------ | ------------------------------- | --------------------------- |
+| `User`       | Equipe interna (admin, suporte) | Keycloak — roles do realm   |
+| `Advertiser` | Anunciante externo do portal    | Keycloak (sem role interna) |
+
+### Tipos de anunciante (`AdvertiserType`)
+
+| Tipo        | Descrição                       |
+| ----------- | ------------------------------- |
+| `AGENCY`    | Imobiliária                     |
+| `BROKER`    | Corretor independente           |
+| `OWNER`     | Proprietário direto (sem CRECI) |
+| `DEVELOPER` | Construtora / Incorporadora     |
+
+### Planos de assinatura (`PlanType`)
+
+| Plano          | Preço/mês | Máx. imóveis  | Máx. fotos | Máx. vídeos |
+| -------------- | --------- | ------------- | ---------- | ----------- |
+| `BASIC`        | Gratuito  | **1**         | 5          | 0           |
+| `INTERMEDIATE` | R$ 49,90  | 5             | 10         | 1           |
+| `PREMIUM`      | R$ 99,90  | **ilimitado** | 10         | 1           |
+
+> `maxProperties = -1` significa ilimitado (plano PREMIUM).
+> O plano BASIC é atribuído automaticamente ao criar um anunciante.
+
+## Autenticação
 
 ### Clientes Keycloak: nexo-web vs nexo-api
-
-O sistema utiliza **dois clientes Keycloak** com papeis distintos no fluxo de autenticacao:
 
 #### nexo-web (Public Client)
 
 - **Tipo:** Public (sem client_secret)
-- **Proposito:** Emitir tokens JWT para usuarios
-- **Usado por:**
-  - Frontend (Next.js) para login de usuarios
-  - Ferramentas de teste (Postman, curl, Insomnia)
-  - Qualquer aplicacao cliente que precise autenticar usuarios
-- **Fluxo:** Usuario → nexo-web → Keycloak → Token JWT
+- **Propósito:** Emitir tokens JWT para usuários e anunciantes
+- **Usado por:** Frontend (Next.js), Postman, ferramentas de teste
 
 #### nexo-api (Confidential Client)
 
 - **Tipo:** Confidential (requer client_secret)
-- **Proposito:** Validar tokens JWT nas requisicoes ao backend
-- **Usado por:**
-  - Backend NestJS via `KeycloakStrategy` (Passport JWT)
-  - Validacao automatica via JWKS (chaves publicas do Keycloak)
-- **Fluxo:** Request com token → JwtAuthGuard → KeycloakStrategy → Valida via JWKS → AuthUser
+- **Propósito:** Validar tokens JWT nas requisições ao backend
+- **Usado por:** Backend NestJS via `KeycloakStrategy` (Passport JWT + JWKS)
 
-#### Fluxo Completo de Autenticacao
+#### Fluxo de autenticação
 
 ```
-1. Usuario faz login no frontend (ou via Postman)
-   → POST http://localhost:8080/realms/nexo/protocol/openid-connect/token
-   → Body: client_id=nexo-web, grant_type=password, username, password
-   → Keycloak valida credenciais e emite access_token (JWT)
+1. Usuário faz login via nexo-web
+   → POST /realms/nexo/protocol/openid-connect/token
+   → Retorna access_token (JWT RS256)
 
-2. Frontend/Cliente armazena o access_token
-
-3. Cliente faz request para o backend com o token
-   → GET http://localhost:3333/auth/me
-   → Header: Authorization: Bearer <access_token>
-
-4. Backend valida o token automaticamente
-   → JwtAuthGuard intercepta a request
-   → KeycloakStrategy (nexo-api) busca chaves publicas via JWKS
-   → Valida assinatura do token (RS256)
-   → Extrai claims (sub, email, name, realm_access.roles)
+2. Cliente envia request com Bearer Token
+   → JwtAuthGuard intercepta
+   → KeycloakStrategy valida via JWKS (chaves públicas do nexo-api)
+   → Extrai claims: sub, email, name, realm_access.roles
    → Retorna AuthUser para o controller
 
-5. Controller executa a logica de negocio
-   → MeUseCase recebe AuthUser
-   → Faz upsert no banco (cria ou atualiza usuario)
-   → Retorna UserDTO com dados do banco local
+3. SyncUserUseCase (identity)
+   → Faz upsert do usuário interno no banco (User)
+   → Mapeia roles do Keycloak para roles internas (ADMIN / MODERATOR / SUPPORT)
 ```
-
-#### Por que usar nexo-web nos testes?
-
-O client **nexo-api** e confidential e requer `client_secret`, sendo usado apenas internamente pelo backend para validacao. Para obter tokens (login), sempre use **nexo-web** (public), que permite autenticacao direta com username/password.
 
 ## Setup
 
-### Pre-requisitos
+### Pré-requisitos
 
 - Node.js 20+
 - pnpm
 - Docker e Docker Compose
 
-### 1. Subir os servicos (PostgreSQL + Keycloak)
-
-#
+### 1. Subir os serviços
 
 ```bash
 # Na raiz do monorepo
 docker compose up -d
 ```
 
-Isso inicia:
+Inicia:
 
 - **PostgreSQL** na porta `5432` (bancos: `nexo_db` e `nexo_keycloak`)
-- **Keycloak 26.5** na porta `8080` (admin: `admin`/`admin`)
+- **Keycloak 26** na porta `8080` (admin: `admin`/`admin`)
 
-### 2. Configurar variaveis de ambiente
+### 2. Configurar variáveis de ambiente
 
 ```bash
 cp .env.example .env
 ```
-
-Variaveis de ambiente utilizadas pela aplicacao:
 
 ```env
 NODE_ENV=development
@@ -154,13 +139,14 @@ KEYCLOAK_INTERNAL_URL=http://localhost:8080
 KEYCLOAK_REALM=nexo
 ```
 
-> **Kubernetes:** In cluster deployments `KEYCLOAK_URL` must match the token issuer (external HTTPS URL, e.g. `https://develop.auth.nexo.local`) while `KEYCLOAK_INTERNAL_URL` points to the cluster-internal service (e.g. `http://nexo-auth-develop:8080`) for JWKS fetching. Locally both use the same value.
+> **Kubernetes:** `KEYCLOAK_URL` deve ser a URL externa (issuer do token, ex: `https://develop.auth.nexo.local`) e `KEYCLOAK_INTERNAL_URL` aponta para o serviço interno do cluster para buscar as JWKS.
 
 ### 3. Configurar o banco
 
 ```bash
 pnpm prisma:generate   # Gera o Prisma Client
-pnpm prisma:migrate     # Aplica as migrations
+pnpm prisma:migrate    # Aplica as migrations
+pnpm prisma:seed       # Popula com dados de desenvolvimento
 ```
 
 ### 4. Iniciar o servidor
@@ -169,15 +155,13 @@ pnpm prisma:migrate     # Aplica as migrations
 pnpm start:dev
 ```
 
-A API estara disponivel em `http://localhost:3333` e a documentacao Swagger em `http://localhost:3333/docs`.
+API disponível em `http://localhost:3333` — Swagger em `http://localhost:3333/docs`.
 
-## Configuracao do Keycloak
+## Configuração do Keycloak
 
-Acesse o admin do Keycloak em `http://localhost:8080` com as credenciais `admin`/`admin`.
+Acesse `http://localhost:8080` com `admin`/`admin`.
 
-### Passo 1 — Desabilitar SSL nos Realms (desenvolvimento)
-
-O Keycloak exige HTTPS por padrao. Para desenvolvimento local via HTTP, execute:
+### Passo 1 — Desabilitar SSL (desenvolvimento local)
 
 ```bash
 docker exec nexo-auth-dev /opt/keycloak/bin/kcadm.sh \
@@ -187,82 +171,48 @@ docker exec nexo-auth-dev /opt/keycloak/bin/kcadm.sh \
   update realms/master -s sslRequired=NONE
 ```
 
-> Repita para o realm `nexo` apos cria-lo: `kcadm.sh update realms/nexo -s sslRequired=NONE`
+### Passo 2 — Criar o Realm `nexo`
 
-### Passo 2 — Criar o Realm
-
-1. No menu lateral, clique no dropdown do realm (mostra "master")
-2. Clique em **Create realm**
-3. Preencha:
-   - **Realm name:** `nexo`
-4. Clique em **Create**
-5. Desabilite SSL no novo realm:
+1. Menu lateral → dropdown do realm → **Create realm**
+2. **Realm name:** `nexo` → **Create**
+3. Desabilitar SSL no novo realm:
 
 ```bash
 docker exec nexo-auth-dev /opt/keycloak/bin/kcadm.sh \
   update realms/nexo -s sslRequired=NONE
 ```
 
-### Passo 3 — Criar o Client do Backend (nexo-api)
+### Passo 3 — Criar o Client do Backend (`nexo-api`)
 
-1. No realm `nexo`, va em **Clients** → **Create client**
-2. **General settings:**
-   - **Client ID:** `nexo-api`
-   - **Client type:** OpenID Connect
-3. **Capability config:**
-   - **Client authentication:** ON (confidential)
-   - **Authorization:** OFF
-   - **Authentication flow:** marque apenas **Standard flow** e **Direct access grants**
-4. **Login settings:**
-   - **Valid redirect URIs:** `http://localhost:3333/*`
-   - **Web origins:** `http://localhost:3333`
-5. Clique em **Save**
+1. **Clients** → **Create client**
+2. **Client ID:** `nexo-api` | **Client type:** OpenID Connect
+3. **Client authentication:** ON | **Standard flow** + **Direct access grants**
+4. **Valid redirect URIs:** `http://localhost:3333/*` | **Web origins:** `http://localhost:3333`
 
-### Passo 4 — Criar o Client do Frontend (nexo-web)
+### Passo 4 — Criar o Client do Frontend (`nexo-web`)
 
-1. Va em **Clients** → **Create client**
-2. **General settings:**
-   - **Client ID:** `nexo-web`
-   - **Client type:** OpenID Connect
-3. **Capability config:**
-   - **Client authentication:** OFF (public)
-   - **Authentication flow:** marque **Standard flow** e **Direct access grants**
-4. **Login settings:**
-   - **Valid redirect URIs:** `http://localhost:3000/*`
-   - **Web origins:** `http://localhost:3000`
-5. Clique em **Save**
+1. **Clients** → **Create client**
+2. **Client ID:** `nexo-web` | **Client type:** OpenID Connect
+3. **Client authentication:** OFF (public) | **Standard flow** + **Direct access grants**
+4. **Valid redirect URIs:** `http://localhost:3000/*` | **Web origins:** `http://localhost:3000`
 
 ### Passo 5 — Criar Roles
 
-1. Va em **Realm roles** → **Create role**
-2. Crie as seguintes roles:
-   - `admin`
-   - `moderator`
-   - `support`
+Em **Realm roles** → **Create role**, crie:
 
-### Passo 6 — Criar um Usuario de Teste
+- `admin`
+- `moderator`
+- `support`
 
-1. Va em **Users** → **Add user**
-2. Preencha:
-   - **Username:** `dev@nexo.local`
-   - **Email:** `dev@nexo.local`
-   - **Email verified:** ON
-   - **First name:** `Dev`
-   - **Last name:** `Nexo`
-3. Clique em **Create**
-4. Na aba **Credentials**:
-   - Clique em **Set password**
-   - Defina a senha (ex: `dev123`)
-   - **Temporary:** OFF
-5. Na aba **Role mapping**:
-   - Clique em **Assign role**
-   - Selecione `admin`
+### Passo 6 — Criar Usuário de Teste
 
-## Testando a Autenticacao
+1. **Users** → **Add user** → Username: `dev@nexo.local` | Email verified: ON
+2. Aba **Credentials** → **Set password** → Temporary: OFF
+3. Aba **Role mapping** → **Assign role** → `admin`
 
-Use o client **nexo-web** (public) para obter tokens. O client **nexo-api** e confidential e serve apenas para validacao no backend.
+## Testando a Autenticação
 
-### Obter um token JWT
+### Obter token JWT
 
 ```bash
 curl -s -X POST http://localhost:8080/realms/nexo/protocol/openid-connect/token \
@@ -270,229 +220,142 @@ curl -s -X POST http://localhost:8080/realms/nexo/protocol/openid-connect/token 
   -d "client_id=nexo-web" \
   -d "grant_type=password" \
   -d "username=dev@nexo.local" \
-  -d "password=<senha_definida>" | jq .access_token -r
+  -d "password=<sua_senha>" | jq .access_token -r
 ```
 
-### Chamar o endpoint /auth/me
+### Chamar `/auth/me`
 
 ```bash
-TOKEN="<token_obtido_acima>"
-
 curl -s http://localhost:3333/auth/me \
   -H "Authorization: Bearer $TOKEN" | jq
 ```
 
-Resposta esperada:
-
 ```json
 {
-  "id": "b7191598-3f4d-4ff0-8cef-31bd606572bd",
-  "keycloakId": "6b7df60c-f76f-4103-b34c-a173b38e0731",
+  "id": "b7191598-...",
+  "keycloakId": "6b7df60c-...",
   "email": "dev@nexo.local",
-  "name": "Geraldo Luiz",
-  "role": "SUPPORT",
+  "name": "Dev Nexo",
+  "role": "ADMIN",
   "isActive": true
 }
 ```
 
-O endpoint faz **upsert** automaticamente: na primeira chamada cria o usuario no banco, nas seguintes atualiza `lastLoginAt`.
-
 ### Respostas de erro
 
-| Status | Descricao                                             |
-| ------ | ----------------------------------------------------- |
-| 401    | Token JWT ausente, expirado ou invalido               |
-| 403    | Token valido mas sem permissao para acessar o recurso |
-| 429    | Limite de requisicoes excedido (100 req/min)          |
-| 500    | Erro interno (falha no banco, Keycloak indisponivel)  |
-
-### Testando no Postman
-
-1. **Obter token:** POST `http://localhost:8080/realms/nexo/protocol/openid-connect/token`
-   - Body (x-www-form-urlencoded):
-     - `client_id`: `nexo-web`
-     - `grant_type`: `password`
-     - `username`: `dev@nexo.local`
-     - `password`: `<senha_definida>`
-2. **Chamar API:** GET `http://localhost:3333/auth/me`
-   - Header: `Authorization: Bearer <access_token>`
+| Status | Descrição                                              |
+| ------ | ------------------------------------------------------ |
+| 401    | Token JWT ausente, expirado ou inválido                |
+| 403    | Token válido mas sem permissão para o recurso          |
+| 429    | Limite de requisições excedido (100 req/min)           |
+| 500    | Erro interno (banco indisponível, Keycloak fora do ar) |
 
 ## Endpoints
 
-| Metodo | Rota       | Auth | Descricao                   |
-| ------ | ---------- | ---- | --------------------------- |
-| GET    | `/auth/me` | JWT  | Retorna usuario autenticado |
-| GET    | `/health`  | -    | Health check                |
-| GET    | `/metrics` | -    | Metricas                    |
-| GET    | `/docs`    | -    | Swagger UI                  |
+| Método | Rota                            | Auth | Descrição                             |
+| ------ | ------------------------------- | ---- | ------------------------------------- |
+| GET    | `/auth/me`                      | JWT  | Retorna usuário interno autenticado   |
+| GET    | `/health`                       | —    | Health check                          |
+| GET    | `/metrics`                      | —    | Métricas Prometheus                   |
+| GET    | `/docs`                         | —    | Swagger UI                            |
+| GET    | `/marketing`                    | —    | Lista anúncios públicos (ACTIVE)      |
+| GET    | `/marketing/:id`                | —    | Detalhe de anúncio público            |
+| GET    | `/marketing/me`                 | JWT  | Lista meus anúncios (todos os status) |
+| GET    | `/marketing/me/:id`             | JWT  | Detalhe de um anúncio próprio         |
+| POST   | `/marketing`                    | JWT  | Cria novo anúncio (DRAFT)             |
+| PATCH  | `/marketing/:id`                | JWT  | Atualiza anúncio próprio              |
+| DELETE | `/marketing/:id`                | JWT  | Remove anúncio (soft delete)          |
+| PATCH  | `/marketing/:id/publish`        | JWT  | Publica anúncio (DRAFT → ACTIVE)      |
+| PATCH  | `/marketing/:id/unpublish`      | JWT  | Pausa anúncio (ACTIVE → INACTIVE)     |
+| PATCH  | `/marketing/:id/reactivate`     | JWT  | Reativa anúncio (INACTIVE → ACTIVE)   |
+| POST   | `/marketing/:id/media`          | JWT  | Upload de mídia (foto/vídeo)          |
+| DELETE | `/marketing/:id/media/:mediaId` | JWT  | Remove uma mídia                      |
+| PATCH  | `/marketing/:id/media/reorder`  | JWT  | Reordena mídias                       |
 
-## Controle de Acesso e Ownership de Anuncios
+## Controle de Acesso
 
-### Conceito de Dono (Owner)
+### Ownership de anúncios
 
-Quando um usuario autenticado cria um anuncio via `POST /marketing`, o campo `createdById` e preenchido com o `id` do usuario no banco local. Esse usuario se torna o **dono** do anuncio.
+Quando um anunciante cria um anúncio via `POST /marketing`, o campo `advertiserId` é preenchido com o `id` do `Advertiser` autenticado. Esse anunciante se torna o **dono** do anúncio.
 
 ### Regras por endpoint
 
-| Endpoint                                 | Publico | Dono             | Admin / Moderador |
-| ---------------------------------------- | ------- | ---------------- | ----------------- |
-| `POST /marketing`                        | ✗       | ✓ cria           | ✓ cria            |
-| `GET /marketing` (status=ACTIVE)         | ✓       | ✓                | ✓                 |
-| `GET /marketing` (status=DRAFT/INACTIVE) | ✗ 403   | ✓ so os proprios | ✓ todos           |
-| `GET /marketing/:id` (ACTIVE)            | ✓       | ✓                | ✓                 |
-| `GET /marketing/:id` (DRAFT/INACTIVE)    | 404     | ✓                | ✓                 |
-| `PATCH /marketing/:id`                   | ✗       | ✓ so o proprio   | ✓ qualquer        |
-| `DELETE /marketing/:id`                  | ✗       | ✓ so o proprio   | ✓ qualquer        |
-| `PATCH /marketing/:id/publish`           | ✗       | ✓ so o proprio   | ✓ qualquer        |
-| `PATCH /marketing/:id/unpublish`         | ✗       | ✓ so o proprio   | ✓ qualquer        |
+| Endpoint                              | Público | Dono             | Admin / Moderador |
+| ------------------------------------- | ------- | ---------------- | ----------------- |
+| `POST /marketing`                     | ✗       | ✓ cria           | ✓ cria            |
+| `GET /marketing` (ACTIVE)             | ✓       | ✓                | ✓                 |
+| `GET /marketing` (DRAFT/INACTIVE)     | ✗ 403   | ✓ só os próprios | ✓ todos           |
+| `GET /marketing/:id` (ACTIVE)         | ✓       | ✓                | ✓                 |
+| `GET /marketing/:id` (DRAFT/INACTIVE) | 404     | ✓                | ✓                 |
+| `PATCH /marketing/:id`                | ✗       | ✓ só o próprio   | ✓ qualquer        |
+| `DELETE /marketing/:id`               | ✗       | ✓ só o próprio   | ✓ qualquer        |
+| `PATCH /marketing/:id/publish`        | ✗       | ✓ só o próprio   | ✓ qualquer        |
+| `PATCH /marketing/:id/unpublish`      | ✗       | ✓ só o próprio   | ✓ qualquer        |
 
-> **Nota sobre o 404 em rascunhos**: Ao tentar acessar `GET /marketing/:id` de um anuncio DRAFT sem ser o dono, a API retorna **404** (nao encontrado) em vez de 403 (proibido). Isso e intencional — nao vazar informacao sobre a existencia de rascunhos de outros usuarios.
+> **404 em rascunhos:** ao tentar `GET /marketing/:id` de um DRAFT sem ser o dono, a API retorna 404 intencionalmente — não vaza a existência de rascunhos de outros anunciantes.
 
-### Ciclo de vida de um anuncio
+### Ciclo de vida de um anúncio
 
 ```
 POST /marketing
-  └─► status: DRAFT (invisivel no portal — so o dono ve)
+  └─► status: DRAFT  (invisível no portal — só o dono vê)
         │
-        ▼ PATCH /:id/publish (dono ou Admin/Moderador)
-      status: ACTIVE (visivel nas buscas publicas)
+        ▼ PATCH /:id/publish
+      status: ACTIVE  (visível nas buscas públicas)
         │
-        ├─► PATCH /:id/unpublish → status: INACTIVE (fora do ar, dono ainda ve)
+        ├─► PATCH /:id/unpublish → INACTIVE  (fora do ar, dono ainda vê)
         │     └─► PATCH /:id/publish → ACTIVE novamente
         │
-        ├─► status: SOLD   (negocio de venda concluido)
-        └─► status: RENTED (negocio de aluguel concluido)
+        ├─► status: SOLD    (venda concluída)
+        └─► status: RENTED  (aluguel concluído)
 ```
 
-### Como o role do usuario e determinado
+### Roles internas (equipe)
 
-O Keycloak e responsavel apenas pela **autenticacao** (emitir o JWT). O **role** de cada usuario (`ADMIN`, `MODERATOR`, `SUPPORT`) e armazenado no banco local e sincronizado no login via `SyncUserUseCase`:
+| Role no Keycloak | Role no banco | Permissão                                  |
+| ---------------- | ------------- | ------------------------------------------ |
+| `admin`          | `ADMIN`       | Tudo — vê e edita anúncios de qualquer um  |
+| `moderator`      | `MODERATOR`   | Vê e edita anúncios de qualquer anunciante |
+| qualquer outra   | `SUPPORT`     | Acesso básico — operações de suporte       |
 
-```
-Login via Keycloak
-  → JWT com roles do realm (ex: ["admin"])
-    → SyncUserUseCase.mapRole()
-      → Salva/atualiza role no banco local
-        → currentUser.role disponivel nos use-cases e controllers
-```
+> Anunciantes externos (`Advertiser`) não usam o modelo `User`. A proteção dos dados deles é feita pela verificação `listing.advertiserId === advertiser.id`.
 
-Mapeamento de roles do Keycloak para roles internas:
+## Regras de Negócio — Planos
 
-| Role no Keycloak | Role no banco | Permissao                                      |
-| ---------------- | ------------- | ---------------------------------------------- |
-| `admin`          | `ADMIN`       | Tudo — ve e edita anuncios de qualquer usuario |
-| `moderator`      | `MODERATOR`   | Ve e edita anuncios de qualquer usuario        |
-| qualquer outra   | `SUPPORT`     | So ve e edita os proprios anuncios             |
+### Regra 1 — Limite de imóveis ativos por plano
 
-> Anunciantes externos (usuarios do portal) recebem `SUPPORT` por padrao. A logica de **ownership** (`listing.createdById === currentUser.id`) e o que protege os dados deles, nao o role.
+**Use case:** `CreateListingUseCase`
 
-### Dashboard do anunciante — visualizando apenas os proprios anuncios
-
-Para listar os anuncios de um anunciante especifico (incluindo rascunhos), o caller precisa estar autenticado e usar o filtro `advertiserId` com seu proprio `id`:
-
-```bash
-# Listar todos os meus anuncios (DRAFT + ACTIVE + INACTIVE)
-curl 'http://localhost:3333/marketing?advertiserId=<meu-id>&status=DRAFT' \
-  -H 'Authorization: Bearer <token>'
-
-# Sem o status, retorna apenas ACTIVE (comportamento padrao)
-curl 'http://localhost:3333/marketing?advertiserId=<meu-id>' \
-  -H 'Authorization: Bearer <token>'
-```
-
-**O que acontece se tentar ver anuncios de outro usuario?**
-
-```bash
-# Tentativa de ver DRAFTs de outro usuario → 403 Forbidden
-curl 'http://localhost:3333/marketing?advertiserId=<outro-id>&status=DRAFT' \
-  -H 'Authorization: Bearer <token-do-usuario-A>'
-# {"statusCode":403,"message":"Voce so pode ver seus proprios anuncios com status diferente de ACTIVE."}
-```
-
-Admins e Moderadores podem usar `advertiserId` de qualquer usuario sem restricao.
-
-## Regras de Negocio — Planos de Anuncio
-
-Cada anuncio possui um campo `listingPlan` (enum `ListingPlanType`) que determina limites e beneficios. O valor padrao e `FREE`.
-
-> **MOCK:** enquanto o modulo de pagamento nao estiver pronto, todos os imoveis sao criados com `listingPlan = FREE`. A estrutura ja esta preparada para os planos pagos.
-
-### Tabela de limites
-
-| Plano      | Max. fotos | Max. imoveis ativos | Destaque |
-| ---------- | ---------- | ------------------- | -------- |
-| `FREE`     | 5          | **1**               | Nao      |
-| `STANDARD` | 10         | Ilimitado           | Nao      |
-| `FEATURED` | 10         | Ilimitado           | Sim      |
-| `PREMIUM`  | 10         | Ilimitado           | Sim      |
-| `SUPER`    | 10         | Ilimitado           | Sim      |
-
----
-
-### Regra 1 — Limite de 1 imovel no plano FREE
-
-**Use case:** `CreateListingUseCase.execute()`
-
-Antes de criar o anuncio, o sistema verifica:
+Antes de criar o anúncio:
 
 ```
-1. effectivePlan = input.listingPlan ?? FREE
-2. Se FREE:
-      count = countActiveFreeByOwner(userId)    ← query no banco
-      Se count >= 1 → ForbiddenException (403)
-3. Caso contrario: segue normalmente
+1. Busca o plano via getAdvertiserPlanLimits(advertiserId)
+2. Se maxProperties !== -1:
+      count = countActiveByAdvertiser(advertiserId)
+      Se count >= maxProperties → ForbiddenException (403)
+         "Você atingiu o limite de N imóvel(is) do seu plano."
+3. Cria o anúncio normalmente
 ```
 
-O repositorio expoe `countActiveFreeByOwner(userId)` que conta registros com:
+Métodos do `ListingRepository`:
 
-- `createdById = userId`
-- `deletedAt = null`
-- `listingPlan = FREE`
-- `status NOT IN (SOLD, RENTED)`
+- `countActiveByAdvertiser(advertiserId)` — conta imóveis ativos não-deletados e com status diferente de SOLD/RENTED
+- `getAdvertiserPlanLimits(advertiserId)` — retorna `{ maxProperties, maxPhotos, maxVideos }` da assinatura ativa (fallback: limites do plano BASIC)
 
-**Arquivos:**
+### Regra 2 — Limite de mídias por plano
 
-- `domain/repositories/marketing.repository.ts` — interface `countActiveFreeByOwner`
-- `infrastructure/prisma/prisma-marketing.repository.ts` — implementacao Prisma
-- `application/use-cases/create-marketing.use-case.ts` — validacao de negocio
+**Use case:** `UploadMediaUseCase`
 
----
-
-### Regra 2 — Limite de fotos por plano
-
-**Use case:** `UploadMediaUseCase.execute()`
-
-O limite e calculado dinamicamente com base no plano do anuncio:
-
-```typescript
-function maxImagesByPlan(plan: ListingPlan): number {
-  return plan === ListingPlan.FREE ? 5 : 10;
-}
-
-// Dentro do execute():
-const listing = await this.listingRepo.findById(propertyId);
-const maxImages = maxImagesByPlan(listing.listingPlan);
-if (currentCount >= maxImages) → BadRequestException (400)
 ```
-
-A mensagem de erro informa o plano e o limite: `"Limite de imagens atingido para o plano FREE (maximo: 5 fotos por imovel)."`.
-
-**Arquivo:**
-
-- `application/use-cases/upload-marketing-media.use-case.ts`
-
----
-
-### Proximos passos para os planos pagos
-
-1. Integrar gateway de pagamento (Stripe / Pagar.me)
-2. Criar endpoint de confirmacao de pagamento que atribui o plano ao usuario
-3. Associar o plano ao usuario (hoje e por imovel; no futuro sera por usuario/assinatura)
-4. Injetar o plano como atributo no token JWT do Keycloak pos-pagamento
+1. Busca o anúncio e seu advertiserId
+2. Chama getAdvertiserPlanLimits(advertiserId)
+3. Para fotos: se currentCount >= maxPhotos → BadRequestException (400)
+4. Para vídeos: se currentCount >= maxVideos → BadRequestException (400)
+```
 
 ## Seed de Dados de Teste
 
-O arquivo `prisma/seed.ts` popula o banco com dados de desenvolvimento. Alem dos usuarios e imoveis basicos, ele inclui uma secao de **50 imoveis em lote** para facilitar testes de paginacao e filtros no painel do anunciante.
+O arquivo `prisma/seed.ts` popula o banco com dados completos de desenvolvimento.
 
 ### Rodar o seed
 
@@ -500,70 +363,58 @@ O arquivo `prisma/seed.ts` popula o banco com dados de desenvolvimento. Alem dos
 pnpm prisma:seed
 ```
 
-### Imoveis em lote (secao 6b)
+### O que o seed cria
 
-O seed cria 50 imoveis distribuidos por tipo, finalidade, status e cidade:
+| Recurso     | Quantidade | Detalhes                                                  |
+| ----------- | ---------- | --------------------------------------------------------- |
+| Planos      | 3          | BASIC (grátis), INTERMEDIATE (R$49,90), PREMIUM (R$99,90) |
+| Anunciantes | 5          | AGENCY, BROKER, OWNER, DEVELOPER + bulk tester (BROKER)   |
+| Assinaturas | 5          | Cada anunciante com plano adequado ao seu tipo            |
+| Imóveis     | 50+        | Distribuídos por tipo, status e cidade (SP, RJ, MG, etc.) |
+| Conversas   | Várias     | Vinculadas a anunciantes                                  |
 
-| Categoria                     | Quantidade |
-| ----------------------------- | ---------- |
-| Apartamentos / Venda (ACTIVE) | 17         |
-| Casas / Condominios (ACTIVE)  | 10         |
-| Terrenos / Comercial (ACTIVE) | 3          |
-| Apartamentos / Aluguel        | 8          |
-| Casas / Aluguel               | 2          |
-| Rascunhos (DRAFT)             | 5          |
-| Inativos (INACTIVE)           | 3          |
-| Vendido / Alugado             | 2          |
-| **Total**                     | **50**     |
+### Bulk tester (50 imóveis para paginação)
 
-Os imoveis sao distribuidos entre 15 combinacoes de cidade/bairro (SP, RJ, MG, PR, RS, SC).
-
-Todos os 50 imoveis sao criados pertencentes a um unico usuario de teste (`seed.bulk@nexo-dev.local`), cujo `keycloakId` e configuravel via variavel de ambiente.
-
-### Vinculando ao seu usuario Keycloak
-
-Por padrao, o usuario de teste recebe o `keycloakId` ficticio `kc-seed-bulk-001`. Para que os 50 imoveis aparecam no painel do **seu** usuario Keycloak real, defina a variavel antes de rodar o seed:
+O seed cria um anunciante `BROKER` com assinatura PREMIUM para testes de paginação e filtros. Para vinculá-lo ao seu usuário Keycloak:
 
 ```bash
 # .env (apps/nexo-be)
 SEED_OWNER_KEYCLOAK_ID=<uuid-do-seu-usuario-no-keycloak>
 ```
 
-Para obter o UUID do seu usuario no Keycloak:
+Para obter o UUID:
 
 ```bash
-# Via admin do Keycloak
-curl -s http://localhost:8080/realms/nexo/account \
-  -H "Authorization: Bearer <token>" | jq .id
-
-# Ou diretamente no JWT
 echo "<access_token>" | cut -d. -f2 | base64 -d 2>/dev/null | jq .sub
 ```
-
-Sem essa variavel, os imoveis ainda sao criados normalmente no banco, mas ficam associados ao usuario ficticio `kc-seed-bulk-001` — invisivel no painel, util para testes de API.
-
-> **Atencao:** O seed usa `create` (nao `upsert`) para o usuario de lote. Rodar o seed duas vezes causara erro de chave duplicada. Use `pnpm prisma:migrate --force-reset` ou delete manualmente o usuario antes de re-executar.
 
 ## Scripts
 
 ```bash
-pnpm start:dev       # Desenvolvimento com hot-reload
-pnpm build           # Build para producao
-pnpm start:prod      # Iniciar build de producao
-pnpm prisma:generate # Gerar Prisma Client
-pnpm prisma:migrate  # Rodar migrations
-pnpm prisma:studio   # Abrir Prisma Studio (GUI do banco)
-pnpm test            # Rodar testes
-pnpm lint            # Lint com auto-fix
+pnpm start:dev        # Desenvolvimento com hot-reload
+pnpm build            # Build para produção
+pnpm start:prod       # Iniciar build de produção
+pnpm prisma:generate  # Gerar Prisma Client
+pnpm prisma:migrate   # Rodar migrations
+pnpm prisma:reset     # Resetar banco e re-aplicar migrations
+pnpm prisma:seed      # Popular banco com dados de desenvolvimento
+pnpm prisma:studio    # Abrir Prisma Studio (GUI do banco)
+pnpm test             # Rodar testes unitários
+pnpm test:e2e         # Rodar testes e2e
+pnpm test:cov         # Rodar testes com cobertura
+pnpm lint             # Lint com auto-fix
 ```
 
 ## Stack
 
-- **Runtime:** Node.js 20+ / TypeScript
-- **Framework:** NestJS 11
-- **ORM:** Prisma 7 com PostgreSQL
-- **Auth:** Keycloak 26.5 (JWT via JWKS / Passport)
-- **Logs:** Pino (pretty no dev, JSON em producao)
-- **Docs:** Swagger/OpenAPI
-- **Rate Limiting:** @nestjs/throttler (100 req/min)
-- **Monorepo:** Turborepo + pnpm
+| Camada     | Tecnologia                                     |
+| ---------- | ---------------------------------------------- |
+| Runtime    | Node.js 20+ / TypeScript                       |
+| Framework  | NestJS 11                                      |
+| ORM        | Prisma 7 com `@prisma/adapter-pg` (PostgreSQL) |
+| Auth       | Keycloak 26 (JWT RS256 via JWKS / Passport)    |
+| Upload     | Cloudinary                                     |
+| Logs       | Pino (pretty no dev, JSON em produção)         |
+| Docs       | Swagger / OpenAPI                              |
+| Rate Limit | @nestjs/throttler (100 req/min)                |
+| Monorepo   | Turborepo + pnpm                               |

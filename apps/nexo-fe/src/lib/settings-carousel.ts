@@ -1,4 +1,4 @@
-export const settings = {
+export const SETTINGS_CAROUSEL = {
   dots: true,
   infinite: false,
   speed: 500,

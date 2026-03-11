@@ -24,7 +24,6 @@ import { GetMyListingsUseCase } from '../../application/use-cases/get-my-marketi
 import { GetMyListingByIdUseCase } from '../../application/use-cases/get-my-marketing-by-id.use-case';
 import { ListingEntity } from '../../domain/entities/marketing.entity';
 import { ListingStatus } from '../../domain/enums/marketing-status.enum';
-import { ListingPlan } from '../../domain/enums/marketing-plan.enum';
 import { CreateListingDto } from './dtos/create-marketing.dto';
 import { GetListingsQueryDto } from './dtos/get-marketing-query.dto';
 
@@ -32,7 +31,7 @@ import { GetListingsQueryDto } from './dtos/get-marketing-query.dto';
 
 const makeListing = (override: Partial<ListingEntity> = {}): ListingEntity => ({
   id: 'listing-uuid-1',
-  createdById: 'owner-uuid',
+  advertiserId: 'owner-uuid',
   status: ListingStatus.DRAFT,
   purpose: 'SALE',
   type: 'APARTMENT',
@@ -83,11 +82,6 @@ const makeListing = (override: Partial<ListingEntity> = {}): ListingEntity => ({
   phoneClicksCount: 0,
   whatsappClicksCount: 0,
   emailClicksCount: 0,
-  leadSourcePortal: 0,
-  leadSourceSearch: 0,
-  leadSourceMap: 0,
-  leadSourceFeatured: 0,
-  listingPlan: ListingPlan.FREE,
   isFeatured: false,
   highlightUntil: null,
   averageRating: null,
@@ -147,7 +141,7 @@ describe('MyListingsController', () => {
       expect(controller.create).toBeDefined();
     });
 
-    it('deve chamar CreateListingUseCase com createdById do token JWT', async () => {
+    it('deve chamar CreateListingUseCase com advertiserId do token JWT', async () => {
       const listing = makeListing();
       mockCreateListing.execute.mockResolvedValue(listing);
 
@@ -166,7 +160,7 @@ describe('MyListingsController', () => {
 
       expect(mockCreateListing.execute).toHaveBeenCalledWith({
         ...dto,
-        createdById: 'owner-uuid',
+        advertiserId: 'owner-uuid',
       });
       expect(result.id).toBe(listing.id);
       expect(result.status).toBe(ListingStatus.DRAFT);
@@ -190,19 +184,19 @@ describe('MyListingsController', () => {
         items: [draft, active],
         total: 2,
         page: 1,
-        limit: 20,
+        limit: 10,
         totalPages: 1,
       });
       const currentUser = { id: 'owner-uuid' } as any;
 
       const result = await controller.listMine(currentUser, {
         page: 1,
-        limit: 20,
+        limit: 10,
       } as GetListingsQueryDto);
 
       expect(mockGetMyListings.execute).toHaveBeenCalledWith(
         'owner-uuid',
-        expect.objectContaining({ page: 1, limit: 20 }),
+        expect.objectContaining({ page: 1, limit: 10 }),
       );
       expect(result.items).toHaveLength(2);
       expect(result.total).toBe(2);
@@ -213,7 +207,7 @@ describe('MyListingsController', () => {
         items: [],
         total: 0,
         page: 1,
-        limit: 20,
+        limit: 10,
         totalPages: 0,
       });
 

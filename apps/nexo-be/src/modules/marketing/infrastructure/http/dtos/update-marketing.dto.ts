@@ -12,7 +12,6 @@ import {
   Min,
 } from 'class-validator';
 import { ListingEntity } from '../../../domain/entities/marketing.entity';
-import { ListingPlan } from '../../../domain/enums/marketing-plan.enum';
 
 /**
  * DTO DE ATUALIZAÇÃO DE ANÚNCIO
@@ -267,17 +266,6 @@ export class UpdateListingDto {
   @IsOptional()
   @IsUrl()
   virtualTourUrl?: string;
-
-  // --- Plano ---
-
-  @ApiPropertyOptional({
-    description: 'Plano do anúncio',
-    enum: ListingPlan,
-    example: ListingPlan.FEATURED,
-  })
-  @IsOptional()
-  @IsEnum(ListingPlan)
-  listingPlan?: ListingPlan;
 
   // --- Integração com portais ---
 

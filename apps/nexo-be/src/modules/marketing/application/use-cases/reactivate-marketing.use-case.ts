@@ -52,7 +52,7 @@ export class ReactivateListingUseCase {
     }
 
     // 2. Verifica ownership
-    const isOwner = listing.createdById === requesterId;
+    const isOwner = listing.advertiserId === requesterId;
     const isPrivileged =
       requesterRole === 'ADMIN' || requesterRole === 'MODERATOR';
     if (!isOwner && !isPrivileged) {

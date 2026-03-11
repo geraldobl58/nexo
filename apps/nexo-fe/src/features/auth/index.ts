@@ -1,7 +1,7 @@
-export { useAuth } from "./hooks/use-auth";
-export { AUTH_SESSION_KEY } from "./hooks/use-auth";
-export { useUser, USER_QUERY_KEY } from "./hooks/use-user";
+export { useAuth } from "./hooks/use-auth.hook";
+export { AUTH_SESSION_KEY } from "./hooks/use-auth.hook";
+export { useUser, USER_QUERY_KEY } from "./hooks/use-user.hook";
 export { ProtectedRoute } from "./components/protected-route";
-export { syncMeAction } from "./actions/sync-me";
-export { setAuthCookie, clearAuthCookie } from "./actions/session";
-export type { User } from "./types";
+export { syncMeAction } from "./actions/sync-me.action";
+export { setAuthCookie, clearAuthCookie } from "./actions/session.action";
+export type { User } from "./types/user.type";

@@ -13,13 +13,12 @@ import {
 } from '../../domain/repositories/marketing.repository';
 import { ListingEntity } from '../../domain/entities/marketing.entity';
 import { ListingStatus } from '../../domain/enums/marketing-status.enum';
-import { ListingPlan } from '../../domain/enums/marketing-plan.enum';
 
 // ─── Fixture helpers ──────────────────────────────────────────────────────────
 
 const makeListing = (id: string): ListingEntity => ({
   id,
-  createdById: 'user-uuid',
+  advertiserId: 'user-uuid',
   status: ListingStatus.ACTIVE,
   purpose: 'SALE',
   type: 'APARTMENT',
@@ -73,12 +72,6 @@ const makeListing = (id: string): ListingEntity => ({
   phoneClicksCount: 0,
   whatsappClicksCount: 0,
   emailClicksCount: 0,
-  leadSourcePortal: 0,
-  leadSourceSearch: 0,
-  leadSourceMap: 0,
-  leadSourceFeatured: 0,
-  // Plano
-  listingPlan: ListingPlan.FREE,
   isFeatured: false,
   highlightUntil: null,
   // Avaliação
@@ -100,7 +93,7 @@ const makeListing = (id: string): ListingEntity => ({
 const makePaginated = (
   items: ListingEntity[],
   page = 1,
-  limit = 20,
+  limit = 10,
 ): PaginatedResult<ListingEntity> => ({
   items,
   total: items.length,
@@ -121,6 +114,12 @@ describe('GetListingsUseCase', () => {
       findById: jest.fn(),
       update: jest.fn(),
       findMany: jest.fn(),
+      countActiveByAdvertiser: jest.fn().mockResolvedValue(0),
+      getAdvertiserPlanLimits: jest.fn().mockResolvedValue({
+        maxProperties: 1,
+        maxPhotos: 5,
+        maxVideos: 0,
+      }),
       slugExists: jest.fn(),
       softDelete: jest.fn(),
     };

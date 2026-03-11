@@ -1,471 +1,408 @@
 # Nexo Frontend (nexo-fe)
 
-Frontend do Nexo — marketplace imobiliário construído com Next.js 14, Tailwind CSS, React Query e Keycloak para autenticação.
+Frontend do Nexo — marketplace imobiliário construído com **Next.js 15** (App Router), **Tailwind CSS**, **TanStack Query v5** e **Keycloak** para autenticação.
 
-## Arquitetura
+## Stack
 
-O projeto segue uma arquitetura **feature-based** com separação clara de responsabilidades:
+| Camada         | Tecnologia                                     |
+| -------------- | ---------------------------------------------- |
+| Framework      | Next.js 15 (App Router), React 19              |
+| Linguagem      | TypeScript 5 (strict mode)                     |
+| Estilização    | Tailwind CSS 3 + MUI v7                        |
+| Estado / Dados | TanStack Query v5                              |
+| Autenticação   | Keycloak JS (PKCE, tokens em `sessionStorage`) |
+| Formulários    | react-hook-form v7 + Zod v4                    |
+| HTTP           | Axios com interceptor do bearer token Keycloak |
+| Mapas          | Leaflet / react-leaflet                        |
+| Testes         | Vitest + Testing Library + Playwright          |
+| Monorepo       | pnpm workspaces + Turborepo                    |
+
+---
+
+## Estrutura de pastas
 
 ```
 src/
-├── middleware.ts                # Middleware Next.js (protege rotas server-side)
+├── middleware.ts                  # Guard de rotas server-side (cookie nexo-session)
 │
-├── features/                   # Módulos por funcionalidade
-│   └── auth/                   # Feature de autenticação
-│       ├── index.ts            # Barrel exports da feature
-│       ├── actions/            # Server Actions ("use server")
-│       │   ├── sync-me.ts      # Busca dados do usuário via API (server-side)
-│       │   └── session.ts      # Gerencia cookie de sessão (httpOnly)
-│       ├── components/         # Componentes específicos da feature
-│       │   └── protected-route.tsx
-│       ├── hooks/              # Hooks da feature
-│       │   ├── use-auth.ts     # Hook de autenticação (React Query)
-│       │   └── use-user.ts     # React Query hook para dados do usuário
-│       ├── http/               # Chamadas HTTP client-side (Axios)
-│       │   └── auth-api.ts     # Endpoints de autenticação
-│       ├── types/              # TypeScript types da feature
-│       │   └── index.ts        # User
-│       └── schemas/            # Validação (Zod)
+├── app/                           # Next.js App Router
+│   ├── layout.tsx                 # Layout raiz (AuthProvider, MuiProvider, QueryProvider)
+│   ├── (marketing)/               # Route group — páginas públicas (Header + Footer)
+│   │   ├── layout.tsx
+│   │   ├── page.tsx               # Homepage
+│   │   ├── imovel/[id]/page.tsx   # Detalhe público do anúncio
+│   │   └── publish/
+│   │       ├── page.tsx           # Escolha de plano
+│   │       └── owner/page.tsx     # Wizard de publicação
+│   └── panel/                     # Área protegida (ProtectedRoute + sidebar)
+│       ├── layout.tsx
+│       ├── page.tsx               # Dashboard
+│       └── my-properties/
+│           ├── page.tsx
+│           └── [my-property]/page.tsx
 │
-├── providers/                  # Providers globais (sem Context API)
-│   ├── query-provider.tsx      # React Query (QueryClientProvider)
-│   └── auth-provider.tsx       # Inicializa Keycloak e seta React Query cache
+├── features/                      # Feature slices (organização vertical)
+│   ├── auth/
+│   │   ├── index.ts               # Barrel export da feature
+│   │   ├── actions/
+│   │   │   ├── session.action.ts  # "use server" — gerencia cookies nexo-session / nexo-user
+│   │   │   └── sync-me.action.ts  # "use server" — GET /auth/me com API_URL privada
+│   │   ├── components/
+│   │   │   └── protected-route.tsx
+│   │   ├── hooks/
+│   │   │   ├── use-auth.hook.ts   # isAuthenticated, login, logout
+│   │   │   └── use-user.hook.ts   # dados do usuário via React Query
+│   │   ├── services/
+│   │   │   └── auth.service.ts    # GET /auth/me (client-side Axios)
+│   │   └── types/
+│   │       └── user.type.ts       # interface User
+│   │
+│   ├── dashboard/
+│   │   ├── index.ts
+│   │   ├── components/
+│   │   │   └── chart-last-days.tsx
+│   │   ├── hooks/
+│   │   │   └── use-my-listings-count.hook.ts
+│   │   └── services/
+│   │       └── dashboard.service.ts
+│   │
+│   ├── marketing/
+│   │   ├── index.ts
+│   │   ├── components/
+│   │   │   ├── marketing-card.component.tsx
+│   │   │   └── marketing-search-form.component.tsx
+│   │   ├── hooks/
+│   │   │   └── use-marketing.hook.ts
+│   │   ├── services/
+│   │   │   └── marketing.service.ts   # GET /marketing
+│   │   └── types/
+│   │       └── marketing.type.ts
+│   │
+│   └── owner/
+│       ├── index.ts
+│       ├── actions/
+│       │   ├── my-listings.action.ts  # CRUD client-side (Axios + KC interceptor)
+│       │   └── publish.action.ts      # createPublication, uploadMediaFiles
+│       ├── components/
+│       │   ├── my-properties.tsx
+│       │   ├── my-property.tsx
+│       │   ├── my-property-by-id.tsx
+│       │   ├── my-property-publish-wizard.tsx
+│       │   ├── my-property-media-card.tsx
+│       │   ├── action-cell.tsx
+│       │   ├── columns.tsx
+│       │   └── steps/
+│       │       ├── step-location.tsx
+│       │       ├── step-details.tsx
+│       │       ├── step-photos.tsx
+│       │       ├── step-comodities.tsx
+│       │       ├── step-contact.tsx
+│       │       └── step-finished.tsx
+│       ├── enums/
+│       │   └── listing.enum.ts        # Purpose, PropertyType, Listing, labels
+│       ├── hooks/
+│       │   ├── use-my-listings.hook.ts
+│       │   └── use-media.hook.ts
+│       ├── schemas/
+│       │   ├── publish-location.schema.ts
+│       │   ├── publish-details.schema.ts
+│       │   ├── publish-comodities.schema.ts
+│       │   └── publish-contact.schema.ts
+│       ├── services/
+│       │   ├── listing.service.ts     # GET /marketing/:id (público)
+│       │   ├── my-listings.service.ts # CRUD /marketing/me (autenticado)
+│       │   └── publish.service.ts     # POST /marketing/me + media upload
+│       └── types/
+│           ├── publish.type.ts
+│           ├── publish-details.type.ts
+│           ├── publish-comodities.type.ts
+│           ├── publish-location.type.ts
+│           └── my-property-media-card.type.ts
 │
-├── components/                 # Componentes compartilhados (UI)
-│   └── ui/
-│       └── button.tsx          # shadcn/ui components
+├── components/                    # Componentes compartilhados
+│   ├── layout/                    # Header, Footer, Sidebar, Navbar, AppBar
+│   ├── sections/                  # Seções da home (Hero, Feature, Information, System)
+│   ├── feedback/                  # Loading
+│   └── ui/                        # Primitivos de UI (Card, Carousel, DataTable, etc.)
 │
-├── config/                     # Configurações globais
-│   └── api.ts                  # Cliente Axios com interceptor JWT
+├── config/
+│   └── api.ts                     # Instância Axios com interceptor JWT do Keycloak
 │
-├── lib/                        # Bibliotecas e utilitários
-│   ├── keycloak.ts             # Instância do Keycloak JS
-│   └── utils.ts                # Utilitários (cn, etc.)
+├── constants/
+│   └── index.ts                   # BREADCRUMB_MAP, limites de plano
 │
-├── app/                        # Páginas Next.js (App Router)
-│   ├── (marketing)/
-│   │   └── page.tsx            # Home (pública)
-│   ├── panel/
-│   │   └── page.tsx            # Painel administrativo (protegido)
-│   └── layout.tsx              # Layout raiz com Providers
+├── contexts/
+│   └── publish-context.tsx        # Estado do wizard multi-step (persiste em sessionStorage)
 │
-└── public/
-    └── silent-check-sso.html   # SSO silencioso do Keycloak
+├── lib/                           # Utilitários transversais
+│   ├── keycloak.ts                # Singleton do Keycloak JS
+│   ├── session.ts                 # Parse de cookies (Edge-safe)
+│   ├── formatted-money.ts         # toCents, fromCents, formatCurrency
+│   ├── fect-cep.ts                # Lookup de CEP via BrasilAPI
+│   ├── media-upload.tsx           # Limites, tipos aceitos e validação de arquivos
+│   ├── leaflet-map.tsx            # Componente de mapa (Leaflet)
+│   └── settings-carousel.ts      # Configuração do Slick carousel
+│
+├── providers/
+│   ├── auth-provider.tsx          # Inicializa Keycloak + sync de cookies
+│   ├── mui-provider.tsx           # ThemeProvider MUI + AppRouterCache
+│   └── query-provider.tsx         # TanStack QueryClientProvider
+│
+└── routes/
+    └── index.tsx                  # Configuração de rotas do sidebar
 ```
 
-### Convenção para novas features
+---
 
-Cada feature segue a mesma estrutura:
+## Convenções de nomenclatura
 
-```
-src/features/<nome-da-feature>/
-├── index.ts            # Barrel exports (API pública da feature)
-├── actions/            # Server Actions ("use server") - chamadas seguras ao backend
-├── components/         # Componentes React da feature
-├── hooks/              # Custom hooks (React Query, estado local)
-├── http/               # Chamadas HTTP client-side (Axios)
-├── types/              # Interfaces e tipos TypeScript
-├── schemas/            # Schemas de validação (Zod)
-```
+Baseadas nos mesmos padrões do backend:
 
-Importar sempre pelo barrel export: `import { useAuth, ProtectedRoute } from "@/features/auth"`.
+| Tipo de arquivo       | Sufixo           | Exemplo                           |
+| --------------------- | ---------------- | --------------------------------- |
+| Hook (React Query)    | `.hook.ts`       | `use-my-listings.hook.ts`         |
+| Serviço HTTP (Axios)  | `.service.ts`    | `my-listings.service.ts`          |
+| Server Action         | `.action.ts`     | `session.action.ts`               |
+| Schema de validação   | `.schema.ts`     | `publish-details.schema.ts`       |
+| Tipos / interfaces    | `.type.ts`       | `publish.type.ts`, `user.type.ts` |
+| Enum                  | `.enum.ts`       | `listing.enum.ts`                 |
+| Componente de feature | `.component.tsx` | `marketing-card.component.tsx`    |
 
-## Proteção de Rotas (Middleware + ProtectedRoute)
+---
 
-O projeto usa **duas camadas de proteção** que se complementam:
+## Organização por feature slice
 
-### 1. Middleware (server-side)
-
-O `middleware.ts` roda no servidor **antes** da página carregar. Verifica o cookie `nexo-session` (httpOnly) e redireciona para `/` se ausente. Isso evita o "flash" de conteúdo protegido.
+Cada feature em `src/features/` é **auto-contida** com a seguinte estrutura:
 
 ```
-Requisição → Middleware → Cookie existe? → Sim → Renderiza página
-                                         → Não → Redirect para /
+src/features/<nome>/
+├── index.ts          # Barrel export (API pública da feature)
+├── actions/          # Client-side actions ou Server Actions ("use server")
+├── components/       # Componentes React específicos da feature
+├── hooks/            # Custom hooks (TanStack Query)
+├── services/         # Chamadas HTTP via Axios (client-side)
+├── types/            # Interfaces e tipos TypeScript
+├── schemas/          # Schemas de validação Zod
+└── enums/            # Enums do domínio
 ```
 
-Rotas protegidas pelo middleware: `/panel/*`
+**Regra:** importe sempre pelo barrel export quando disponível:
+
+```tsx
+import { useAuth, ProtectedRoute } from "@/features/auth";
+import { useMyListings, Purpose } from "@/features/owner";
+import { useMarketing } from "@/features/marketing";
+```
+
+---
+
+## Proteção de rotas
+
+O projeto usa **duas camadas** complementares:
+
+### 1. Middleware (server-side, Edge)
+
+`middleware.ts` roda antes da página carregar. Verifica o cookie `nexo-session` (httpOnly) e redireciona para `/` se ausente — sem flash de conteúdo.
+
+Rotas protegidas: `/panel/*`
 
 ### 2. ProtectedRoute (client-side)
 
-O componente `ProtectedRoute` valida o token Keycloak no client-side. Funciona como segunda camada de segurança — garante que o token é válido e não apenas que o cookie existe.
+Componente que valida o token Keycloak no browser. Segunda linha de defesa, garante que o token é válido (não apenas que o cookie existe).
 
 ```tsx
 import { ProtectedRoute, useAuth } from "@/features/auth";
 
-export default function AdminPage() {
-  const { user } = useAuth();
-
-  return (
-    <ProtectedRoute>
-      <h1>Bem-vindo, {user?.name}!</h1>
-    </ProtectedRoute>
-  );
+export default function PanelLayout({ children }) {
+  return <ProtectedRoute>{children}</ProtectedRoute>;
 }
 ```
 
-### Por que manter os dois?
+| Camada         | Onde roda       | O que verifica        | Benefício                  |
+| -------------- | --------------- | --------------------- | -------------------------- |
+| Middleware     | Servidor (edge) | Cookie `nexo-session` | Redirect rápido, sem flash |
+| ProtectedRoute | Client          | Token Keycloak válido | Validação real do JWT      |
 
-| Camada         | Onde roda        | O que verifica        | Benefício                  |
-| -------------- | ---------------- | --------------------- | -------------------------- |
-| Middleware     | Servidor (edge)  | Cookie `nexo-session` | Redirect rápido, sem flash |
-| ProtectedRoute | Client (browser) | Token Keycloak válido | Validação real do token    |
+---
 
-## Server Actions ("use server")
-
-As chamadas à API backend são feitas via **Server Actions** para maior segurança:
-
-- A URL da API (`API_URL`) fica **apenas no servidor** — não exposta no bundle do client
-- O token JWT é passado para a server action, que faz a requisição server-side
-- Detalhes da requisição (headers, URLs internas) ficam ocultos do browser
-
-```tsx
-// src/features/auth/actions/sync-me.ts
-"use server";
-
-export async function syncMeAction(token: string): Promise<User> {
-  const res = await fetch(`${process.env.API_URL}/auth/me`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.json();
-}
-```
-
-O hook `useUser()` chama a server action automaticamente via React Query:
-
-```tsx
-// src/features/auth/hooks/use-user.ts
-const query = useQuery({
-  queryKey: ["auth", "user"],
-  queryFn: async () => {
-    await keycloak.updateToken(30);
-    return syncMeAction(keycloak.token!);
-  },
-  enabled: isAuthenticated,
-});
-```
-
-## Gerenciamento de Estado com React Query (sem Context API)
-
-O projeto usa **@tanstack/react-query** como unica solucao de estado — **sem Context API**:
-
-- **Auth status** (`isAuthenticated`, `isLoading`) — armazenado no cache React Query via `AUTH_SESSION_KEY`
-- **Dados do usuário** — query `["auth", "user"]` que chama server action
-- **AuthProvider** — apenas inicializa o Keycloak e seta dados no cache (nao usa Context.Provider)
-- **useAuth()** — le do cache React Query, sem useContext
-
-Benefícios:
-
-- Cache automático e deduplicação de requisições
-- Revalidação inteligente (stale-while-revalidate)
-- Retry automático em caso de falha
-- Estado global sem prop drilling ou Context boilerplate
-
-### Exemplo: criando uma nova feature com server action
-
-```tsx
-// src/features/properties/actions/fetch-properties.ts
-"use server";
-
-export async function fetchPropertiesAction(token: string) {
-  const res = await fetch(`${process.env.API_URL}/properties`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.json();
-}
-```
-
-```tsx
-// src/features/properties/hooks/use-properties.ts
-import { useQuery } from "@tanstack/react-query";
-import keycloak from "@/lib/keycloak";
-import { fetchPropertiesAction } from "../actions/fetch-properties";
-
-export function useProperties() {
-  return useQuery({
-    queryKey: ["properties"],
-    queryFn: async () => {
-      await keycloak.updateToken(30);
-      return fetchPropertiesAction(keycloak.token!);
-    },
-  });
-}
-```
-
-## Fluxo de Autenticação
+## Fluxo de autenticação
 
 ```
 1. Usuário acessa /panel sem estar autenticado
-   → Middleware detecta ausência do cookie nexo-session
-   → Redireciona para / (server-side, sem flash)
+   → Middleware: cookie nexo-session ausente → redirect para /
 
-2. Usuário clica em "Entrar com Keycloak"
+2. useAuth().login() é chamado
    → keycloak.login() redireciona para o Keycloak
-   → Usuário faz login no Keycloak
-   → Keycloak redireciona de volta para /panel com token JWT
+   → Usuário realiza login
+   → Keycloak redireciona de volta com código PKCE
 
-3. AuthProvider inicializa
-   → keycloak.init({ onLoad: 'check-sso' }) verifica SSO
-   → Se autenticado: seta cookie nexo-session (httpOnly)
-   → React Query busca dados do usuário via server action
-   → Configura refresh automático do token (30s)
+3. AuthProvider (auth-provider.tsx) inicializa
+   → keycloak.init({ pkceMethod: 'S256', checkLoginIframe: false })
+   → Tokens armazenados em sessionStorage (kc_token, kc_refresh_token, kc_id_token)
+   → syncMeAction(token) → GET /auth/me (server-side, URL privada)
+   → setAuthCookie() → grava nexo-session (httpOnly) + nexo-user (base64)
+   → React Query cache atualizado
 
 4. Usuário autenticado acessa /panel
    → Middleware permite (cookie presente)
    → ProtectedRoute valida token Keycloak
-   → Página renderiza com dados do useAuth()
+   → useAuth() expõe { user, isAuthenticated }
 
-5. Requisições à API
-   → Server actions fazem chamadas server-side
-   → Token é passado como parâmetro e atualizado antes de expirar
+5. Refresh automático
+   → keycloak.onAuthRefreshSuccess → atualiza sessionStorage
+   → keycloak.onAuthRefreshError  → força logout
 
 6. Logout
-   → useAuth().logout() limpa cookie nexo-session
-   → Limpa estado e redireciona para Keycloak
-   → Keycloak faz logout global e redireciona para home
+   → sessionStorage limpo + cookies deletados
+   → keycloak.logout() → redireciona para home
 ```
 
-## API do useAuth
+---
+
+## API do `useAuth`
 
 ```tsx
 import { useAuth } from "@/features/auth";
 
 const {
-  user, // Dados do usuário (id, email, name, role, isActive)
-  isLoading, // true durante inicialização/verificação
-  isAuthenticated, // true se usuário estiver autenticado
-  login, // Função para iniciar login no Keycloak
-  logout, // Função para fazer logout (limpa cookie + Keycloak)
-  refreshUserData, // Invalida cache React Query e recarrega dados
+  user, // User | null
+  isLoading, // true durante inicialização
+  isAuthenticated, // boolean
+  login, // (redirectPath?: string) => Promise<void>
+  logout, // () => Promise<void>
+  refreshUserData, // () => Promise<void>
 } = useAuth();
 ```
 
-## Regras de Negócio — Planos de Anúncio
+---
 
-O sistema possui planos para anúncios imobiliários. Cada anúncio (`Property`) tem um campo `listingPlan` que define os limites e benefícios aplicados.
+## Server Actions (`"use server"`)
 
-### Planos disponíveis
+Server Actions são usadas quando a chamada precisa de segurança server-side (URL privada, lógica de cookie):
 
-| Plano      | Fotos | Imóveis ativos | Destaque | Status        |
-| ---------- | ----- | -------------- | -------- | ------------- |
-| `FREE`     | 5     | 1              | Não      | ✅ Disponível |
-| `STANDARD` | 10    | Ilimitado      | Não      | 🔒 Em breve   |
-| `FEATURED` | 10    | Ilimitado      | Sim      | 🔒 Em breve   |
-| `PREMIUM`  | 10    | Ilimitado      | Sim      | 🔒 Em breve   |
-| `SUPER`    | 10    | Ilimitado      | Sim      | 🔒 Em breve   |
+```ts
+// src/features/auth/actions/sync-me.action.ts
+"use server";
 
-> **MOCK:** o módulo de pagamento ainda não está implementado. Por enquanto,
-> todos os imóveis criados recebem o plano `FREE` automaticamente
-> (`listingPlan @default(FREE)` no Prisma Schema). Os planos pagos serão
-> desbloqueados quando a integração com o gateway de pagamento for concluída.
+export async function syncMeAction(token: string): Promise<User> {
+  const res = await fetch(`${process.env.API_URL}/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  return res.json();
+}
+```
+
+> `API_URL` é uma variável de ambiente **privada** (sem prefixo `NEXT_PUBLIC_`).
+> Chamadas client-side usam `NEXT_PUBLIC_API_URL` via Axios (`src/config/api.ts`).
 
 ---
 
-#
+## Gerenciamento de estado (TanStack Query)
 
-### Regra 1 — Imóvel único no plano FREE (backend + frontend)
+O projeto usa **TanStack Query v5** como única solução de estado global — **sem Context API**:
 
-**Onde:** `CreateListingUseCase.execute()` (backend)
-
-Um usuário no plano FREE só pode ter **1 imóvel ativo** (não-deletado, não SOLD/RENTED).
-
-**Fluxo:**
-
-```
-POST /marketing/me
-  → CreateListingUseCase.execute()
-  → listingPlan === FREE?
-      → SIM → countActiveFreeByOwner(userId) >= 1?
-                  → SIM → ForbiddenException (403) com mensagem
-                  → NÃO → prossegue
-      → NÃO → prossegue (planos pagos = ilimitado)
-```
-
-**Frontend:** o hook `useMyListings()` expõe `isAtFreeLimit` (boolean).
-Quando `true`, o botão **+ Novo imóvel** em `my-properties.tsx` fica
-desabilitado com tooltip explicativo.
-
-Arquivos envolvidos:
-
-| Arquivo                          | Responsabilidade                     |
-| -------------------------------- | ------------------------------------ |
-| `create-marketing.use-case.ts`   | Validação de negócio (lança 403)     |
-| `marketing.repository.ts`        | Interface `countActiveFreeByOwner()` |
-| `prisma-marketing.repository.ts` | Implementação Prisma do count        |
-| `hooks/use-my-listings.ts`       | Calcula `isAtFreeLimit` no cliente   |
-| `components/my-properties.tsx`   | Botão desabilitado + tooltip         |
+- **Auth status** (`isAuthenticated`, `isLoading`) — cache React Query via `AUTH_SESSION_KEY`
+- **Dados do usuário** — query `["auth", "user"]` com `syncMeAction`
+- **AuthProvider** — inicializa o Keycloak e atualiza o cache (não usa `Context.Provider`)
+- **`useAuth()`** — lê do cache React Query, sem `useContext`
 
 ---
 
-### Regra 2 — Limite de fotos por plano (backend + frontend)
+## Wizard de publicação
 
-**Onde:** `UploadMediaUseCase.execute()` (backend) + `step-photos.tsx` (frontend)
-
-| Plano | Máx. fotos | Máx. vídeos |
-| ----- | ---------- | ----------- |
-| FREE  | **5**      | 2           |
-| Pagos | **10**     | 2           |
-
-**Backend:** lê `listing.listingPlan` e calcula o limite dinamicamente.
-
-```typescript
-// upload-marketing-media.use-case.ts
-const maxImages = listing.listingPlan === ListingPlan.FREE ? 5 : 10;
-// Se currentCount >= maxImages → BadRequestException (400)
-```
-
-**Frontend:** como novos imóveis são sempre FREE (mock), o wizard de criação
-usa `MAX_IMAGES_FREE = 5`. Os limites são exportados de `src/lib/media-upload.tsx`:
-
-```typescript
-export const MAX_IMAGES_FREE = 5;   // plano FREE
-export const MAX_IMAGES_PAID = 10;  // planos pagos
-export function getMaxImages(plan?: ListingPlanType): number { ... }
-```
-
-O componente `step-photos.tsx` mostra um badge informativo:
+O fluxo de criação de anúncio usa `PublishContext` (`contexts/publish-context.tsx`) para coordenar o wizard multi-step:
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  📷 Plano FREE — até 5 fotos   Planos pagos: até 10  │
-└─────────────────────────────────────────────────────┘
+Localização → Detalhes → Fotos → Comodidades → Contato → Concluído
 ```
 
-Arquivos envolvidos:
-
-| Arquivo                              | Responsabilidade                    |
-| ------------------------------------ | ----------------------------------- |
-| `upload-marketing-media.use-case.ts` | Limite dinâmico por plano (backend) |
-| `src/lib/media-upload.tsx`           | Constantes e helpers de validação   |
-| `components/step-photos.tsx`         | Validação + UI do wizard            |
+- Estado persiste em `sessionStorage` com versionamento (`STORAGE_VERSION`) — dados de versões antigas são descartados automaticamente
+- Arquivos de mídia (`File[]`) não são persistidos (não serializáveis)
+- Ao concluir: `POST /marketing/me` (cria DRAFT) → upload das fotos → redirecionamento para `/panel`
 
 ---
 
-### Como os planos serão implementados no futuro
+## Regras de negócio — Planos de anúncio
 
-1. **Gateway de pagamento** — integração com Stripe / Pagar.me para cobrar mensalidade
-2. **Campo no usuário** — associar o plano ao usuário (hoje é por imóvel)
-3. **Keycloak attribute** — após pagamento confirmado, injetar `plan=STANDARD` como atributo no token JWT
-4. **Backend** — ler o plano do token em vez do campo do imóvel
-5. **Frontend** — ler o plano do `useAuth()` para controlar limites dinamicamente
+| Plano      | Fotos | Anúncios ativos | Destaque | Status        |
+| ---------- | ----- | --------------- | -------- | ------------- |
+| `FREE`     | 5     | 1               | Não      | ✅ Disponível |
+| `STANDARD` | 10    | Ilimitado       | Não      | 🔒 Em breve   |
+| `FEATURED` | 10    | Ilimitado       | Sim      | 🔒 Em breve   |
+| `PREMIUM`  | 10    | Ilimitado       | Sim      | 🔒 Em breve   |
+| `SUPER`    | 10    | Ilimitado       | Sim      | 🔒 Em breve   |
 
-## Setup
+> **Nota:** o módulo de pagamento ainda não está implementado. Todos os anúncios criados recebem o plano `FREE` por padrão (`listingPlan @default(FREE)` no Prisma Schema).
 
-### Pré-requisitos
+### Regra 1 — Anúncio único no plano FREE
 
-- Node.js 20+
-- pnpm
-- Backend (nexo-be) rodando em `http://localhost:3333`
-- Keycloak rodando em `http://localhost:8080`
+Um usuário FREE só pode ter **1 anúncio ativo**. Validação dupla:
 
-### 1. Instalar dependências
+- **Backend:** `CreateListingUseCase` lança `ForbiddenException (403)` se `countActiveFreeByOwner >= 1`
+- **Frontend:** `useMyListings()` expõe `isAtFreeLimit` (boolean) — botão "Novo anúncio" fica desabilitado com tooltip
 
-```bash
-pnpm install
-```
+### Regra 2 — Limite de fotos por plano
 
-### 2. Configurar variáveis de ambiente
+| Plano | Fotos | Vídeos |
+| ----- | ----- | ------ |
+| FREE  | 5     | 0      |
+| Pagos | 10    | 2      |
 
-Crie ou edite o arquivo `.env`:
+Constantes em `src/lib/media-upload.tsx`: `MAX_IMAGES_FREE`, `MAX_IMAGES_PAID`, `MAX_VIDEOS`.
 
-```env
-NEXT_PUBLIC_API_URL="http://localhost:3333"
-NEXT_PUBLIC_KEYCLOAK_URL="http://localhost:8080"
-NEXT_PUBLIC_KEYCLOAK_REALM="nexo"
-NEXT_PUBLIC_KEYCLOAK_CLIENT_ID="nexo-web"
+---
 
-# Server-only (usado por server actions - não exposto ao client)
-API_URL="http://localhost:3333"
-```
+## Variáveis de ambiente
 
-> **Importante:**
->
-> - `NEXT_PUBLIC_*` — embutidas no bundle JavaScript em **build-time** (expostas ao client)
-> - `API_URL` — disponível apenas no servidor (server actions, middleware). Mais seguro.
+| Variável                         | Tipo                | Descrição                            |
+| -------------------------------- | ------------------- | ------------------------------------ |
+| `API_URL`                        | Server-only         | URL base do backend (Server Actions) |
+| `NEXT_PUBLIC_API_URL`            | Client (build-time) | URL base do backend (Axios)          |
+| `NEXT_PUBLIC_KEYCLOAK_URL`       | Client (build-time) | URL do Keycloak                      |
+| `NEXT_PUBLIC_KEYCLOAK_REALM`     | Client (build-time) | Realm do Keycloak                    |
+| `NEXT_PUBLIC_KEYCLOAK_CLIENT_ID` | Client (build-time) | Client ID do Keycloak                |
 
-### 3. Iniciar o servidor de desenvolvimento
+> `NEXT_PUBLIC_*` são embutidas no bundle JS em build-time (expostas ao browser).
+> `API_URL` fica **apenas no servidor** — nunca exposta ao client.
 
-```bash
-pnpm dev
-```
+Os valores por ambiente ficam definidos nos Helm values em `local/helm/nexo-fe/`.
 
-A aplicação estará disponível em `http://localhost:3000`.
+---
 
-## Variáveis de Ambiente por Ambiente
+## Segurança
 
-| Variável                         | Tipo                | develop                                   | prod                              |
-| -------------------------------- | ------------------- | ----------------------------------------- | --------------------------------- |
-| `API_URL`                        | Server-only         | `http://nexo-be-nexo-develop:3000`        | `http://nexo-be-nexo-prod:3000`   |
-| `NEXT_PUBLIC_API_URL`            | Client (build-time) | `https://develop.api.g3developer.online`  | `https://api.g3developer.online`  |
-| `NEXT_PUBLIC_KEYCLOAK_URL`       | Client (build-time) | `https://develop.auth.g3developer.online` | `https://auth.g3developer.online` |
-| `NEXT_PUBLIC_KEYCLOAK_REALM`     | Client (build-time) | `nexo`                                    | `nexo`                            |
-| `NEXT_PUBLIC_KEYCLOAK_CLIENT_ID` | Client (build-time) | `nexo-web`                                | `nexo-fe`                         |
+- PKCE (Proof Key for Code Exchange) ativado no Keycloak
+- Tokens armazenados em `sessionStorage` (não em `localStorage`)
+- Cookie `nexo-session` httpOnly — não acessível via JavaScript
+- `API_URL` server-only — URL do backend nunca exposta ao client
+- Proteção dupla de rotas (Middleware + ProtectedRoute)
+- Refresh automático do token a cada 30s antes de expirar
+- Logout global (invalida sessão no Keycloak + limpa cookie + limpa sessionStorage)
 
-Os valores ficam definidos em:
-
-- **Local:** `.env` (localhost)
-- **Kubernetes:** `infra/helm/nexo-fe/values-{env}.yaml`
-- **Pipeline:** `.github/workflows/pipeline.yml` (Docker build args para `NEXT_PUBLIC_*`)
-
-> `API_URL` (server-only) é injetado como env var runtime pelo Helm — funciona sem build args porque só é lido no servidor.
-
-## Configuração do Keycloak
-
-O frontend usa o client **nexo-web** (public) para autenticação:
-
-1. **Client ID:** `nexo-web`
-2. **Client type:** OpenID Connect
-3. **Client authentication:** OFF (public)
-4. **Valid redirect URIs:** `http://localhost:3000/*`
-5. **Web origins:** `http://localhost:3000`
-6. **Authentication flow:** Standard flow + Direct access grants
-
-## Páginas
-
-| Rota     | Descrição                | Protegida                         |
-| -------- | ------------------------ | --------------------------------- |
-| `/`      | Home / Login (marketing) | Não                               |
-| `/panel` | Painel administrativo    | Sim (Middleware + ProtectedRoute) |
+---
 
 ## Scripts
 
 ```bash
-pnpm dev         # Desenvolvimento com hot-reload
-pnpm build       # Build para produção
-pnpm start       # Iniciar build de produção
-pnpm lint        # Lint com ESLint
+pnpm dev    # Desenvolvimento com hot-reload
+pnpm build  # Build para produção
+pnpm start  # Iniciar build de produção
+pnpm lint   # Lint com ESLint
+pnpm test   # Vitest
 ```
 
-## Segurança
+---
 
-- Tokens JWT com refresh automático
-- SSO (Single Sign-On) via Keycloak
-- PKCE (Proof Key for Code Exchange) ativado
-- Proteção dupla de rotas (Middleware + ProtectedRoute)
-- Cookie de sessão httpOnly (não acessível via JavaScript)
-- Server Actions para chamadas à API (URL do backend oculta do client)
-- Logout global (invalida sessão no Keycloak + limpa cookie)
-- Tokens armazenados apenas em memória (não em localStorage)
+## Próximos passos
 
-## Stack
-
-- **Framework:** Next.js 14 (App Router + Middleware)
-- **Linguagem:** TypeScript
-- **Estado + Data Fetching:** React Query (@tanstack/react-query) + Server Actions (sem Context API)
-- **HTTP Client:** Axios (client-side) / fetch (server actions)
-- **Estilização:** Tailwind CSS
-- **Autenticação:** Keycloak JS Client 26.2.3
-- **UI Components:** Radix UI (shadcn/ui) + Lucide Icons
-- **Monorepo:** Turborepo + pnpm
-
-## Próximos Passos
-
-- [x] Wizard de publicação de imóvel (localização → detalhes → fotos → comodidades → contato → revisão)
+- [x] Wizard de publicação (localização → detalhes → fotos → comodidades → contato → concluído)
 - [x] Painel do proprietário (listar, editar, publicar, despublicar, excluir)
-- [x] Regra: plano FREE permite apenas 1 imóvel ativo
-- [x] Regra: plano FREE permite até 5 fotos (planos pagos: 10)
+- [x] Regra: plano FREE permite apenas 1 anúncio ativo
+- [x] Regra: plano FREE permite até 5 fotos (planos pagos: até 10)
 - [ ] Integração com gateway de pagamento (Stripe / Pagar.me)
 - [ ] Planos pagos desbloqueáveis (STANDARD, FEATURED, PREMIUM, SUPER)
-- [ ] Implementar controle de permissões por role
-- [ ] Adicionar testes (Vitest + React Testing Library)
-- [ ] Implementar dark mode
-- [ ] Adicionar i18n (internacionalização)
+- [ ] Controle de permissões por role
+- [ ] Testes unitários e de integração (Vitest + React Testing Library)
+- [ ] Dark mode
+- [ ] i18n (internacionalização)

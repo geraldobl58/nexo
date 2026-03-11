@@ -1,7 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ListingEntity } from '../../../domain/entities/marketing.entity';
 import { ListingStatus } from '../../../domain/enums/marketing-status.enum';
-import { ListingPlan } from '../../../domain/enums/marketing-plan.enum';
 import { MediaResponseDto } from './media-response.dto';
 
 /**
@@ -35,10 +34,10 @@ export class ListingResponseDto {
   externalId: string | null;
 
   @ApiPropertyOptional({
-    description: 'ID do usuário que criou o anúncio',
+    description: 'ID do anunciante dono do anúncio',
     example: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
   })
-  createdById: string | null;
+  advertiserId: string;
 
   @ApiProperty({ enum: ListingStatus, example: ListingStatus.ACTIVE })
   status: ListingStatus;
@@ -216,24 +215,7 @@ export class ListingResponseDto {
   @ApiProperty({ example: 5 })
   emailClicksCount: number;
 
-  // --- Origem dos leads ---
-
-  @ApiProperty({ example: 10 })
-  leadSourcePortal: number;
-
-  @ApiProperty({ example: 3 })
-  leadSourceSearch: number;
-
-  @ApiProperty({ example: 1 })
-  leadSourceMap: number;
-
-  @ApiProperty({ example: 1 })
-  leadSourceFeatured: number;
-
   // --- Plano e destaque ---
-
-  @ApiProperty({ enum: ListingPlan, example: ListingPlan.FREE })
-  listingPlan: ListingPlan;
 
   @ApiProperty({ example: false })
   isFeatured: boolean;

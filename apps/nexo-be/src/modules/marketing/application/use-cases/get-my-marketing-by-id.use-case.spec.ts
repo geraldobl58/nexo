@@ -12,7 +12,6 @@ import { GetMyListingByIdUseCase } from './get-my-marketing-by-id.use-case';
 import { ListingRepository } from '../../domain/repositories/marketing.repository';
 import { ListingEntity } from '../../domain/entities/marketing.entity';
 import { ListingStatus } from '../../domain/enums/marketing-status.enum';
-import { ListingPlan } from '../../domain/enums/marketing-plan.enum';
 
 // ─── Fixture ─────────────────────────────────────────────────────────────────
 
@@ -20,7 +19,7 @@ const makeListing = (
   overrides: Partial<ListingEntity> = {},
 ): ListingEntity => ({
   id: 'listing-uuid',
-  createdById: 'owner-uuid',
+  advertiserId: 'owner-uuid',
   status: ListingStatus.DRAFT,
   purpose: 'SALE',
   type: 'APARTMENT',
@@ -71,11 +70,6 @@ const makeListing = (
   phoneClicksCount: 0,
   whatsappClicksCount: 0,
   emailClicksCount: 0,
-  leadSourcePortal: 0,
-  leadSourceSearch: 0,
-  leadSourceMap: 0,
-  leadSourceFeatured: 0,
-  listingPlan: ListingPlan.FREE,
   isFeatured: false,
   highlightUntil: null,
   averageRating: null,
@@ -104,6 +98,12 @@ describe('GetMyListingByIdUseCase', () => {
       findById: jest.fn(),
       update: jest.fn(),
       findMany: jest.fn(),
+      countActiveByAdvertiser: jest.fn().mockResolvedValue(0),
+      getAdvertiserPlanLimits: jest.fn().mockResolvedValue({
+        maxProperties: 1,
+        maxPhotos: 5,
+        maxVideos: 0,
+      }),
       slugExists: jest.fn(),
       softDelete: jest.fn(),
     };
@@ -159,7 +159,7 @@ describe('GetMyListingByIdUseCase', () => {
   // ─── Proibido ─────────────────────────────────────────────────────────────
 
   it('deve lançar ForbiddenException quando o anúncio pertence a outro usuário', async () => {
-    const listing = makeListing({ createdById: 'other-owner-uuid' });
+    const listing = makeListing({ advertiserId: 'other-owner-uuid' });
     mockRepo.findById.mockResolvedValue(listing);
 
     await expect(
@@ -168,7 +168,7 @@ describe('GetMyListingByIdUseCase', () => {
   });
 
   it('não deve vazar a existência do anúncio a um usuário sem acesso via mensagem de ForbiddenException', async () => {
-    const listing = makeListing({ createdById: 'other-owner-uuid' });
+    const listing = makeListing({ advertiserId: 'other-owner-uuid' });
     mockRepo.findById.mockResolvedValue(listing);
 
     await expect(

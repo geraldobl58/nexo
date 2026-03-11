@@ -20,14 +20,14 @@ import {
 } from "lucide-react";
 
 import keycloak from "@/lib/keycloak";
-import { getListingById } from "../http/listing";
+import { getListingById } from "../services/listing.service";
 import {
   PropertyType,
   PropertyTypeLabel,
   StatusLabel,
   Listing,
-} from "../enums/publish-details-enums";
-import { CreatePublishResponse } from "../types/publish-types";
+} from "../enums/listing.enum";
+import { CreatePublishResponse } from "../types/publish.type";
 import { InfoItem } from "@/components/ui/info-item/info-item";
 
 import { formatCurrency } from "@/lib/formatted-money";

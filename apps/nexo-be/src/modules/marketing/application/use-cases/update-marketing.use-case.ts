@@ -12,7 +12,6 @@ import {
 } from '../../domain/repositories/marketing.repository';
 import { ListingEntity } from '../../domain/entities/marketing.entity';
 import { ListingTitle } from '../../domain/value-objects/marketing-title.vo';
-import { ListingPlan } from '../../domain/enums/marketing-plan.enum';
 import { UserRole } from '@/modules/identity/domain/entities/user.entity';
 import { generateListingSlug } from '../utils/slug.util';
 
@@ -68,8 +67,7 @@ export type UpdateListingInput = {
   // Mídia
   videoUrl?: string;
   virtualTourUrl?: string;
-  // Plano e integração
-  listingPlan?: ListingPlan;
+  // Integração com portais
   publishToVivaReal?: boolean;
   publishToOLX?: boolean;
   publishToZapImoveis?: boolean;
@@ -118,7 +116,7 @@ export class UpdateListingUseCase {
     }
 
     // 2. Verifica ownership: apenas o dono ou Admin/Moderador podem editar.
-    const isOwner = listing.createdById === requesterId;
+    const isOwner = listing.advertiserId === requesterId;
     const isPrivileged =
       requesterRole === 'ADMIN' || requesterRole === 'MODERATOR';
     if (!isOwner && !isPrivileged) {
@@ -206,7 +204,6 @@ export class UpdateListingUseCase {
       'metaDescription',
       'videoUrl',
       'virtualTourUrl',
-      'listingPlan',
       'publishToVivaReal',
       'publishToOLX',
       'publishToZapImoveis',

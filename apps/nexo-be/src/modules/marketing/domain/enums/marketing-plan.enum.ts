@@ -1,26 +1,21 @@
 /**
- * PLANO DO ANÚNCIO
+ * PLANO DE ASSINATURA DO ANUNCIANTE
  *
- * Define a visibilidade e os benefícios do anúncio no portal.
- * Espelha o enum `ListingPlanType` do Prisma — mantemos uma cópia
- * no domínio para que essa camada permaneça independente de infraestrutura.
+ * Espelha o enum `PlanType` do Prisma — mantemos uma cópia no domínio
+ * para que essa camada permaneça independente de infraestrutura.
  *
- * Hierarquia de planos (crescente em visibilidade):
- *   FREE → STANDARD → FEATURED → PREMIUM → SUPER
+ * Regras:
+ *   BASIC        → gratuito, 1 imóvel, 5 fotos, sem vídeo
+ *   INTERMEDIATE → R$ 49,90/mês, até 5 imóveis, 10 fotos, 1 vídeo
+ *   PREMIUM      → R$ 99,90/mês, ilimitado, 10 fotos, 1 vídeo
  */
 export enum ListingPlan {
-  /** Gratuito: básico, sem destaque */
-  FREE = 'FREE',
+  /** Básico — gratuito (1 imóvel, 5 fotos, sem vídeo) */
+  BASIC = 'BASIC',
 
-  /** Padrão: listagem normal com mais fotos */
-  STANDARD = 'STANDARD',
+  /** Intermediário — R$ 49,90/mês (5 imóveis, 10 fotos, 1 vídeo) */
+  INTERMEDIATE = 'INTERMEDIATE',
 
-  /** Destaque: aparece no topo dos resultados de busca */
-  FEATURED = 'FEATURED',
-
-  /** Premium: múltiplas fotos + tour virtual */
+  /** Premium — R$ 99,90/mês (ilimitado, 10 fotos, 1 vídeo) */
   PREMIUM = 'PREMIUM',
-
-  /** Super Destaque: homepage, cor especial, máxima visibilidade */
-  SUPER = 'SUPER',
 }

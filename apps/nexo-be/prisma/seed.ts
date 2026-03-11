@@ -5,17 +5,20 @@
  *
  * O QUE ESTE SEED CRIA:
  *  - 1 usuário admin (equipe interna)
- *  - 3 anunciantes (imobiliária, corretor, proprietário)
+ *  - 4 anunciantes (imobiliária, corretor, proprietário, construtora)
+ *  - 3 planos de assinatura (BASIC, INTERMEDIATE, PREMIUM)
+ *  - 3 assinaturas (imobiliária → PREMIUM, corretor → INTERMEDIATE, construtora → PREMIUM)
  *  - 3 clientes (customers)
- *  - 5 comodidades (amenities)
- *  - 5 planos de anúncio (listing plans)
+ *  - 8 comodidades (amenities)
  *  - 8 imóveis com fotos e comodidades
+ *  - 50 imóveis de teste em lote (para paginação/filtros)
  *  - 4 leads
  *  - 2 conversas com mensagens
  *  - 2 avaliações
  *  - 1 denúncia
  *  - 1 visita agendada
  *  - 1 proposta
+ *  - 4 favoritos
  *
  * COMO USAR:
  *  pnpm prisma:seed
@@ -79,10 +82,12 @@ async function main() {
     prisma.propertyAmenity.deleteMany(),
     prisma.propertyMedia.deleteMany(),
     prisma.property.deleteMany(),
-    prisma.listingPlan.deleteMany(),
+    prisma.subscription.deleteMany(),
+    prisma.plan.deleteMany(),
     prisma.amenity.deleteMany(),
     prisma.customer.deleteMany(),
     prisma.notification.deleteMany(),
+    prisma.advertiser.deleteMany(),
     prisma.user.deleteMany(),
   ]);
   console.log('✅ Dados anteriores removidos.\n');
@@ -104,49 +109,180 @@ async function main() {
   console.log(`   ✅ Admin: ${admin.email}`);
 
   // -------------------------------------------------------------------------
-  // 2. ANUNCIANTES
+  // 2. PLANOS DE ASSINATURA
   // -------------------------------------------------------------------------
-  console.log('\n🏢 Criando anunciantes (como usuários)...');
+  console.log('\n📋 Criando planos de assinatura...');
 
-  const imobiliaria = await prisma.user.create({
+  const [planBasico, planIntermediario, planPremium] = await Promise.all([
+    prisma.plan.create({
+      data: {
+        type: 'BASIC',
+        name: 'Básico',
+        description: 'Gratuito — ideal para proprietário direto.',
+        priceMonthly: 0,
+        maxProperties: 1,
+        maxPhotos: 5,
+        maxVideos: 0,
+        featuredInSearch: false,
+        featuredInHomepage: false,
+        isActive: true,
+      },
+    }),
+    prisma.plan.create({
+      data: {
+        type: 'INTERMEDIATE',
+        name: 'Intermediário',
+        description: 'Até 5 imóveis com fotos e vídeo.',
+        priceMonthly: 4990, // R$ 49,90
+        maxProperties: 5,
+        maxPhotos: 10,
+        maxVideos: 1,
+        featuredInSearch: true,
+        featuredInHomepage: false,
+        isActive: true,
+      },
+    }),
+    prisma.plan.create({
+      data: {
+        type: 'PREMIUM',
+        name: 'Premium',
+        description: 'Imóveis ilimitados com máxima visibilidade.',
+        priceMonthly: 9990, // R$ 99,90
+        maxProperties: -1,
+        maxPhotos: 10,
+        maxVideos: 1,
+        featuredInSearch: true,
+        featuredInHomepage: true,
+        isActive: true,
+      },
+    }),
+  ]);
+
+  console.log(
+    `   ✅ ${planBasico.name} (gratuito), ${planIntermediario.name} (R$ 49,90/mês), ${planPremium.name} (R$ 99,90/mês)`,
+  );
+
+  // -------------------------------------------------------------------------
+  // 3. ANUNCIANTES (4 tipos do sistema)
+  // -------------------------------------------------------------------------
+  console.log('\n🏢 Criando anunciantes...');
+
+  const imobiliaria = await prisma.advertiser.create({
     data: {
       keycloakId: 'kc-adv-agency-001',
       email: 'contato@horizonte.com.br',
       name: 'Imobiliária Horizonte',
       phone: '11930000001',
-      isActive: true,
-      advertiserType: 'AGENCY',
+      type: 'AGENCY',
+      status: 'ACTIVE',
+      companyName: 'Horizonte Negócios Imobiliários LTDA',
+      creciNumber: 'J-12345',
+      city: 'São Paulo',
+      state: 'SP',
+      isVerified: true,
     },
   });
 
-  const corretor = await prisma.user.create({
+  const corretor = await prisma.advertiser.create({
     data: {
       keycloakId: 'kc-adv-broker-001',
       email: 'carlos.mendes@corretor.com.br',
       name: 'Carlos Eduardo Mendes',
       phone: '21987654321',
-      isActive: true,
-      advertiserType: 'BROKER',
+      type: 'BROKER',
+      status: 'ACTIVE',
+      creciNumber: 'F-98765',
+      city: 'Rio de Janeiro',
+      state: 'RJ',
+      isVerified: true,
     },
   });
 
-  const proprietario = await prisma.user.create({
+  const proprietario = await prisma.advertiser.create({
     data: {
       keycloakId: 'kc-adv-owner-001',
       email: 'maria.silva@email.com',
       name: 'Maria Aparecida Silva',
       phone: '11912345678',
-      isActive: true,
-      advertiserType: 'OWNER',
+      type: 'OWNER',
+      status: 'ACTIVE',
+      city: 'São Paulo',
+      state: 'SP',
     },
   });
 
-  console.log(`   ✅ Imobiliária: ${imobiliaria.name}`);
-  console.log(`   ✅ Corretor: ${corretor.name}`);
-  console.log(`   ✅ Proprietário: ${proprietario.name}`);
+  const construtora = await prisma.advertiser.create({
+    data: {
+      keycloakId: 'kc-adv-developer-001',
+      email: 'vendas@vertexconstrutora.com.br',
+      name: 'Vertex Construtora',
+      phone: '11933339999',
+      type: 'DEVELOPER',
+      status: 'ACTIVE',
+      companyName: 'Vertex Construtora e Incorporadora S.A.',
+      city: 'São Paulo',
+      state: 'SP',
+      isVerified: true,
+    },
+  });
+
+  console.log(`   ✅ ${imobiliaria.name} (AGENCY)`);
+  console.log(`   ✅ ${corretor.name} (BROKER)`);
+  console.log(`   ✅ ${proprietario.name} (OWNER)`);
+  console.log(`   ✅ ${construtora.name} (DEVELOPER)`);
 
   // -------------------------------------------------------------------------
-  // 3. CUSTOMERS (usuários finais)
+  // 4. ASSINATURAS DOS ANUNCIANTES
+  // -------------------------------------------------------------------------
+  console.log('\n💳 Criando assinaturas...');
+
+  await Promise.all([
+    // Imobiliária → PREMIUM
+    prisma.subscription.create({
+      data: {
+        advertiserId: imobiliaria.id,
+        planId: planPremium.id,
+        status: 'ACTIVE',
+        startDate: new Date('2025-01-01'),
+        amount: planPremium.priceMonthly,
+      },
+    }),
+    // Corretor → INTERMEDIATE
+    prisma.subscription.create({
+      data: {
+        advertiserId: corretor.id,
+        planId: planIntermediario.id,
+        status: 'ACTIVE',
+        startDate: new Date('2025-01-01'),
+        amount: planIntermediario.priceMonthly,
+      },
+    }),
+    // Proprietário → BASIC (gratuito)
+    prisma.subscription.create({
+      data: {
+        advertiserId: proprietario.id,
+        planId: planBasico.id,
+        status: 'ACTIVE',
+        startDate: new Date('2025-01-01'),
+        amount: 0,
+      },
+    }),
+    // Construtora → PREMIUM
+    prisma.subscription.create({
+      data: {
+        advertiserId: construtora.id,
+        planId: planPremium.id,
+        status: 'ACTIVE',
+        startDate: new Date('2025-01-01'),
+        amount: planPremium.priceMonthly,
+      },
+    }),
+  ]);
+
+  console.log('   ✅ 4 assinaturas criadas');
+
+  // -------------------------------------------------------------------------
+  // 5. CUSTOMERS (usuários finais)
   // -------------------------------------------------------------------------
   console.log('\n👥 Criando clientes...');
 
@@ -188,7 +324,7 @@ async function main() {
   console.log(`   ✅ ${clienteRoberto.name}`);
 
   // -------------------------------------------------------------------------
-  // 4. COMODIDADES (AMENITIES)
+  // 6. COMODIDADES (AMENITIES)
   // -------------------------------------------------------------------------
   console.log('\n🏊 Criando comodidades...');
 
@@ -222,90 +358,14 @@ async function main() {
   console.log(`   ✅ ${amenities.length} comodidades criadas`);
 
   // -------------------------------------------------------------------------
-  // 5. PLANOS DE ANÚNCIO
-  // -------------------------------------------------------------------------
-  console.log('\n📋 Criando planos de anúncio...');
-
-  const planos = await Promise.all([
-    prisma.listingPlan.create({
-      data: {
-        type: 'FREE',
-        name: 'Gratuito',
-        description: 'Anúncio básico com até 5 fotos.',
-        price: 0,
-        duration: 30,
-        maxPhotos: 5,
-        maxVideos: 0,
-      },
-    }),
-    prisma.listingPlan.create({
-      data: {
-        type: 'STANDARD',
-        name: 'Padrão',
-        description: 'Anúncio padrão com até 20 fotos.',
-        price: 4990,
-        duration: 60,
-        maxPhotos: 20,
-        maxVideos: 1,
-        featuredInSearch: true,
-      },
-    }),
-    prisma.listingPlan.create({
-      data: {
-        type: 'FEATURED',
-        name: 'Destaque',
-        description: 'Aparece no topo das buscas.',
-        price: 9990,
-        duration: 30,
-        maxPhotos: 30,
-        maxVideos: 2,
-        featuredInSearch: true,
-        badge: 'DESTAQUE',
-      },
-    }),
-    prisma.listingPlan.create({
-      data: {
-        type: 'PREMIUM',
-        name: 'Premium',
-        description: 'Anúncio premium com tour virtual.',
-        price: 19990,
-        duration: 30,
-        maxPhotos: 50,
-        maxVideos: 5,
-        allowVirtualTour: true,
-        featuredInSearch: true,
-        badge: 'PREMIUM',
-      },
-    }),
-    prisma.listingPlan.create({
-      data: {
-        type: 'SUPER',
-        name: 'Super Destaque',
-        description: 'Máxima visibilidade: homepage + topo + cor especial.',
-        price: 39990,
-        duration: 30,
-        maxPhotos: 50,
-        maxVideos: 10,
-        allowVirtualTour: true,
-        featuredInSearch: true,
-        featuredInHomepage: true,
-        highlightColor: '#FFD700',
-        badge: 'SUPER',
-      },
-    }),
-  ]);
-
-  console.log(`   ✅ ${planos.length} planos criados`);
-
-  // -------------------------------------------------------------------------
-  // 6. IMÓVEIS
+  // 7. IMÓVEIS
   // -------------------------------------------------------------------------
   console.log('\n🏠 Criando imóveis...');
 
   // --- Imóveis da Imobiliária ---
   const apto1 = await prisma.property.create({
     data: {
-      createdById: imobiliaria.id,
+      advertiserId: imobiliaria.id,
       status: 'ACTIVE',
       purpose: 'SALE',
       type: 'APARTMENT',
@@ -341,7 +401,6 @@ async function main() {
       acceptsFinancing: true,
       isReadyToMove: true,
       isFeatured: true,
-      listingPlan: 'FEATURED',
       publishedAt: new Date('2024-10-01'),
       metaTitle: 'Apartamento 3 quartos nos Jardins - R$ 1.450.000',
       metaDescription:
@@ -356,7 +415,7 @@ async function main() {
 
   const apto2 = await prisma.property.create({
     data: {
-      createdById: imobiliaria.id,
+      advertiserId: imobiliaria.id,
       status: 'ACTIVE',
       purpose: 'RENT',
       type: 'APARTMENT',
@@ -386,7 +445,6 @@ async function main() {
       longitude: -46.6823,
       acceptsFinancing: false,
       isReadyToMove: true,
-      listingPlan: 'STANDARD',
       publishedAt: new Date('2024-11-15'),
       viewsCount: 567,
       uniqueViewsCount: 412,
@@ -397,44 +455,41 @@ async function main() {
 
   const casa1 = await prisma.property.create({
     data: {
-      createdById: imobiliaria.id,
+      advertiserId: imobiliaria.id,
       status: 'ACTIVE',
       purpose: 'SALE',
-      type: 'HOUSE',
-      title: 'Casa 4 quartos em condomínio fechado Alphaville',
-      slug: slugify(
-        'Casa 4 quartos em condomínio fechado Alphaville',
-        'p9q2r4',
-      ),
+      type: 'CONDO_HOUSE',
+      title: 'Casa 4 suítes em condomínio fechado Alphaville',
+      slug: slugify('Casa 4 suites em condominio fechado Alphaville', 'p8q5r2'),
       description:
-        'Ampla casa em condomínio fechado de alto padrão em Alphaville. 4 suítes, piscina privativa, área gourmet, jardim, 4 vagas. Condomínio com clube, quadras e segurança 24h.',
+        'Magnífica casa em condomínio de alto padrão em Alphaville. 4 suítes sendo a master com closet e hidromassagem. Área gourmet completa com piscina aquecida. Segurança 24h, quadra de tênis. Pronta para morar.',
       price: 380000000, // R$ 3.800.000
-      condominiumFee: 300000, // R$ 3.000
-      iptuYearly: 1200000, // R$ 12.000
-      areaM2: 600,
-      builtArea: 420,
+      condominiumFee: 450000, // R$ 4.500
+      iptuYearly: 1800000,
+      areaM2: 420,
+      builtArea: 320,
       bedrooms: 4,
       suites: 4,
       bathrooms: 6,
       garageSpots: 4,
+      floor: 0,
       yearBuilt: 2019,
-      furnished: false,
+      furnished: true,
       petFriendly: true,
       city: 'Barueri',
       state: 'SP',
       district: 'Alphaville',
-      zipcode: '06474-140',
+      zipcode: '06454-000',
       latitude: -23.4969,
-      longitude: -46.8499,
-      acceptsFinancing: true,
+      longitude: -46.8535,
+      acceptsFinancing: false,
       acceptsExchange: true,
       isReadyToMove: true,
       isFeatured: true,
-      listingPlan: 'PREMIUM',
-      publishedAt: new Date('2024-09-01'),
+      publishedAt: new Date('2024-09-15'),
       viewsCount: 2100,
-      uniqueViewsCount: 1540,
-      leadsCount: 35,
+      uniqueViewsCount: 1560,
+      leadsCount: 32,
       contactPhone: imobiliaria.phone,
       contactWhatsApp: imobiliaria.phone,
     },
@@ -443,46 +498,46 @@ async function main() {
   // --- Imóveis do Corretor ---
   const apto3 = await prisma.property.create({
     data: {
-      createdById: corretor.id,
+      advertiserId: corretor.id,
       status: 'ACTIVE',
       purpose: 'SALE',
       type: 'APARTMENT',
-      title: 'Cobertura 3 quartos com piscina privativa no Leblon',
+      title: 'Cobertura duplex 3 suítes no Leblon com piscina privativa',
       slug: slugify(
-        'Cobertura 3 quartos com piscina privativa no Leblon',
-        'm5n8k3',
+        'Cobertura duplex 3 suites no Leblon com piscina privativa',
+        'r9s4t6',
       ),
       description:
-        'Cobertura duplex única no Leblon com piscina privativa e vista para o mar. 3 suítes, home theater, 4 vagas. Acabamento de altíssimo padrão. Oportunidade única.',
+        'Cobertura duplex de alto padrão no Leblon com piscina privativa, terraço e vista panorâmica para o mar. 3 suítes, lavabo, adega. Um dos endereços mais exclusivos do Rio de Janeiro.',
       price: 850000000, // R$ 8.500.000
-      condominiumFee: 480000, // R$ 4.800
+      condominiumFee: 600000, // R$ 6.000
       iptuYearly: 3600000,
-      areaM2: 320,
-      builtArea: 280,
+      areaM2: 350,
+      builtArea: 290,
       bedrooms: 3,
       suites: 3,
       bathrooms: 5,
-      garageSpots: 4,
-      floor: 22,
-      totalFloors: 22,
-      yearBuilt: 2016,
+      garageSpots: 3,
+      floor: 14,
+      totalFloors: 14,
+      yearBuilt: 2015,
       furnished: true,
       petFriendly: true,
       city: 'Rio de Janeiro',
       state: 'RJ',
       district: 'Leblon',
-      street: 'Rua Dias Ferreira',
-      zipcode: '22431-050',
-      latitude: -22.9841,
-      longitude: -43.2298,
+      zipcode: '22440-040',
+      latitude: -22.9868,
+      longitude: -43.2243,
       acceptsFinancing: false,
       isReadyToMove: true,
       isFeatured: true,
-      listingPlan: 'SUPER',
-      publishedAt: new Date('2024-08-01'),
-      viewsCount: 5400,
-      uniqueViewsCount: 3200,
-      leadsCount: 22,
+      publishedAt: new Date('2024-10-20'),
+      videoUrl:
+        'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      viewsCount: 3450,
+      uniqueViewsCount: 2100,
+      leadsCount: 45,
       contactPhone: corretor.phone,
       contactWhatsApp: corretor.phone,
     },
@@ -490,13 +545,13 @@ async function main() {
 
   const apto4 = await prisma.property.create({
     data: {
-      createdById: corretor.id,
+      advertiserId: corretor.id,
       status: 'ACTIVE',
       purpose: 'SALE',
       type: 'APARTMENT',
-      title: 'Apartamento 2 quartos em Ipanema próximo à praia',
+      title: 'Apartamento 2 quartos em Ipanema alto andar vista parcial mar',
       slug: slugify(
-        'Apartamento 2 quartos em Ipanema próximo à praia',
+        'Apartamento 2 quartos Ipanema alto andar vista parcial mar',
         'v6w1t7',
       ),
       description:
@@ -523,7 +578,6 @@ async function main() {
       longitude: -43.1986,
       acceptsFinancing: true,
       isReadyToMove: true,
-      listingPlan: 'STANDARD',
       publishedAt: new Date('2024-12-01'),
       viewsCount: 890,
       uniqueViewsCount: 650,
@@ -532,10 +586,10 @@ async function main() {
     },
   });
 
-  // --- Imóvel da Proprietária ---
+  // --- Imóvel da Proprietária (OWNER — plano BASIC: 1 imóvel, 5 fotos) ---
   const aptoProprietario = await prisma.property.create({
     data: {
-      createdById: proprietario.id,
+      advertiserId: proprietario.id,
       status: 'ACTIVE',
       purpose: 'SALE',
       type: 'APARTMENT',
@@ -565,7 +619,6 @@ async function main() {
       acceptsFinancing: true,
       acceptsExchange: true,
       isReadyToMove: true,
-      listingPlan: 'FREE',
       publishedAt: new Date('2025-01-10'),
       viewsCount: 234,
       uniqueViewsCount: 198,
@@ -575,10 +628,51 @@ async function main() {
     },
   });
 
+  // --- Lançamento da Construtora ---
+  const lancamento = await prisma.property.create({
+    data: {
+      advertiserId: construtora.id,
+      status: 'ACTIVE',
+      purpose: 'SALE',
+      type: 'APARTMENT',
+      title: 'Lançamento Vertex One — Studios e 1 dorm a partir de R$ 320k',
+      slug: slugify(
+        'Lancamento Vertex One Studios 1 dorm a partir de 320k',
+        'm2n8o4',
+      ),
+      description:
+        'O mais novo lançamento da Vertex Construtora. Studios e apartamentos de 1 dormitório com acabamento premium, área de lazer completa. Entrega prevista: 2027. Condições especiais para os primeiros compradores.',
+      price: 32000000, // R$ 320.000 (a partir de)
+      condominiumFee: 35000, // R$ 350 (estimativa)
+      areaM2: 38,
+      builtArea: 32,
+      bedrooms: 1,
+      bathrooms: 1,
+      garageSpots: 1,
+      city: 'São Paulo',
+      state: 'SP',
+      district: 'Tatuapé',
+      street: 'Rua Tuiuti',
+      zipcode: '03307-000',
+      latitude: -23.5405,
+      longitude: -46.5668,
+      acceptsFinancing: true,
+      isLaunch: true,
+      isReadyToMove: false,
+      isFeatured: true,
+      publishedAt: new Date('2025-02-01'),
+      viewsCount: 1890,
+      uniqueViewsCount: 1423,
+      leadsCount: 56,
+      contactPhone: construtora.phone,
+      contactWhatsApp: construtora.phone,
+    },
+  });
+
   // --- Imóvel DRAFT (não publicado) ---
   const aptoDraft = await prisma.property.create({
     data: {
-      createdById: imobiliaria.id,
+      advertiserId: imobiliaria.id,
       status: 'DRAFT',
       purpose: 'RENT',
       type: 'COMMERCIAL',
@@ -597,7 +691,6 @@ async function main() {
       district: 'Bela Vista',
       street: 'Av. Paulista',
       zipcode: '01310-100',
-      listingPlan: 'FREE',
     },
   });
 
@@ -607,10 +700,11 @@ async function main() {
   console.log(`   ✅ ${apto3.title}`);
   console.log(`   ✅ ${apto4.title}`);
   console.log(`   ✅ ${aptoProprietario.title}`);
+  console.log(`   ✅ ${lancamento.title}`);
   console.log(`   ✅ ${aptoDraft.title} [DRAFT]`);
 
   // -------------------------------------------------------------------------
-  // 6b. BULK TEST LISTINGS (50 imóveis para paginação e filtros)
+  // 7b. BULK TEST LISTINGS (50 imóveis para paginação e filtros)
   // -------------------------------------------------------------------------
   console.log('\n🏘️  Criando 50 imóveis de teste em lote...');
   console.log(
@@ -624,13 +718,26 @@ async function main() {
     process.env.SEED_OWNER_KEYCLOAK_ID ??
     '03916ee1-861e-45d5-85cd-11635d42b4d4';
 
-  const seedOwner = await prisma.user.create({
+  // Cria o anunciante de dev como BROKER com assinatura PREMIUM (ilimitado)
+  const seedOwner = await prisma.advertiser.create({
     data: {
       keycloakId: seedOwnerKeycloakId,
       email: 'seed.bulk@nexo-dev.local',
       name: 'Dev Bulk Tester',
-      isActive: true,
-      advertiserType: 'OWNER',
+      type: 'BROKER',
+      status: 'ACTIVE',
+      city: 'São Paulo',
+      state: 'SP',
+    },
+  });
+
+  await prisma.subscription.create({
+    data: {
+      advertiserId: seedOwner.id,
+      planId: planPremium.id,
+      status: 'ACTIVE',
+      startDate: new Date(),
+      amount: planPremium.priceMonthly,
     },
   });
 
@@ -660,7 +767,8 @@ async function main() {
     | 'STUDIO'
     | 'CONDO_HOUSE'
     | 'LAND'
-    | 'COMMERCIAL';
+    | 'COMMERCIAL'
+    | 'FARM';
 
   interface BulkSpec {
     title: string;
@@ -699,404 +807,363 @@ async function main() {
       garageSpots: 1,
     },
     {
-      title: 'Apartamento 3 quartos alto padrão',
+      title: 'Apartamento 3 quartos reformado',
       type: 'APARTMENT',
       purpose: 'SALE',
       status: 'ACTIVE',
-      price: 89000000,
-      areaM2: 100,
+      price: 78000000,
+      areaM2: 95,
       bedrooms: 3,
-      bathrooms: 3,
+      bathrooms: 2,
       garageSpots: 2,
     },
     {
-      title: 'Cobertura duplex com terraço',
+      title: 'Apartamento 4 quartos luxo',
       type: 'APARTMENT',
       purpose: 'SALE',
       status: 'ACTIVE',
-      price: 175000000,
-      areaM2: 200,
+      price: 135000000,
+      areaM2: 145,
       bedrooms: 4,
       bathrooms: 4,
       garageSpots: 3,
     },
     {
-      title: 'Studio moderno próximo ao metrô',
+      title: 'Cobertura duplex exclusiva',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 290000000,
+      areaM2: 280,
+      bedrooms: 4,
+      bathrooms: 5,
+      garageSpots: 4,
+    },
+    {
+      title: 'Studio garden térreo',
       type: 'STUDIO',
       purpose: 'SALE',
       status: 'ACTIVE',
-      price: 24000000,
-      areaM2: 38,
+      price: 38000000,
+      areaM2: 52,
       bedrooms: 1,
       bathrooms: 1,
       garageSpots: 1,
     },
     {
-      title: 'Apartamento reformado 2 quartos',
+      title: 'Apartamento 2q centro histórico',
       type: 'APARTMENT',
       purpose: 'SALE',
       status: 'ACTIVE',
-      price: 45000000,
+      price: 41000000,
       areaM2: 68,
       bedrooms: 2,
       bathrooms: 1,
       garageSpots: 1,
     },
     {
-      title: 'Apartamento 4 suítes luxuoso',
+      title: 'Flat serviços executivos',
       type: 'APARTMENT',
       purpose: 'SALE',
       status: 'ACTIVE',
-      price: 230000000,
-      areaM2: 180,
-      bedrooms: 4,
-      bathrooms: 4,
-      garageSpots: 4,
-    },
-    {
-      title: 'Kitnet bem localizada',
-      type: 'STUDIO',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 18500000,
-      areaM2: 28,
-      bedrooms: 1,
-      bathrooms: 1,
-    },
-    {
-      title: 'Apartamento garden com quintal privativo',
-      type: 'APARTMENT',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 67000000,
-      areaM2: 90,
-      bedrooms: 2,
-      bathrooms: 2,
-      garageSpots: 2,
-    },
-    {
-      title: 'Apê 2 quartos em condomínio clube',
-      type: 'APARTMENT',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 58000000,
-      areaM2: 76,
-      bedrooms: 2,
-      bathrooms: 2,
-      garageSpots: 2,
-    },
-    {
-      title: 'Apartamento 3 quartos 2 suítes',
-      type: 'APARTMENT',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 112000000,
-      areaM2: 120,
-      bedrooms: 3,
-      bathrooms: 3,
-      garageSpots: 2,
-    },
-    {
-      title: 'Loft industrial reformado',
-      type: 'STUDIO',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 35000000,
+      price: 62000000,
       areaM2: 55,
       bedrooms: 1,
       bathrooms: 1,
       garageSpots: 1,
     },
     {
-      title: 'Apartamento 2 quartos perto do parque',
+      title: 'Apartamento duplo terraço',
       type: 'APARTMENT',
       purpose: 'SALE',
       status: 'ACTIVE',
-      price: 48000000,
-      areaM2: 65,
-      bedrooms: 2,
-      bathrooms: 2,
-      garageSpots: 1,
-    },
-    {
-      title: 'Apê novo em prédio com lazer completo',
-      type: 'APARTMENT',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 74000000,
-      areaM2: 85,
-      bedrooms: 2,
-      bathrooms: 2,
-      garageSpots: 2,
-    },
-    {
-      title: 'Cobertura 3 quartos vista panorâmica',
-      type: 'APARTMENT',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 145000000,
-      areaM2: 160,
-      bedrooms: 3,
-      bathrooms: 3,
-      garageSpots: 3,
-    },
-    {
-      title: 'Apartamento padrão médio 2 quartos',
-      type: 'APARTMENT',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 36000000,
-      areaM2: 60,
-      bedrooms: 2,
-      bathrooms: 1,
-      garageSpots: 1,
-    },
-    {
-      title: 'Apartamento alto padrão 1 suíte',
-      type: 'APARTMENT',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 62000000,
-      areaM2: 78,
-      bedrooms: 2,
-      bathrooms: 2,
-      garageSpots: 1,
-    },
-    // ── SALE · HOUSE / CONDO_HOUSE (10) ─────────────────────────────────────
-    {
-      title: 'Casa 3 quartos com quintal',
-      type: 'HOUSE',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 65000000,
-      areaM2: 150,
-      bedrooms: 3,
-      bathrooms: 2,
-      garageSpots: 2,
-    },
-    {
-      title: 'Casa em condomínio fechado',
-      type: 'CONDO_HOUSE',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 120000000,
-      areaM2: 200,
-      bedrooms: 4,
-      bathrooms: 4,
-      garageSpots: 3,
-    },
-    {
-      title: 'Casa térrea ampla 4 quartos',
-      type: 'HOUSE',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 85000000,
-      areaM2: 180,
-      bedrooms: 4,
-      bathrooms: 3,
-      garageSpots: 2,
-    },
-    {
-      title: 'Sobrado 3 quartos rua tranquila',
-      type: 'HOUSE',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 72000000,
-      areaM2: 160,
-      bedrooms: 3,
-      bathrooms: 3,
-      garageSpots: 2,
-    },
-    {
-      title: 'Casa luxuosa com piscina e churrasqueira',
-      type: 'HOUSE',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 220000000,
-      areaM2: 350,
-      bedrooms: 5,
-      bathrooms: 5,
-      garageSpots: 4,
-    },
-    {
-      title: 'Casa geminada 2 quartos',
-      type: 'HOUSE',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 39000000,
-      areaM2: 90,
-      bedrooms: 2,
-      bathrooms: 1,
-      garageSpots: 1,
-    },
-    {
-      title: 'Casa nova em condomínio clube',
-      type: 'CONDO_HOUSE',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 95000000,
-      areaM2: 160,
-      bedrooms: 3,
-      bathrooms: 3,
-      garageSpots: 2,
-    },
-    {
-      title: 'Casa 3 suítes próxima ao comércio',
-      type: 'HOUSE',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 78000000,
-      areaM2: 170,
-      bedrooms: 3,
-      bathrooms: 3,
-      garageSpots: 2,
-    },
-    {
-      title: 'Sobrado moderno 4 quartos',
-      type: 'HOUSE',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 110000000,
-      areaM2: 210,
-      bedrooms: 4,
-      bathrooms: 4,
-      garageSpots: 2,
-    },
-    {
-      title: 'Casa simples 2 quartos boa localização',
-      type: 'HOUSE',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 32000000,
-      areaM2: 80,
-      bedrooms: 2,
-      bathrooms: 1,
-      garageSpots: 1,
-    },
-    // ── SALE · LAND / COMMERCIAL (3) ─────────────────────────────────────────
-    {
-      title: 'Terreno 450m² em condomínio',
-      type: 'LAND',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 38000000,
-      areaM2: 450,
-    },
-    {
-      title: 'Sala comercial 50m² edifício corporativo',
-      type: 'COMMERCIAL',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 42000000,
-      areaM2: 50,
-    },
-    {
-      title: 'Terreno plano 600m²',
-      type: 'LAND',
-      purpose: 'SALE',
-      status: 'ACTIVE',
-      price: 55000000,
-      areaM2: 600,
-    },
-    // ── RENT · APARTMENT / STUDIO (8) ────────────────────────────────────────
-    {
-      title: 'Apartamento 1 quarto para locação',
-      type: 'APARTMENT',
-      purpose: 'RENT',
-      status: 'ACTIVE',
-      price: 180000,
-      areaM2: 45,
-      bedrooms: 1,
-      bathrooms: 1,
-      garageSpots: 1,
-    },
-    {
-      title: 'Apartamento mobiliado 2 quartos',
-      type: 'APARTMENT',
-      purpose: 'RENT',
-      status: 'ACTIVE',
-      price: 350000,
-      areaM2: 70,
-      bedrooms: 2,
-      bathrooms: 2,
-      garageSpots: 1,
-    },
-    {
-      title: 'Studio mobiliado perto do metrô',
-      type: 'STUDIO',
-      purpose: 'RENT',
-      status: 'ACTIVE',
-      price: 120000,
-      areaM2: 35,
-      bedrooms: 1,
-      bathrooms: 1,
-    },
-    {
-      title: 'Apartamento 3 quartos para família',
-      type: 'APARTMENT',
-      purpose: 'RENT',
-      status: 'ACTIVE',
-      price: 520000,
-      areaM2: 90,
-      bedrooms: 3,
-      bathrooms: 2,
-      garageSpots: 2,
-    },
-    {
-      title: 'Flat executivo para temporada',
-      type: 'STUDIO',
-      purpose: 'RENT',
-      status: 'ACTIVE',
-      price: 280000,
-      areaM2: 42,
-      bedrooms: 1,
-      bathrooms: 1,
-      garageSpots: 1,
-    },
-    {
-      title: 'Apartamento alto padrão para locação',
-      type: 'APARTMENT',
-      purpose: 'RENT',
-      status: 'ACTIVE',
-      price: 980000,
+      price: 99000000,
       areaM2: 130,
       bedrooms: 3,
       bathrooms: 3,
       garageSpots: 2,
     },
     {
-      title: 'Kitnet central bem localizada',
-      type: 'STUDIO',
-      purpose: 'RENT',
+      title: 'Apartamento mobiliado zona sul',
+      type: 'APARTMENT',
+      purpose: 'SALE',
       status: 'ACTIVE',
-      price: 95000,
-      areaM2: 25,
-      bedrooms: 1,
+      price: 73000000,
+      areaM2: 88,
+      bedrooms: 2,
+      bathrooms: 2,
+      garageSpots: 1,
+    },
+    {
+      title: 'Kitnet reformada centro',
+      type: 'STUDIO',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 19500000,
+      areaM2: 28,
+      bedrooms: 0,
       bathrooms: 1,
     },
     {
-      title: 'Sala comercial pronta para uso',
-      type: 'COMMERCIAL',
-      purpose: 'RENT',
+      title: 'Apartamento 3q suíte master',
+      type: 'APARTMENT',
+      purpose: 'SALE',
       status: 'ACTIVE',
-      price: 220000,
-      areaM2: 60,
+      price: 86000000,
+      areaM2: 102,
+      bedrooms: 3,
+      bathrooms: 3,
+      garageSpots: 2,
     },
-    // ── RENT · HOUSE (2) ─────────────────────────────────────────────────────
     {
-      title: 'Casa 3 quartos com jardim para locação',
-      type: 'HOUSE',
-      purpose: 'RENT',
+      title: 'Apartamento 2q varanda',
+      type: 'APARTMENT',
+      purpose: 'SALE',
       status: 'ACTIVE',
-      price: 450000,
+      price: 59000000,
+      areaM2: 78,
+      bedrooms: 2,
+      bathrooms: 2,
+      garageSpots: 1,
+    },
+    {
+      title: 'Piso alto vista panorâmica',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 110000000,
+      areaM2: 118,
+      bedrooms: 3,
+      bathrooms: 3,
+      garageSpots: 2,
+    },
+    {
+      title: 'Apartamento planta compacta',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 33000000,
+      areaM2: 48,
+      bedrooms: 1,
+      bathrooms: 1,
+      garageSpots: 1,
+    },
+    {
+      title: 'Apartamento duplex com terraço',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 125000000,
       areaM2: 140,
+      bedrooms: 3,
+      bathrooms: 3,
+      garageSpots: 2,
+    },
+    {
+      title: 'Apart-hotel investimento',
+      type: 'APARTMENT',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 47000000,
+      areaM2: 42,
+      bedrooms: 1,
+      bathrooms: 1,
+      garageSpots: 1,
+    },
+    // ── SALE · HOUSE (6) ─────────────────────────────────────────────────────
+    {
+      title: 'Casa 3 quartos quintal',
+      type: 'HOUSE',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 68000000,
+      areaM2: 130,
       bedrooms: 3,
       bathrooms: 2,
       garageSpots: 2,
     },
     {
-      title: 'Casa em condomínio para locação',
+      title: 'Sobrado 4 suítes piscina',
+      type: 'HOUSE',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 148000000,
+      areaM2: 250,
+      bedrooms: 4,
+      bathrooms: 4,
+      garageSpots: 3,
+    },
+    {
+      title: 'Casa em condomínio fechado',
       type: 'CONDO_HOUSE',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 220000000,
+      areaM2: 320,
+      bedrooms: 4,
+      bathrooms: 5,
+      garageSpots: 4,
+    },
+    {
+      title: 'Casa térrea 2 quartos',
+      type: 'HOUSE',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 42000000,
+      areaM2: 90,
+      bedrooms: 2,
+      bathrooms: 1,
+      garageSpots: 1,
+    },
+    {
+      title: 'Mansão alto padrão',
+      type: 'HOUSE',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 580000000,
+      areaM2: 800,
+      bedrooms: 6,
+      bathrooms: 8,
+      garageSpots: 8,
+    },
+    {
+      title: 'Casa de campo sítio',
+      type: 'FARM',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 95000000,
+      areaM2: 5000,
+      bedrooms: 4,
+      bathrooms: 3,
+      garageSpots: 4,
+    },
+    // ── SALE · LAND (3) ──────────────────────────────────────────────────────
+    {
+      title: 'Terreno plano residencial',
+      type: 'LAND',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 25000000,
+      areaM2: 360,
+    },
+    {
+      title: 'Lote condomínio beira-mar',
+      type: 'LAND',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 78000000,
+      areaM2: 600,
+    },
+    {
+      title: 'Terreno comercial avenida',
+      type: 'LAND',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 155000000,
+      areaM2: 1200,
+    },
+    // ── SALE · COMMERCIAL (4) ────────────────────────────────────────────────
+    {
+      title: 'Sala comercial 40m2',
+      type: 'COMMERCIAL',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 32000000,
+      areaM2: 40,
+    },
+    {
+      title: 'Loja 80m2 ponto comercial',
+      type: 'COMMERCIAL',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 67000000,
+      areaM2: 80,
+    },
+    {
+      title: 'Andar corporativo 400m2',
+      type: 'COMMERCIAL',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 210000000,
+      areaM2: 400,
+    },
+    {
+      title: 'Galpão industrial 1000m2',
+      type: 'COMMERCIAL',
+      purpose: 'SALE',
+      status: 'ACTIVE',
+      price: 320000000,
+      areaM2: 1000,
+    },
+    // ── RENT · APARTMENT (7) ─────────────────────────────────────────────────
+    {
+      title: 'Studio aluguel mobiliado',
+      type: 'STUDIO',
+      purpose: 'RENT',
+      status: 'ACTIVE',
+      price: 220000,
+      areaM2: 32,
+      bedrooms: 1,
+      bathrooms: 1,
+    },
+    {
+      title: 'Apartamento 1q aluguel',
+      type: 'APARTMENT',
+      purpose: 'RENT',
+      status: 'ACTIVE',
+      price: 280000,
+      areaM2: 52,
+      bedrooms: 1,
+      bathrooms: 1,
+      garageSpots: 1,
+    },
+    {
+      title: 'Apartamento 2q aluguel zona sul',
+      type: 'APARTMENT',
+      purpose: 'RENT',
+      status: 'ACTIVE',
+      price: 360000,
+      areaM2: 70,
+      bedrooms: 2,
+      bathrooms: 2,
+      garageSpots: 1,
+    },
+    {
+      title: 'Apartamento 3q aluguel completo',
+      type: 'APARTMENT',
+      purpose: 'RENT',
+      status: 'ACTIVE',
+      price: 480000,
+      areaM2: 95,
+      bedrooms: 3,
+      bathrooms: 2,
+      garageSpots: 2,
+    },
+    {
+      title: 'Cobertura aluguel curto prazo',
+      type: 'APARTMENT',
+      purpose: 'RENT',
+      status: 'ACTIVE',
+      price: 1200000,
+      areaM2: 200,
+      bedrooms: 3,
+      bathrooms: 3,
+      garageSpots: 2,
+    },
+    {
+      title: 'Flat executivo aluguel mensal',
+      type: 'APARTMENT',
+      purpose: 'RENT',
+      status: 'ACTIVE',
+      price: 390000,
+      areaM2: 55,
+      bedrooms: 1,
+      bathrooms: 1,
+      garageSpots: 1,
+    },
+    {
+      title: 'Apartamento 4q aluguel família',
+      type: 'APARTMENT',
       purpose: 'RENT',
       status: 'ACTIVE',
       price: 580000,
@@ -1215,26 +1282,11 @@ async function main() {
     },
   ];
 
-  // Distribui planos de forma realista: ~30% FREE, ~40% STANDARD, ~20% FEATURED, ~7% PREMIUM, ~3% SUPER
-  const BULK_PLANS = [
-    'FREE',
-    'STANDARD',
-    'STANDARD',
-    'FEATURED',
-    'STANDARD',
-    'FREE',
-    'STANDARD',
-    'FEATURED',
-    'PREMIUM',
-    'SUPER',
-  ] as const;
-
   const bulkProperties = await prisma.property.createManyAndReturn({
     data: bulkSpecs.map((spec, i) => {
       const loc = bulkCities[i % bulkCities.length];
-      const plan = BULK_PLANS[i % BULK_PLANS.length];
       return {
-        createdById: seedOwner.id,
+        advertiserId: seedOwner.id,
         status: spec.status,
         purpose: spec.purpose,
         type: spec.type,
@@ -1252,9 +1304,7 @@ async function main() {
         publishedAt: spec.status === 'ACTIVE' ? new Date() : undefined,
         viewsCount: Math.floor(Math.random() * 800),
         uniqueViewsCount: Math.floor(Math.random() * 500),
-        listingPlan: plan,
-        isFeatured:
-          plan === 'FEATURED' || plan === 'PREMIUM' || plan === 'SUPER',
+        isFeatured: i % 7 === 0,
         acceptsFinancing: spec.purpose === 'SALE',
         isReadyToMove: spec.status === 'ACTIVE',
       };
@@ -1274,7 +1324,6 @@ async function main() {
     ['studio-01', 'open-plan-01', 'window-01'],
   ];
 
-  // Vídeos de amostra do Google CDN — sempre disponíveis, sem autenticação
   const BULK_VIDEO_URLS = [
     'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
     'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
@@ -1293,7 +1342,6 @@ async function main() {
         publicId: `seed/bulk-${i + 1}-photo-${order}`,
         order,
       }));
-      // Adiciona 1 vídeo a cada 5 imóveis (índices 0, 5, 10, 15, …)
       const videoEntry =
         i % 5 === 0
           ? [
@@ -1304,7 +1352,7 @@ async function main() {
                   Math.floor(i / 5) % BULK_VIDEO_URLS.length
                 ],
                 publicId: `seed/bulk-${i + 1}-video`,
-                order: seeds.length, // depois das fotos
+                order: seeds.length,
               },
             ]
           : [];
@@ -1318,7 +1366,7 @@ async function main() {
   );
 
   // -------------------------------------------------------------------------
-  // 7. MÍDIAS DOS IMÓVEIS (fotos + vídeos)
+  // 8. MÍDIAS DOS IMÓVEIS (fotos + vídeos)
   // -------------------------------------------------------------------------
   console.log('\n📸 Adicionando mídias (fotos e vídeos)...');
 
@@ -1330,7 +1378,7 @@ async function main() {
         type: 'IMAGE',
         url: 'https://picsum.photos/seed/nexo-sala-jardins/1200/800',
         publicId: 'seed/apto1-sala-jardins',
-        order: 0, // capa
+        order: 0,
       },
       {
         propertyId: apto1.id,
@@ -1359,7 +1407,7 @@ async function main() {
         type: 'IMAGE',
         url: 'https://picsum.photos/seed/nexo-studio-itaim/1200/800',
         publicId: 'seed/apto2-studio-itaim',
-        order: 0, // capa
+        order: 0,
       },
       {
         propertyId: apto2.id,
@@ -1374,7 +1422,7 @@ async function main() {
         type: 'IMAGE',
         url: 'https://picsum.photos/seed/nexo-fachada-casa/1200/800',
         publicId: 'seed/casa1-fachada',
-        order: 0, // capa
+        order: 0,
       },
       {
         propertyId: casa1.id,
@@ -1403,7 +1451,7 @@ async function main() {
         type: 'IMAGE',
         url: 'https://picsum.photos/seed/nexo-vista-mar/1200/800',
         publicId: 'seed/apto3-vista-mar',
-        order: 0, // capa
+        order: 0,
       },
       {
         propertyId: apto3.id,
@@ -1420,7 +1468,6 @@ async function main() {
         order: 2,
       },
       {
-        // Vídeo de tour virtual — Big Buck Bunny (Google CDN, sempre disponível)
         propertyId: apto3.id,
         type: 'VIDEO',
         url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
@@ -1433,7 +1480,7 @@ async function main() {
         type: 'IMAGE',
         url: 'https://picsum.photos/seed/nexo-sala-ipanema/1200/800',
         publicId: 'seed/apto4-sala-ipanema',
-        order: 0, // capa
+        order: 0,
       },
       {
         propertyId: apto4.id,
@@ -1442,24 +1489,44 @@ async function main() {
         publicId: 'seed/apto4-vista-parcial',
         order: 1,
       },
-      // ── Apê Moema (proprietário) ──────────────────────────────────────────
+      // ── Apê Moema (proprietária — máx 5 fotos, sem vídeo) ─────────────────
       {
         propertyId: aptoProprietario.id,
         type: 'IMAGE',
         url: 'https://picsum.photos/seed/nexo-sala-moema/1200/800',
         publicId: 'seed/aptoProprietario-sala-moema',
-        order: 0, // capa
+        order: 0,
+      },
+      // ── Lançamento Construtora ─────────────────────────────────────────────
+      {
+        propertyId: lancamento.id,
+        type: 'IMAGE',
+        url: 'https://picsum.photos/seed/nexo-lancamento-fachada/1200/800',
+        publicId: 'seed/lancamento-fachada',
+        order: 0,
+      },
+      {
+        propertyId: lancamento.id,
+        type: 'IMAGE',
+        url: 'https://picsum.photos/seed/nexo-lancamento-perspectiva/1200/800',
+        publicId: 'seed/lancamento-perspectiva',
+        order: 1,
+      },
+      {
+        propertyId: lancamento.id,
+        type: 'VIDEO',
+        url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+        publicId: 'seed/lancamento-video',
+        order: 2,
       },
       // aptoDraft — sem mídia (draft recém-criado, ainda sem fotos)
     ],
   });
 
-  console.log(
-    '   ✅ 17 mídias adicionadas aos imóveis nomeados (16 imagens + 1 vídeo)',
-  );
+  console.log('   ✅ 19 mídias adicionadas aos imóveis nomeados');
 
   // -------------------------------------------------------------------------
-  // 8. COMODIDADES DOS IMÓVEIS
+  // 9. COMODIDADES DOS IMÓVEIS
   // -------------------------------------------------------------------------
   console.log('\n🏊 Vinculando comodidades...');
 
@@ -1493,7 +1560,7 @@ async function main() {
   console.log('   ✅ Comodidades vinculadas');
 
   // -------------------------------------------------------------------------
-  // 9. LEADS
+  // 10. LEADS
   // -------------------------------------------------------------------------
   console.log('\n📬 Criando leads...');
 
@@ -1545,7 +1612,7 @@ async function main() {
   console.log('   ✅ 4 leads criados');
 
   // -------------------------------------------------------------------------
-  // 10. CONVERSAS E MENSAGENS
+  // 11. CONVERSAS E MENSAGENS
   // -------------------------------------------------------------------------
   console.log('\n💬 Criando conversas...');
 
@@ -1553,7 +1620,7 @@ async function main() {
     data: {
       propertyId: apto1.id,
       customerId: clienteJoao.id,
-      userId: imobiliaria.id,
+      advertiserId: imobiliaria.id,
       lastMessage: 'Olá! O apartamento ainda está disponível?',
       lastMessageAt: new Date('2025-01-20T10:30:00'),
       lastMessageBy: 'customer',
@@ -1574,19 +1641,11 @@ async function main() {
       {
         conversationId: conversa1.id,
         senderType: 'advertiser',
-        userId: imobiliaria.id,
+        advertiserId: imobiliaria.id,
         content:
           'Olá, João! Sim, está disponível. Gostaria de agendar uma visita?',
         status: 'DELIVERED',
         createdAt: new Date('2025-01-20T11:00:00'),
-      },
-      {
-        conversationId: conversa1.id,
-        senderType: 'customer',
-        customerId: clienteJoao.id,
-        content: 'Olá! O apartamento ainda está disponível?',
-        status: 'READ',
-        createdAt: new Date('2025-01-20T10:30:00'),
       },
     ],
   });
@@ -1595,7 +1654,7 @@ async function main() {
     data: {
       propertyId: apto3.id,
       customerId: clienteAna.id,
-      userId: corretor.id,
+      advertiserId: corretor.id,
       lastMessage: 'Seria possível visitar no próximo fim de semana?',
       lastMessageAt: new Date('2025-01-22T15:00:00'),
       lastMessageBy: 'customer',
@@ -1617,7 +1676,7 @@ async function main() {
       {
         conversationId: conversa2.id,
         senderType: 'advertiser',
-        userId: corretor.id,
+        advertiserId: corretor.id,
         content:
           'Olá, Ana! Que ótimo! A cobertura é realmente um imóvel único. Posso te passar mais detalhes?',
         status: 'READ',
@@ -1637,14 +1696,15 @@ async function main() {
   console.log('   ✅ 2 conversas com mensagens criadas');
 
   // -------------------------------------------------------------------------
-  // 11. AVALIAÇÕES
+  // 12. AVALIAÇÕES
   // -------------------------------------------------------------------------
   console.log('\n⭐ Criando avaliações...');
 
   await prisma.review.createMany({
     data: [
       {
-        userId: corretor.id,
+        // Avaliação do corretor Carlos
+        advertiserId: corretor.id,
         customerId: clienteJoao.id,
         rating: 5,
         title: 'Excelente corretor!',
@@ -1654,6 +1714,7 @@ async function main() {
         isPublished: true,
       },
       {
+        // Avaliação do imóvel apto1
         propertyId: apto1.id,
         customerId: clienteAna.id,
         rating: 4,
@@ -1669,7 +1730,7 @@ async function main() {
   console.log('   ✅ 2 avaliações criadas');
 
   // -------------------------------------------------------------------------
-  // 12. VISITA AGENDADA
+  // 13. VISITA AGENDADA
   // -------------------------------------------------------------------------
   console.log('\n🗓️ Criando visita...');
 
@@ -1689,7 +1750,7 @@ async function main() {
   console.log('   ✅ 1 visita agendada');
 
   // -------------------------------------------------------------------------
-  // 13. PROPOSTA
+  // 14. PROPOSTA
   // -------------------------------------------------------------------------
   console.log('\n📝 Criando proposta...');
 
@@ -1711,7 +1772,7 @@ async function main() {
   console.log('   ✅ 1 proposta criada');
 
   // -------------------------------------------------------------------------
-  // 14. DENÚNCIA
+  // 15. DENÚNCIA
   // -------------------------------------------------------------------------
   console.log('\n🚨 Criando denúncia...');
 
@@ -1729,7 +1790,7 @@ async function main() {
   console.log('   ✅ 1 denúncia criada');
 
   // -------------------------------------------------------------------------
-  // 15. FAVORITOS
+  // 16. FAVORITOS
   // -------------------------------------------------------------------------
   console.log('\n❤️  Criando favoritos...');
 
@@ -1747,8 +1808,26 @@ async function main() {
   // -------------------------------------------------------------------------
   // Resumo final
   // -------------------------------------------------------------------------
-  const counts = await Promise.all([
+  const [
+    usersCount,
+    advertisersCount,
+    plansCount,
+    subscriptionsCount,
+    customersCount,
+    propertiesCount,
+    mediaCount,
+    amenitiesCount,
+    leadsCount,
+    conversationsCount,
+    messagesCount,
+    reviewsCount,
+    visitsCount,
+    proposalsCount,
+  ] = await Promise.all([
     prisma.user.count(),
+    prisma.advertiser.count(),
+    prisma.plan.count(),
+    prisma.subscription.count(),
     prisma.customer.count(),
     prisma.property.count(),
     prisma.propertyMedia.count(),
@@ -1759,37 +1838,36 @@ async function main() {
     prisma.review.count(),
     prisma.visit.count(),
     prisma.proposal.count(),
-    prisma.listingPlan.count(),
   ]);
 
   console.log('\n═══════════════════════════════════════');
   console.log('✅ SEED CONCLUÍDO COM SUCESSO!');
   console.log('═══════════════════════════════════════');
-  console.log(`   👤 Usuários:        ${counts[0]}`);
-  console.log(`   👥 Clientes:        ${counts[1]}`);
+  console.log(`   👤 Usuários internos:  ${usersCount}`);
+  console.log(`   🏢 Anunciantes:        ${advertisersCount} (agency, broker, owner, developer + bulk)`);
+  console.log(`   📋 Planos:             ${plansCount} (BASIC, INTERMEDIATE, PREMIUM)`);
+  console.log(`   💳 Assinaturas:        ${subscriptionsCount}`);
+  console.log(`   👥 Clientes:           ${customersCount}`);
   console.log(
-    `   🏠 Imóveis:         ${counts[2]} (7 detalhados + 50 de teste em lote)`,
+    `   🏠 Imóveis:           ${propertiesCount} (8 detalhados + 50 de teste em lote)`,
   );
-  console.log(`   📸 Mídias:          ${counts[3]}`); // imagens + vídeos
-  console.log(`   🏊 Comodidades:     ${counts[4]}`);
-  console.log(`   📋 Planos:          ${counts[11]}`);
-  console.log(`   📬 Leads:           ${counts[5]}`);
-  console.log(`   💬 Conversas:       ${counts[6]}`);
-  console.log(`   ✉️  Mensagens:       ${counts[7]}`);
-  console.log(`   ⭐ Avaliações:      ${counts[8]}`);
-  console.log(`   🗓️  Visitas:         ${counts[9]}`);
-  console.log(`   📝 Propostas:       ${counts[10]}`);
+  console.log(`   📸 Mídias:             ${mediaCount}`);
+  console.log(`   🏊 Comodidades:        ${amenitiesCount}`);
+  console.log(`   📬 Leads:              ${leadsCount}`);
+  console.log(`   💬 Conversas:          ${conversationsCount}`);
+  console.log(`   ✉️  Mensagens:          ${messagesCount}`);
+  console.log(`   ⭐ Avaliações:         ${reviewsCount}`);
+  console.log(`   🗓️  Visitas:            ${visitsCount}`);
+  console.log(`   📝 Propostas:          ${proposalsCount}`);
   console.log('═══════════════════════════════════════');
   console.log('');
-  console.log('🔑 Usuário de teste em lote:');
+  console.log('🔑 Anunciante de teste em lote (BROKER/PREMIUM):');
+  console.log(`   keycloakId: ${seedOwnerKeycloakId}`);
   console.log(
-    `   keycloakId: ${process.env.SEED_OWNER_KEYCLOAK_ID ?? 'kc-seed-bulk-001'}`,
+    '   Para logar como este anunciante no Keycloak, certifique-se de que',
   );
   console.log(
-    '   Para logar como este usuário no Keycloak, certifique-se de que',
-  );
-  console.log(
-    '   o UUID acima corresponde ao sub do JWT do seu usuário Keycloak.',
+    '   o UUID acima corresponde ao sub do JWT do seu Keycloak.',
   );
   console.log(
     '   Defina SEED_OWNER_KEYCLOAK_ID=<seu-uuid> no .env do backend.',

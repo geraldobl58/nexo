@@ -49,7 +49,7 @@ export class GetMyListingByIdUseCase {
       );
     }
 
-    if (listing.createdById !== userId) {
+    if (listing.advertiserId !== userId) {
       throw new ForbiddenException(
         'Você não tem permissão para acessar este anúncio.',
       );

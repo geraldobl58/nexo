@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../hooks/use-auth";
+import { useAuth } from "../hooks/use-auth.hook";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -18,7 +18,7 @@ export function ProtectedRoute({
 
   const handleLogin = useCallback(async () => {
     try {
-      await login("/publish/owner");
+      await login("/panel");
     } catch (error) {
       console.error("Erro ao iniciar login:", error);
       router.replace("/");

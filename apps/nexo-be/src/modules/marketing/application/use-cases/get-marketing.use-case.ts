@@ -40,7 +40,7 @@ export class GetListingsUseCase {
   ): Promise<PaginatedResult<ListingEntity>> {
     // Aplica limites de paginação para evitar abuso da API.
     const page = Math.max(1, filters.page ?? 1); // mínimo página 1
-    const limit = Math.min(100, Math.max(1, filters.limit ?? 20)); // entre 1 e 100
+    const limit = Math.min(100, Math.max(1, filters.limit ?? 10)); // entre 1 e 100
 
     return this.listings.findMany({
       ...filters,
