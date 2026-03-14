@@ -34,13 +34,13 @@ export class GetMyListingByIdUseCase {
   ) {}
 
   /**
-   * @param listingId - UUID do anúncio
-   * @param userId    - ID do usuário autenticado (extraído do JWT pelo controller)
+   * @param listingId  - UUID do anúncio
+   * @param keycloakId - Sub do JWT do usuário autenticado
    * @returns Entidade completa do anúncio
    * @throws NotFoundException  quando o anúncio não existe ou está deletado
    * @throws ForbiddenException quando o anúncio pertence a outro usuário
    */
-  async execute(listingId: string, userId: string): Promise<ListingEntity> {
+  async execute(listingId: string, keycloakId: string): Promise<ListingEntity> {
     const listing = await this.listings.findById(listingId);
 
     if (!listing || listing.deletedAt !== null) {
@@ -49,7 +49,10 @@ export class GetMyListingByIdUseCase {
       );
     }
 
-    if (listing.advertiserId !== userId) {
+    const advertiserId =
+      await this.listings.resolveAdvertiserIdByKeycloakId(keycloakId);
+
+    if (listing.advertiserId !== advertiserId) {
       throw new ForbiddenException(
         'Você não tem permissão para acessar este anúncio.',
       );

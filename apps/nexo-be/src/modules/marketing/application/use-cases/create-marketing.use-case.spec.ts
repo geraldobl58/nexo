@@ -105,7 +105,7 @@ const makeListing = (override: Partial<ListingEntity> = {}): ListingEntity => ({
 const makeInput = (
   override: Partial<Parameters<CreateListingUseCase['execute']>[0]> = {},
 ) => ({
-  advertiserId: 'user-uuid',
+  advertiserKeycloakId: 'user-uuid',
   purpose: 'SALE' as const,
   type: 'APARTMENT' as const,
   title: 'Apartamento 3 quartos no centro',
@@ -127,6 +127,7 @@ describe('CreateListingUseCase', () => {
     mockRepo = {
       create: jest.fn(),
       findById: jest.fn(),
+      findBySlug: jest.fn(),
       update: jest.fn(),
       findMany: jest.fn(),
       slugExists: jest.fn(),
@@ -137,6 +138,9 @@ describe('CreateListingUseCase', () => {
         maxPhotos: 5,
         maxVideos: 0,
       }),
+      resolveAdvertiserIdByKeycloakId: jest
+        .fn()
+        .mockImplementation((id: string) => Promise.resolve(id)),
     };
 
     // Instancia o use-case diretamente (sem NestJS TestingModule)

@@ -21,7 +21,8 @@ import { generateListingSlug } from '../utils/slug.util';
  * e o use-case valida as regras de negócio.
  */
 export type CreateListingInput = {
-  advertiserId: string;
+  /** keycloakId (sub do JWT) do anunciante autenticado */
+  advertiserKeycloakId: string;
   purpose: ListingEntity['purpose'];
   type: ListingEntity['type'];
   title: string;
@@ -121,13 +122,19 @@ export class CreateListingUseCase {
     }
 
     // 3. Verifica o limite de imóveis do plano do anunciante.
-    const planLimits = await this.listings.getAdvertiserPlanLimits(
-      input.advertiserId,
+    const advertiserId = await this.listings.resolveAdvertiserIdByKeycloakId(
+      input.advertiserKeycloakId,
     );
-    if (planLimits.maxProperties !== -1) {
-      const activeCount = await this.listings.countActiveByAdvertiser(
-        input.advertiserId,
+    if (!advertiserId) {
+      throw new BadRequestException(
+        'Anunciante não encontrado para o usuário autenticado.',
       );
+    }
+    const planLimits =
+      await this.listings.getAdvertiserPlanLimits(advertiserId);
+    if (planLimits.maxProperties !== -1) {
+      const activeCount =
+        await this.listings.countActiveByAdvertiser(advertiserId);
       if (activeCount >= planLimits.maxProperties) {
         throw new ForbiddenException(
           `Você atingiu o limite de ${planLimits.maxProperties} imóvel(is) do seu plano. ` +
@@ -157,7 +164,7 @@ export class CreateListingUseCase {
     // Monta o objeto de criação com todos os campos + slug gerado.
     // Status "DRAFT" é definido pelo repositório como padrão (via Prisma schema).
     const data: CreateListingData = {
-      advertiserId: input.advertiserId,
+      advertiserId,
       purpose: input.purpose,
       type: input.type,
       title: titleVO.value, // usamos o título normalizado (sem espaços extras)

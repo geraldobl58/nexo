@@ -9,6 +9,7 @@
 import { api } from "@/config/api";
 import {
   MarketingQueryParams,
+  MarketingResponse,
   PaginatedMarketingResponse,
 } from "../types/marketing.type";
 
@@ -24,9 +25,26 @@ import {
 export async function getMarketing(
   params: MarketingQueryParams = {},
 ): Promise<PaginatedMarketingResponse> {
-  const response = await api.get<PaginatedMarketingResponse>("/marketing", {
+  const { data } = await api.get<PaginatedMarketingResponse>("/marketing", {
     params,
   });
 
-  return response.data;
+  return data;
+}
+
+/**
+ * Busca um imóvel pelo slug (URL amigável).
+ *
+ * Endpoint: GET /marketing/slug/:slug
+ *
+ * @param slug - URL amigável do imóvel
+ * @returns Dados completos do imóvel
+ */
+export async function getMarketingBySlug(
+  slug: string,
+): Promise<MarketingResponse> {
+  const { data } = await api.get<MarketingResponse>(
+    `/marketing/slug/${encodeURIComponent(slug)}`,
+  );
+  return data;
 }

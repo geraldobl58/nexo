@@ -39,20 +39,27 @@ export class GetMyListingsUseCase {
   ) {}
 
   /**
-   * @param userId  - ID do usuário autenticado (extraído do JWT pelo controller)
-   * @param filters - Filtros opcionais (status, page, limit, etc.)
+   * @param keycloakId - Sub do JWT do usuário autenticado
+   * @param filters    - Filtros opcionais (status, page, limit, etc.)
    */
   async execute(
-    userId: string,
+    keycloakId: string,
     filters: Omit<ListingFilters, 'advertiserId'> = {},
   ): Promise<PaginatedResult<ListingEntity>> {
     const page = Math.max(1, filters.page ?? 1);
     const limit = Math.min(100, Math.max(1, filters.limit ?? 10));
 
+    const advertiserId =
+      await this.listings.resolveAdvertiserIdByKeycloakId(keycloakId);
+
+    if (!advertiserId) {
+      return { items: [], total: 0, page, limit, totalPages: 0 };
+    }
+
     return this.listings.findMany({
       ...filters,
       // Isola os dados: somente anúncios do anunciante autenticado
-      advertiserId: userId,
+      advertiserId,
       // Quando nenhum status é informado, retorna TODOS (não apenas ACTIVE)
       statuses: filters.status ? undefined : ALL_STATUSES,
       page,

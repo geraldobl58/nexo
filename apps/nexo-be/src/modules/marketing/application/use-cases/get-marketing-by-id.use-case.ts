@@ -58,4 +58,34 @@ export class GetListingUseCase {
 
     return listing;
   }
+
+  /**
+   * @param slug - URL amigável do anúncio
+   * @returns A entidade completa do anúncio
+   * @throws NotFoundException quando o anúncio não existe ou está deletado
+   */
+  async executeBySlug(
+    slug: string,
+    requesterId?: string | null,
+    requesterRole?: UserRole | null,
+  ): Promise<ListingEntity> {
+    const listing = await this.listings.findBySlug(slug);
+
+    if (!listing || listing.deletedAt !== null) {
+      throw new NotFoundException(`Anúncio com slug "${slug}" não encontrado.`);
+    }
+
+    if (listing.status !== ListingStatus.ACTIVE) {
+      const isOwner = requesterId && listing.advertiserId === requesterId;
+      const isPrivileged =
+        requesterRole === 'ADMIN' || requesterRole === 'MODERATOR';
+      if (!isOwner && !isPrivileged) {
+        throw new NotFoundException(
+          `Anúncio com slug "${slug}" não encontrado.`,
+        );
+      }
+    }
+
+    return listing;
+  }
 }

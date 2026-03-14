@@ -122,6 +122,7 @@ describe('GetListingsUseCase', () => {
       }),
       slugExists: jest.fn(),
       softDelete: jest.fn(),
+      findBySlug: jest.fn(),
     };
 
     useCase = new GetListingsUseCase(mockRepo);

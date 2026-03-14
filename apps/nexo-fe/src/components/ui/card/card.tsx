@@ -12,6 +12,7 @@ import {
   Zap,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 export type CardProps = {
   badge?: boolean;
@@ -28,7 +29,7 @@ export type CardProps = {
   imageUrl?: string;
   imageAlt?: string;
   onFavoriteClick?: () => void;
-  onContactClick?: () => void;
+  href?: string;
 };
 
 export const Card = ({
@@ -46,7 +47,7 @@ export const Card = ({
   imageUrl = "/images/placeholder.jpg",
   imageAlt = "Imagem do imóvel",
   onFavoriteClick,
-  onContactClick,
+  href = "#",
 }: CardProps) => {
   return (
     <div className="border min-h-[520px] rounded-lg bg-white shadow-sm">
@@ -118,7 +119,9 @@ export const Card = ({
           variant="outlined"
           startIcon={<Zap className="size-5" />}
           color="primary"
-          onClick={onContactClick}
+          LinkComponent={Link}
+          href={href}
+          target="_blank"
         >
           Contatar anunciante
         </Button>

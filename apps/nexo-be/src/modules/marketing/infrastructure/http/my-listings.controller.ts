@@ -164,7 +164,7 @@ export class MyListingsController {
   ): Promise<ListingResponseDto> {
     const listing = await this.createListing.execute({
       ...dto,
-      advertiserId: currentUser.id,
+      advertiserKeycloakId: currentUser.keycloakId,
     });
     return ListingResponseDto.fromEntity(listing);
   }
@@ -192,7 +192,7 @@ export class MyListingsController {
     @CurrentUser() currentUser: UserEntity,
     @Query() query: GetListingsQueryDto,
   ): Promise<PaginatedListingResponseDto> {
-    const result = await this.getMyListings.execute(currentUser.id, {
+    const result = await this.getMyListings.execute(currentUser.keycloakId, {
       ...query,
       status: query.status as ListingStatus | undefined,
     });
@@ -227,7 +227,10 @@ export class MyListingsController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() currentUser: UserEntity,
   ): Promise<ListingResponseDto> {
-    const listing = await this.getMyListingById.execute(id, currentUser.id);
+    const listing = await this.getMyListingById.execute(
+      id,
+      currentUser.keycloakId,
+    );
     return ListingResponseDto.fromEntity(listing);
   }
 
@@ -271,7 +274,7 @@ export class MyListingsController {
     const listing = await this.updateListing.execute(
       id,
       dto,
-      currentUser.id,
+      currentUser.keycloakId,
       currentUser.role,
     );
     return ListingResponseDto.fromEntity(listing);
@@ -303,7 +306,11 @@ export class MyListingsController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() currentUser: UserEntity,
   ): Promise<void> {
-    await this.deleteListing.execute(id, currentUser.id, currentUser.role);
+    await this.deleteListing.execute(
+      id,
+      currentUser.keycloakId,
+      currentUser.role,
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -343,7 +350,7 @@ export class MyListingsController {
   ): Promise<ListingResponseDto> {
     const listing = await this.publishListing.execute(
       id,
-      currentUser.id,
+      currentUser.keycloakId,
       currentUser.role,
     );
     return ListingResponseDto.fromEntity(listing);
@@ -387,7 +394,7 @@ export class MyListingsController {
   ): Promise<ListingResponseDto> {
     const listing = await this.unpublishListing.execute(
       id,
-      currentUser.id,
+      currentUser.keycloakId,
       currentUser.role,
     );
     return ListingResponseDto.fromEntity(listing);

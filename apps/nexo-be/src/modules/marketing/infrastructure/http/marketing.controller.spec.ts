@@ -96,7 +96,7 @@ const makeListing = (override: Partial<ListingEntity> = {}): ListingEntity => ({
 
 // ─── Mocks dos use-cases ──────────────────────────────────────────────────────
 
-const mockGetListing = { execute: jest.fn() };
+const mockGetListing = { execute: jest.fn(), executeBySlug: jest.fn() };
 const mockGetListings = { execute: jest.fn() };
 
 // ─── Testes ───────────────────────────────────────────────────────────────────

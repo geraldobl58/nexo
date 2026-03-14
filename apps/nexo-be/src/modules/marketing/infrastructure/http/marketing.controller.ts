@@ -116,6 +116,55 @@ export class MarketingController {
   }
 
   // ---------------------------------------------------------------------------
+  // GET /marketing/slug/:slug — Detalhe do anúncio por slug (público)
+  // ---------------------------------------------------------------------------
+
+  @Get('slug/:slug')
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiOperation({
+    summary: 'Buscar anúncio por slug',
+    description:
+      'Rota pública — sem necessidade de login. ' +
+      'Retorna o anúncio correspondente ao slug (URL amigável). ' +
+      'Anúncios não-ACTIVE só são retornados para o próprio dono ou Admin/Moderador.',
+  })
+  @ApiOkResponse({ description: 'Dados do anúncio', type: ListingResponseDto })
+  @ApiNotFoundResponse({
+    description: 'Anúncio não encontrado',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Anúncio com slug "slug" não encontrado.',
+        error: 'Not Found',
+      },
+    },
+  })
+  @ApiTooManyRequestsResponse({
+    description: 'Limite de requisições excedido (100 req/min)',
+    schema: {
+      example: {
+        statusCode: 429,
+        message: 'ThrottlerException: Too Many Requests',
+      },
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Erro interno do servidor',
+    schema: { example: { statusCode: 500, message: 'Internal server error' } },
+  })
+  async findBySlug(
+    @Param('slug') slug: string,
+    @CurrentUser() currentUser: UserEntity | null,
+  ): Promise<ListingResponseDto> {
+    const listing = await this.getListing.executeBySlug(
+      slug,
+      currentUser?.id,
+      currentUser?.role,
+    );
+    return ListingResponseDto.fromEntity(listing);
+  }
+
+  // ---------------------------------------------------------------------------
   // GET /marketing/:id — Detalhe do anúncio (público)
   // ---------------------------------------------------------------------------
 

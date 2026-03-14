@@ -2,8 +2,6 @@
 
 import { Card } from "@/components/ui/card/card";
 
-import { useMarketing } from "../hooks/use-marketing.hook";
-
 import { formatCurrency } from "@/lib/formatted-money";
 
 import { MarketingResponse } from "../types/marketing.type";
@@ -11,12 +9,8 @@ import { SectionFeature } from "@/components/sections/section-feature";
 import { Heading } from "@/components/ui/heading/heading";
 import { Carousel } from "@/components/ui/carousel/carousel";
 import { SETTINGS_CAROUSEL } from "@/lib/settings-carousel";
-import { useRouter } from "next/navigation";
 
-function toCarouselItems(
-  marketing: MarketingResponse[],
-  router: ReturnType<typeof useRouter>,
-) {
+function toCarouselItems(marketing: MarketingResponse[]) {
   return marketing.map((marketing) => (
     <Card
       key={marketing.id}
@@ -36,25 +30,20 @@ function toCarouselItems(
       imageAlt={marketing.title}
       badge={marketing.isFeatured}
       badgeText="Destaque"
-      onContactClick={() => router.push(`/imovel/${marketing.slug}`)}
+      href={`/single/${marketing.slug}`}
       onFavoriteClick={() => {}}
     />
   ));
 }
 
-export const MarketingCard = () => {
-  const router = useRouter();
-  const { listings } = useMarketing({ status: "ACTIVE", page: 1, limit: 50 });
+interface MarketingCardProps {
+  listings: MarketingResponse[];
+}
 
-  const featuredItems = toCarouselItems(
-    listings.filter((l) => l.isFeatured),
-    router,
-  );
+export const MarketingCard = ({ listings }: MarketingCardProps) => {
+  const featuredItems = toCarouselItems(listings.filter((l) => l.isFeatured));
 
-  const regularItems = toCarouselItems(
-    listings.filter((l) => !l.isFeatured),
-    router,
-  );
+  const regularItems = toCarouselItems(listings.filter((l) => !l.isFeatured));
 
   return (
     <div>

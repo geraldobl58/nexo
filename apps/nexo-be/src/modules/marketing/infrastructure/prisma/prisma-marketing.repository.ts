@@ -246,6 +246,17 @@ export class PrismaListingRepository implements ListingRepository {
     return record ? this.toEntity(record) : null;
   }
 
+  async findBySlug(slug: string): Promise<ListingEntity | null> {
+    const record = await this.prisma.property.findFirst({
+      where: { slug, deletedAt: null },
+      include: {
+        media: { orderBy: { order: 'asc' } },
+      },
+    });
+
+    return record ? this.toEntity(record) : null;
+  }
+
   async update(id: string, data: UpdateListingData): Promise<ListingEntity> {
     const record = await this.prisma.property.update({
       where: { id },
@@ -551,5 +562,15 @@ export class PrismaListingRepository implements ListingRepository {
       maxPhotos: basicPlan?.maxPhotos ?? 5,
       maxVideos: basicPlan?.maxVideos ?? 0,
     };
+  }
+
+  async resolveAdvertiserIdByKeycloakId(
+    keycloakId: string,
+  ): Promise<string | null> {
+    const advertiser = await this.prisma.advertiser.findFirst({
+      where: { keycloakId },
+      select: { id: true },
+    });
+    return advertiser?.id ?? null;
   }
 }

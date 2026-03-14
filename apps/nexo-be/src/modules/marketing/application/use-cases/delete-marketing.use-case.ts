@@ -34,10 +34,9 @@ export class DeleteListingUseCase {
    */
   async execute(
     listingId: string,
-    requesterId: string,
+    requesterKeycloakId: string,
     requesterRole: UserRole,
   ): Promise<void> {
-    // Verifica existência antes de deletar para retornar 404 claro
     const listing = await this.listings.findById(listingId);
     if (!listing || listing.deletedAt !== null) {
       throw new NotFoundException(
@@ -45,8 +44,9 @@ export class DeleteListingUseCase {
       );
     }
 
-    // Verifica ownership: apenas o dono ou Admin/Moderador podem excluir.
-    const isOwner = listing.advertiserId === requesterId;
+    const advertiserId =
+      await this.listings.resolveAdvertiserIdByKeycloakId(requesterKeycloakId);
+    const isOwner = listing.advertiserId === advertiserId;
     const isPrivileged =
       requesterRole === 'ADMIN' || requesterRole === 'MODERATOR';
     if (!isOwner && !isPrivileged) {

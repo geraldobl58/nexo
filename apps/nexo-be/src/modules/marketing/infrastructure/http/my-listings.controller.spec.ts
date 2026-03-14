@@ -154,13 +154,13 @@ describe('MyListingsController', () => {
         state: listing.state,
         district: listing.district,
       } as CreateListingDto;
-      const currentUser = { id: 'owner-uuid' } as any;
+      const currentUser = { keycloakId: 'owner-uuid' } as any;
 
       const result = await controller.create(currentUser, dto);
 
       expect(mockCreateListing.execute).toHaveBeenCalledWith({
         ...dto,
-        advertiserId: 'owner-uuid',
+        advertiserKeycloakId: 'owner-uuid',
       });
       expect(result.id).toBe(listing.id);
       expect(result.status).toBe(ListingStatus.DRAFT);
@@ -187,7 +187,7 @@ describe('MyListingsController', () => {
         limit: 10,
         totalPages: 1,
       });
-      const currentUser = { id: 'owner-uuid' } as any;
+      const currentUser = { keycloakId: 'owner-uuid' } as any;
 
       const result = await controller.listMine(currentUser, {
         page: 1,
@@ -212,7 +212,7 @@ describe('MyListingsController', () => {
       });
 
       const result = await controller.listMine(
-        { id: 'owner-uuid' } as any,
+        { keycloakId: 'owner-uuid' } as any,
         {} as GetListingsQueryDto,
       );
 
@@ -233,7 +233,7 @@ describe('MyListingsController', () => {
       mockGetMyListingById.execute.mockResolvedValue(listing);
 
       const result = await controller.findMine('listing-uuid-1', {
-        id: 'owner-uuid',
+        keycloakId: 'owner-uuid',
       } as any);
 
       expect(mockGetMyListingById.execute).toHaveBeenCalledWith(
@@ -254,7 +254,7 @@ describe('MyListingsController', () => {
     it('deve chamar UpdateListingUseCase com id, dto, userId e role', async () => {
       const updated = makeListing({ title: 'Novo Título' });
       mockUpdateListing.execute.mockResolvedValue(updated);
-      const currentUser = { id: 'owner-uuid', role: 'SUPPORT' } as any;
+      const currentUser = { keycloakId: 'owner-uuid', role: 'SUPPORT' } as any;
 
       const result = await controller.update('listing-uuid-1', currentUser, {
         title: 'Novo Título',
@@ -279,7 +279,7 @@ describe('MyListingsController', () => {
 
     it('deve chamar DeleteListingUseCase com id, userId e role', async () => {
       mockDeleteListing.execute.mockResolvedValue(undefined);
-      const currentUser = { id: 'owner-uuid', role: 'SUPPORT' } as any;
+      const currentUser = { keycloakId: 'owner-uuid', role: 'SUPPORT' } as any;
 
       await controller.remove('listing-uuid-1', currentUser);
 
@@ -304,7 +304,7 @@ describe('MyListingsController', () => {
         publishedAt: new Date(),
       });
       mockPublishListing.execute.mockResolvedValue(published);
-      const currentUser = { id: 'owner-uuid', role: 'SUPPORT' } as any;
+      const currentUser = { keycloakId: 'owner-uuid', role: 'SUPPORT' } as any;
 
       const result = await controller.publish('listing-uuid-1', currentUser);
 
@@ -327,7 +327,7 @@ describe('MyListingsController', () => {
     it('deve chamar UnpublishListingUseCase com id, userId e role', async () => {
       const inactive = makeListing({ status: ListingStatus.INACTIVE });
       mockUnpublishListing.execute.mockResolvedValue(inactive);
-      const currentUser = { id: 'owner-uuid', role: 'SUPPORT' } as any;
+      const currentUser = { keycloakId: 'owner-uuid', role: 'SUPPORT' } as any;
 
       const result = await controller.unpublish('listing-uuid-1', currentUser);
 

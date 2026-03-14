@@ -196,9 +196,11 @@ export const MyProperties = () => {
           loading={isLoading}
           rowHeight={120}
           emptyMessage="Você ainda não cadastrou nenhum imóvel."
+          serverSide
           pagination={{
             model: paginationModel,
             onModelChange: handlePaginationChange,
+            rowCount: total ?? 0,
             pageSizeOptions: [10, 25, 50],
           }}
           total={total}

@@ -104,10 +104,9 @@ export class UpdateListingUseCase {
   async execute(
     listingId: string,
     input: UpdateListingInput,
-    requesterId: string,
+    requesterKeycloakId: string,
     requesterRole: UserRole,
   ): Promise<ListingEntity> {
-    // 1. Busca e verifica existência
     const listing = await this.listings.findById(listingId);
     if (!listing || listing.deletedAt !== null) {
       throw new NotFoundException(
@@ -115,8 +114,9 @@ export class UpdateListingUseCase {
       );
     }
 
-    // 2. Verifica ownership: apenas o dono ou Admin/Moderador podem editar.
-    const isOwner = listing.advertiserId === requesterId;
+    const advertiserId =
+      await this.listings.resolveAdvertiserIdByKeycloakId(requesterKeycloakId);
+    const isOwner = listing.advertiserId === advertiserId;
     const isPrivileged =
       requesterRole === 'ADMIN' || requesterRole === 'MODERATOR';
     if (!isOwner && !isPrivileged) {

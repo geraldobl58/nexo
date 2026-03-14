@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { MarketingQueryParams } from "../types/marketing.type";
-import { getMarketing } from "../services/marketing.service";
+import { getMarketingAction } from "../actions/marketing.action";
 
 /**
  * Retorna a lista paginada dos imóveis do usuário logado.
@@ -22,7 +22,7 @@ export const MARKETING_KEY = (params: MarketingQueryParams) => {
 export function useMarketing(params: MarketingQueryParams = {}) {
   const query = useQuery({
     queryKey: MARKETING_KEY(params),
-    queryFn: () => getMarketing(params),
+    queryFn: () => getMarketingAction(params),
     enabled: true, // sempre habilitado, pois não depende de autenticação
     staleTime: 1 * 60 * 1000, // 1 minuto
   });

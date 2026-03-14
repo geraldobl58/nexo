@@ -18,3 +18,18 @@ export async function getListingById(
   const response = await api.get<CreatePublishResponse>(`/marketing/${id}`);
   return response.data;
 }
+
+/**
+ * Busca os dados completos de um anúncio pelo slug (URL amigável).
+ *
+ * Endpoint: GET /marketing/slug/:slug
+ * Auth: Nenhuma (público)
+ */
+export async function getListingBySlug(
+  slug: string,
+): Promise<CreatePublishResponse> {
+  const response = await api.get<CreatePublishResponse>(
+    `/marketing/slug/${slug}`,
+  );
+  return response.data;
+}

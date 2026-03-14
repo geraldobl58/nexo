@@ -37,10 +37,9 @@ export class PublishListingUseCase {
    */
   async execute(
     listingId: string,
-    requesterId: string,
+    requesterKeycloakId: string,
     requesterRole: UserRole,
   ): Promise<ListingEntity> {
-    // 1. Busca o anúncio. Se não existir, retorna 404.
     const listing = await this.listings.findById(listingId);
     if (!listing) {
       throw new NotFoundException(
@@ -48,8 +47,9 @@ export class PublishListingUseCase {
       );
     }
 
-    // 2. Verifica ownership: apenas o dono ou Admin/Moderador podem publicar.
-    const isOwner = listing.advertiserId === requesterId;
+    const advertiserId =
+      await this.listings.resolveAdvertiserIdByKeycloakId(requesterKeycloakId);
+    const isOwner = listing.advertiserId === advertiserId;
     const isPrivileged =
       requesterRole === 'ADMIN' || requesterRole === 'MODERATOR';
     if (!isOwner && !isPrivileged) {

@@ -264,6 +264,12 @@ export interface ListingRepository {
   findById(id: string): Promise<ListingEntity | null>;
 
   /**
+   * Busca um anúncio pelo slug (URL amigável).
+   * @returns A entidade ou `null` se não encontrada
+   */
+  findBySlug(slug: string): Promise<ListingEntity | null>;
+
+  /**
    * Atualiza campos de um anúncio existente.
    * @returns A entidade atualizada
    */
@@ -303,4 +309,12 @@ export interface ListingRepository {
    * @throws NotFoundException quando o anúncio não existe
    */
   softDelete(id: string): Promise<void>;
+
+  /**
+   * Resolve o UUID interno do Advertiser a partir do keycloakId (sub do JWT).
+   * Necessário porque o SyncUserInterceptor sincroniza para a tabela User,
+   * mas Property.advertiserId referencia Advertiser.id — tabelas distintas.
+   * @returns O UUID do Advertiser ou null se não encontrado
+   */
+  resolveAdvertiserIdByKeycloakId(keycloakId: string): Promise<string | null>;
 }

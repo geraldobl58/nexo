@@ -118,6 +118,10 @@ describe('PublishListingUseCase', () => {
       }),
       slugExists: jest.fn(),
       softDelete: jest.fn(),
+      findBySlug: jest.fn(),
+      resolveAdvertiserIdByKeycloakId: jest
+        .fn()
+        .mockImplementation((id: string) => Promise.resolve(id)),
     };
 
     useCase = new PublishListingUseCase(mockRepo);
